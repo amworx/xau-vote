@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 2A: Pulse</title>
+<style>
+  /* ══════════ MOCKUP 2A: PULSE ══════════
+     Clarity-first. Signature: concentric "sonar pulse" rings
+     emanating from the verdict + a full-width direction verdict
+     band. Dark teal-navy, cyan-green data, gold verdict only. */
+  :root{
+    --bg:#071119;
+    --surface:#0E1C26;
+    --border:#1C3242;
+    --border-soft:#14252F;
+    --text:#EAF3F6;
+    --dim:#8FA9B5;
+    --faint:#54707D;
+    --gold:#E2B13C;
+    --gold-bright:#F5C95C;
+    --cyan:#3ED6C3;
+    --cyan-dim:rgba(62,214,195,.12);
+    --short:#E85D5D;
+    --info:#58A6FF;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#03090D;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 12px;border-bottom:1px solid var(--border-soft)}
+  .brand .name{font-size:.92rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .hdr{display:flex;align-items:center;gap:10px}
+  .hdr .p{font-family:var(--mono);font-size:1rem;font-weight:700}
+  .hdr .c{font-family:var(--mono);font-size:.66rem;font-weight:600;color:var(--cyan);background:var(--cyan-dim);padding:2px 7px;border-radius:5px}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--cyan);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px rgba(62,214,195,.9);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @media (prefers-reduced-motion:reduce){.live i,.ring{animation:none!important}}
+
+  main{flex:1;display:flex;flex-direction:column;padding:10px 20px 14px}
+
+  /* ZONE 1 — verdict with sonar pulse rings */
+  .hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;position:relative;min-height:320px}
+  .hero .tf{font-size:.66rem;font-weight:700;letter-spacing:.22em;color:var(--faint);text-transform:uppercase}
+  .stage{position:relative;width:250px;height:250px;display:flex;align-items:center;justify-content:center}
+  /* sonar rings */
+  .ring{position:absolute;border-radius:50%;border:1px solid rgba(226,177,60,.35);animation:sonar 3.4s ease-out infinite}
+  .ring.r1{inset:36%}
+  .ring.r2{inset:24%;animation-delay:.55s}
+  .ring.r3{inset:12%;animation-delay:1.1s}
+  .ring.r4{inset:0;animation-delay:1.65s}
+  @keyframes sonar{
+    0%{transform:scale(.62);opacity:0}
+    18%{opacity:.85}
+    100%{transform:scale(1.06);opacity:0}
+  }
+  /* radar blips */
+  .blip{position:absolute;border-radius:50%;transform:translate(-50%,-50%)}
+  .blip.agree{background:var(--cyan);box-shadow:0 0 8px rgba(62,214,195,.9);width:8px;height:8px}
+  .blip.agree.tiny{width:6px;height:6px;opacity:.85}
+  .blip.dissent{background:var(--short);box-shadow:0 0 7px rgba(232,93,93,.8);width:7px;height:7px}
+  .core{
+    position:relative;z-index:2;
+    width:150px;height:150px;border-radius:50%;
+    background:radial-gradient(circle at 50% 38%,#12242F,#0B1922 72%);
+    border:1px solid var(--border);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    box-shadow:0 0 60px -12px rgba(226,177,60,.35), inset 0 0 30px rgba(0,0,0,.5);
+  }
+  .core svg{width:26px;height:26px;stroke:var(--gold-bright)}
+  .core .word{font-size:1.85rem;font-weight:800;letter-spacing:.12em;color:var(--gold-bright)}
+  .core .sub{font-size:.68rem;color:var(--dim)}
+  .core .sub b{color:var(--text);font-family:var(--mono)}
+
+  /* ZONE 2 — strength */
+  .strength{padding:4px 4px 0}
+  .strength-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .strength-top .lbl{font-size:.6rem;font-weight:700;letter-spacing:.16em;color:var(--faint);text-transform:uppercase}
+  .strength-top .val{font-size:.8rem;font-weight:800;letter-spacing:.1em;color:var(--gold-bright)}
+  .strength-top .val span{font-family:var(--mono);font-size:.72rem;margin-left:6px}
+  .track{position:relative;height:7px;border-radius:4px;background:linear-gradient(90deg,rgba(232,93,93,.3) 0 39%,rgba(226,177,60,.26) 39% 59%,rgba(88,166,255,.22) 59% 74%,rgba(62,214,195,.32) 74% 89%,rgba(62,214,195,.58) 89% 100%)}
+  .fill{position:absolute;top:0;left:0;bottom:0;width:82%;border-radius:4px;background:linear-gradient(90deg,rgba(245,201,92,.3),var(--gold))}
+  .marker{position:absolute;top:-3.5px;bottom:-3.5px;left:82%;width:2.5px;background:var(--gold-bright);border-radius:2px;box-shadow:0 0 8px rgba(245,201,92,.85)}
+
+  /* ZONE 3 — three numbers */
+  .numbers{display:flex;gap:10px;margin-top:16px}
+  .num{flex:1;background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:13px 4px 11px;text-align:center;min-height:44px;position:relative}
+  .num::before{content:"";position:absolute;top:0;left:22%;right:22%;height:2.5px;border-radius:0 0 3px 3px}
+  .num.entry::before{background:var(--info)}
+  .num.sl::before{background:var(--short)}
+  .num.tp::before{background:var(--cyan)}
+  .num .k{font-size:.58rem;font-weight:700;letter-spacing:.14em;color:var(--faint);text-transform:uppercase}
+  .num .v{font-family:var(--mono);font-size:.92rem;font-weight:700;margin-top:6px}
+  .num.entry .v{color:var(--info)}
+  .num.sl .v{color:var(--short)}
+  .num.tp .v{color:var(--cyan)}
+  .num .s{font-size:.58rem;color:var(--faint);margin-top:3px;font-family:var(--mono)}
+
+  .cta{margin-top:16px;display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(160deg,var(--gold-bright),var(--gold));color:#1C1503;border:none;border-radius:14px;font-weight:800;font-size:.86rem;letter-spacing:.12em;text-transform:uppercase;padding:16px;min-height:54px;cursor:pointer;box-shadow:0 10px 26px -10px rgba(226,177,60,.5);transition:filter .18s ease,transform .18s ease}
+  .cta:hover{filter:brightness(1.07);transform:translateY(-1px)}
+  .cta:active{transform:translateY(0)}
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+  .micro{margin-top:10px;text-align:center;font-size:.64rem;color:var(--faint);letter-spacing:.06em}
+  .micro .ok{color:var(--cyan)}
+  .micro .wait{color:var(--gold-bright)}
+
+  nav{display:flex;border-top:1px solid var(--border-soft);background:rgba(6,14,20,.94);backdrop-filter:blur(12px);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-height:44px;border-radius:8px;transition:color .2s ease}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active svg{stroke:var(--gold-bright)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <div class="hdr">
+      <span class="p">4,278.30</span><span class="c">+12.40</span>
+      <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-label="15 minute consensus: LONG, 4 of 5 sources agree">
+      <div class="tf">15M Consensus</div>
+      <div class="stage">
+        <i class="ring r1" aria-hidden="true"></i><i class="ring r2" aria-hidden="true"></i><i class="ring r3" aria-hidden="true"></i><i class="ring r4" aria-hidden="true"></i>
+        <i class="blip agree" style="left:44%;top:20%" aria-hidden="true"></i>
+        <i class="blip agree" style="left:61%;top:26%" aria-hidden="true"></i>
+        <i class="blip agree tiny" style="left:51%;top:35%" aria-hidden="true"></i>
+        <i class="blip agree tiny" style="left:69%;top:40%" aria-hidden="true"></i>
+        <i class="blip dissent" style="left:41%;top:81%" aria-hidden="true"></i>
+        <div class="core">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          <div class="word">LONG</div>
+          <div class="sub"><b>4/5</b> agree</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="strength">
+      <div class="strength-top">
+        <span class="lbl">Consensus Strength</span>
+        <span class="val">STRONG<span>82/100</span></span>
+      </div>
+      <div class="track" role="img" aria-label="Consensus strength 82 out of 100, strong">
+        <div class="fill"></div><div class="marker"></div>
+      </div>
+    </div>
+
+    <div class="numbers">
+      <div class="num entry"><div class="k">Entry</div><div class="v">4,275–80</div><div class="s">zone</div></div>
+      <div class="num sl"><div class="k">Stop</div><div class="v">4,262</div><div class="s">−16 pts</div></div>
+      <div class="num tp"><div class="k">Targets</div><div class="v">4,295 +</div><div class="s">3 levels</div></div>
+    </div>
+
+    <button class="cta" type="button">View Full Setup
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+
+    <div class="micro">1H <span class="ok">SUPPORTIVE</span> · 5M <span class="wait">READY</span> · updated 14s ago</div>
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.51 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.23.6.83 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>Settings</a>
+  </nav>
+</div>
+</body>
+</html>

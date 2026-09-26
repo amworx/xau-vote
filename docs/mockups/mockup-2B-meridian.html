@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 2B: Meridian</title>
+<style>
+  /* ══════════ MOCKUP 2B: MERIDIAN ══════════
+     Clarity-first, ZERO chrome. No boxes, no cards on the hero.
+     Signature: a full-height vertical "meridian line" through the
+     verdict with tick marks (like a surveyor's instrument).
+     The verdict floats on empty space. Hairline dividers only. */
+  :root{
+    --bg:#0C0B09;
+    --ink:#F1ECE2;
+    --dim:#A79E8D;
+    --faint:#6B6355;
+    --gold:#D9B36C;
+    --gold-bright:#EFCE8F;
+    --long:#8FC49A;
+    --short:#DC7F74;
+    --info:#9DB8D9;
+    --hair:#2A261F;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+    --serif:"Didot","Playfair Display",Georgia,"Times New Roman",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#060504;color:var(--ink);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px 4px;font-size:.73rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 24px 12px}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.2em}
+  .brand .name span{color:var(--gold)}
+  .hdr{display:flex;align-items:center;gap:9px}
+  .hdr .p{font-family:var(--mono);font-size:.98rem;font-weight:700}
+  .hdr .c{font-family:var(--mono);font-size:.65rem;font-weight:600;color:var(--long)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.58rem;font-weight:700;letter-spacing:.14em;color:var(--long);min-height:44px}
+  .live i{width:6px;height:6px;border-radius:50%;background:var(--long);box-shadow:0 0 8px rgba(143,196,154,.9);animation:pulse 2.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @media (prefers-reduced-motion:reduce){.live i{animation:none}}
+
+  main{flex:1;display:flex;flex-direction:column;padding:4px 24px 16px;position:relative}
+
+  /* the meridian line */
+  .meridian{
+    position:absolute;top:0;bottom:120px;left:50%;width:1px;
+    background:linear-gradient(180deg,transparent,var(--hair) 12%,var(--hair) 88%,transparent);
+    pointer-events:none;
+  }
+  .meridian i{
+    position:absolute;left:50%;width:9px;height:1px;background:var(--hair);
+    transform:translateX(-50%);
+  }
+
+  /* ZONE 1 — verdict floating on space */
+  .hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;position:relative;min-height:330px}
+  .hero .tf{font-size:.62rem;font-weight:700;letter-spacing:.3em;color:var(--faint);text-transform:uppercase;margin-bottom:22px}
+  .hero .chev{color:var(--gold);margin-bottom:6px}
+  .hero .chev svg{width:26px;height:26px;stroke:currentColor}
+  .hero .word{
+    font-family:var(--serif);
+    font-size:3.3rem;font-weight:700;letter-spacing:.26em;text-indent:.26em;
+    color:var(--gold-bright);line-height:1.05;
+  }
+  .hero .sub{margin-top:14px;font-size:.72rem;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+  .hero .sub b{color:var(--ink);font-family:var(--mono);letter-spacing:0}
+  /* tiny radar hint: blips on an invisible ring */
+  .orbit{position:absolute;width:210px;height:210px;pointer-events:none}
+  .blip{position:absolute;border-radius:50%;transform:translate(-50%,-50%)}
+  .blip.agree{background:var(--long);width:5px;height:5px;box-shadow:0 0 6px rgba(143,196,154,.9)}
+  .blip.dissent{background:var(--short);width:5px;height:5px;box-shadow:0 0 6px rgba(220,127,116,.8)}
+  .orbit .ring{position:absolute;inset:0;border-radius:50%;border:1px dashed var(--hair)}
+
+  /* hairline divider with center diamond */
+  .divider{display:flex;align-items:center;gap:12px;margin:4px 0}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--hair)}
+  .divider i{width:5px;height:5px;background:var(--gold);transform:rotate(45deg);opacity:.8}
+
+  /* ZONE 2 — strength as quiet text + thin bar */
+  .strength{padding:10px 2px}
+  .strength-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+  .strength-top .lbl{font-size:.6rem;font-weight:700;letter-spacing:.24em;color:var(--faint);text-transform:uppercase}
+  .strength-top .val{font-family:var(--serif);font-size:1.02rem;font-weight:700;letter-spacing:.14em;color:var(--gold-bright)}
+  .strength-top .val span{font-family:var(--mono);font-size:.68rem;font-weight:400;margin-left:8px;color:var(--dim)}
+  .track{position:relative;height:2px;background:var(--hair)}
+  .fill{position:absolute;top:0;left:0;bottom:0;width:82%;background:linear-gradient(90deg,var(--gold-deep,#9A7B42),var(--gold))}
+  .marker{position:absolute;top:-3px;width:1.5px;height:8px;left:82%;background:var(--gold-bright)}
+  .bands{display:flex;justify-content:space-between;margin-top:6px;font-size:.58rem;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
+  .bands .cur{color:var(--gold-bright)}
+
+  /* ZONE 3 — three numbers as a single ledger row, no cards */
+  .ledger{display:flex;margin-top:18px;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+  .cell{flex:1;text-align:center;padding:14px 2px 12px;min-height:44px}
+  .cell + .cell{border-left:1px solid var(--hair)}
+  .cell .k{font-size:.6rem;font-weight:700;letter-spacing:.2em;color:var(--faint);text-transform:uppercase}
+  .cell .v{font-family:var(--mono);font-size:.95rem;font-weight:700;margin-top:6px}
+  .cell.entry .v{color:var(--info)}
+  .cell.sl .v{color:var(--short)}
+  .cell.tp .v{color:var(--long)}
+  .cell .s{font-size:.6rem;color:var(--faint);margin-top:3px;font-family:var(--mono)}
+
+  .cta{
+    margin-top:18px;
+    display:flex;align-items:center;justify-content:center;gap:12px;
+    background:transparent;color:var(--gold-bright);
+    border:1px solid var(--gold);border-radius:999px;
+    font-weight:700;font-size:.78rem;letter-spacing:.26em;text-transform:uppercase;
+    padding:16px;min-height:54px;cursor:pointer;
+    transition:background .2s ease,color .2s ease;
+  }
+  .cta:hover{background:var(--gold);color:#241A08}
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px}
+  .micro{margin-top:12px;text-align:center;font-size:.62rem;letter-spacing:.16em;color:var(--faint);text-transform:uppercase}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold-bright)}
+
+  nav{display:flex;justify-content:space-around;border-top:1px solid var(--hair);padding:8px 6px calc(12px + env(safe-area-inset-bottom))}
+  nav a{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;padding:6px 10px;min-height:44px;min-width:56px;transition:color .2s ease}
+  nav a svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.6}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active::after{content:"";width:14px;height:1.5px;background:var(--gold)}
+  nav a:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU <span>RADAR</span></div></div>
+    <div class="hdr">
+      <span class="p">4,278.30</span><span class="c">+12.40</span>
+      <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="meridian" aria-hidden="true">
+      <i style="top:6%"></i><i style="top:18%"></i><i style="top:30%"></i><i style="top:42%"></i><i style="top:54%"></i><i style="top:66%"></i><i style="top:78%"></i><i style="top:90%"></i>
+    </div>
+
+    <section class="hero" aria-label="15 minute consensus: LONG, 4 of 5 sources agree">
+      <div class="orbit" aria-hidden="true">
+        <i class="ring"></i>
+        <i class="blip agree" style="left:42%;top:14%"></i>
+        <i class="blip agree" style="left:64%;top:22%"></i>
+        <i class="blip agree" style="left:52%;top:6%"></i>
+        <i class="blip agree" style="left:74%;top:38%"></i>
+        <i class="blip dissent" style="left:40%;top:88%"></i>
+      </div>
+      <div class="tf">15M Consensus</div>
+      <div class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15l8-8 8 8"/></svg></div>
+      <div class="word">LONG</div>
+      <div class="sub"><b>4 / 5</b> sources agree</div>
+    </section>
+
+    <div class="divider" aria-hidden="true"><i></i></div>
+
+    <div class="strength">
+      <div class="strength-top">
+        <span class="lbl">Consensus Strength</span>
+        <span class="val">STRONG<span>82 / 100</span></span>
+      </div>
+      <div class="track" role="img" aria-label="Consensus strength 82 out of 100, strong">
+        <div class="fill"></div><div class="marker"></div>
+      </div>
+      <div class="bands"><span>Weak</span><span>Dev</span><span>Mod</span><span class="cur">Strong</span><span>V.Str</span></div>
+    </div>
+
+    <div class="ledger">
+      <div class="cell entry"><div class="k">Entry</div><div class="v">4,275–80</div><div class="s">zone</div></div>
+      <div class="cell sl"><div class="k">Stop</div><div class="v">4,262</div><div class="s">−16 pts</div></div>
+      <div class="cell tp"><div class="k">Targets</div><div class="v">4,295 +</div><div class="s">3 levels</div></div>
+    </div>
+
+    <button class="cta" type="button">View Full Setup
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+
+    <div class="micro">1H <span class="ok">Supportive</span> · 5M <span class="wait">Ready</span> · 14s ago</div>
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5" fill="currentColor"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>Settings</a>
+  </nav>
+</div>
+</body>
+</html>

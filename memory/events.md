@@ -59,3 +59,18 @@
 - **errors:** none
 - **lessons:** "Familiar but generic" critique is best answered by keeping layout and adding ONE ownable signature element rather than redesigning — radar sweep ties directly to brand name
 - **tags:** ui, mockups, refinement, radar-sweep
+
+---
+
+## EVT-20260926-0005
+
+- **id:** EVT-20260926-0005
+- **timestamp:** 2026-09-27T00:20:00+03:00
+- **mode:** BUILD (UI design iteration)
+- **action:** Generate three new clarity-first mockups per user feedback ( crowded layout, focus first-view essentials)
+- **summary:** User rejected crowded 1R layout; demanded first-view focus on essentials only (the call, strength, entry/stop). Built three clarity-first variants sharing one strict vertical priority (Zone 1 verdict → Zone 2 strength → Zone 3 three numbers; price demoted to header; R:R band, source dots, context pills removed from first view): (2R) **Clarity** — radar dial + hero verdict baseline; (2A) **Pulse** — sonar pulse rings around verdict core on dark teal-navy; (2B) **Meridian** — zero-chrome editorial, serif verdict on meridian instrument line, ledger numbers, ghost CTA; (2C) **Verdict** — full-bleed tinted verdict field, oversize LONG, source-bar strip, Swiss-poster discipline. All verified: 390px, zero overflow, no sub-9px text after label fixes, screenshots reviewed.
+- **result:** success — awaiting user selection
+- **files:** docs/mockups/mockup-2R-clarity.html, mockup-2A-pulse.html, mockup-2B-meridian.html, mockup-2C-verdict.html, preview-2R/2A/2B/2C.png
+- **errors:** 2A/2B/2C initially had sub-9px micro-labels → bumped to ≥9.6px, re-verified + re-screenshotted
+- **lessons:** clarity-first constraint (one question per zone) produces stronger differentiation than styling alone; all three share information architecture, differ only in personality
+- **tags:** ui, mockups, clarity-first

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 2C: Verdict</title>
+<style>
+  /* ══════════ MOCKUP 2C: VERDICT ══════════
+     Clarity-first, maximum boldness. The ENTIRE upper screen is one
+     tinted verdict field — direction IS the background color story.
+     Signature: oversize direction word at 19vw + a thin "source
+     strip" of 5 vertical bars under the word (agree=dissent height).
+     Bottom third = precision data panel. Swiss-poster discipline. */
+  :root{
+    --bg:#0B0E14;
+    --panel:#121826;
+    --border:#223050;
+    --border-soft:#1A2440;
+    --text:#EDF1FA;
+    --dim:#93A5C6;
+    --faint:#5C6E92;
+    --gold:#E4B440;
+    --gold-bright:#F6CE62;
+    --long:#3BCF9B;
+    --long-deep:rgba(43,160,120,.16);
+    --short:#E8555A;
+    --info:#5B96FF;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#04060B;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 12px;border-bottom:1px solid var(--border-soft)}
+  .brand .name{font-size:.92rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .hdr{display:flex;align-items:center;gap:10px}
+  .hdr .p{font-family:var(--mono);font-size:1rem;font-weight:700}
+  .hdr .c{font-family:var(--mono);font-size:.66rem;font-weight:600;color:var(--long);background:rgba(59,207,155,.12);padding:2px 7px;border-radius:5px}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long);box-shadow:0 0 8px rgba(59,207,155,.9);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @media (prefers-reduced-motion:reduce){.live i{animation:none}}
+
+  main{flex:1;display:flex;flex-direction:column}
+
+  /* ZONE 1 — full-bleed verdict field */
+  .verdict{
+    flex:1;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:18px 24px 22px;
+    background:
+      radial-gradient(130% 90% at 18% 0%,rgba(59,207,155,.14),transparent 55%),
+      linear-gradient(180deg,rgba(59,207,155,.07),transparent 70%);
+    border-bottom:1px solid var(--border-soft);
+    position:relative;
+    min-height:330px;
+  }
+  .verdict .tf{
+    font-size:.64rem;font-weight:700;letter-spacing:.24em;color:var(--faint);text-transform:uppercase;
+  }
+  .verdict .word{
+    font-size:clamp(64px,19.5vw,82px);
+    font-weight:800;letter-spacing:.015em;line-height:1;
+    color:var(--gold-bright);
+    margin:10px 0 4px;
+    display:flex;align-items:center;gap:14px;
+  }
+  .verdict .word svg{width:.62em;height:.62em;stroke:var(--gold-bright);flex-shrink:0}
+  /* source strip: 5 bars, agreeing tall green / dissenter short red */
+  .srcstrip{display:flex;align-items:flex-end;gap:5px;height:26px;margin:14px 0 10px}
+  .srcstrip i{width:14px;border-radius:2.5px;background:var(--long);height:100%;box-shadow:0 0 8px rgba(59,207,155,.4)}
+  .srcstrip i.short{height:38%;background:var(--short);box-shadow:0 0 8px rgba(232,85,90,.4)}
+  .verdict .sub{font-size:.8rem;color:var(--dim)}
+  .verdict .sub b{color:var(--text);font-family:var(--mono);font-weight:700}
+
+  /* ZONE 2 — precision data panel */
+  .panel{padding:16px 24px 8px}
+  .strength{display:flex;align-items:center;gap:12px}
+  .strength .lbl{font-size:.6rem;font-weight:700;letter-spacing:.16em;color:var(--faint);text-transform:uppercase;flex-shrink:0}
+  .track{position:relative;flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,rgba(232,85,90,.3) 0 39%,rgba(228,180,64,.26) 39% 59%,rgba(91,150,255,.22) 59% 74%,rgba(59,207,155,.32) 74% 89%,rgba(59,207,155,.58) 89% 100%)}
+  .fill{position:absolute;top:0;left:0;bottom:0;width:82%;border-radius:3px;background:linear-gradient(90deg,rgba(246,206,98,.3),var(--gold))}
+  .marker{position:absolute;top:-3px;bottom:-3px;left:82%;width:2px;background:var(--gold-bright);box-shadow:0 0 7px rgba(246,206,98,.9)}
+  .strength .val{font-size:.76rem;font-weight:800;letter-spacing:.08em;color:var(--gold-bright);flex-shrink:0}
+  .strength .val span{font-family:var(--mono);font-size:.68rem;font-weight:600;margin-left:5px}
+
+  .numbers{display:flex;gap:10px;margin-top:16px}
+  .num{flex:1;background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;padding:12px 4px 10px;text-align:center;min-height:44px;position:relative}
+  .num::before{content:"";position:absolute;top:0;left:24%;right:24%;height:2px;border-radius:0 0 3px 3px}
+  .num.entry::before{background:var(--info)}
+  .num.sl::before{background:var(--short)}
+  .num.tp::before{background:var(--long)}
+  .num .k{font-size:.6rem;font-weight:700;letter-spacing:.14em;color:var(--faint);text-transform:uppercase}
+  .num .v{font-family:var(--mono);font-size:.9rem;font-weight:700;margin-top:5px}
+  .num.entry .v{color:var(--info)}
+  .num.sl .v{color:var(--short)}
+  .num.tp .v{color:var(--long)}
+  .num .s{font-size:.6rem;color:var(--faint);margin-top:2px;font-family:var(--mono)}
+
+  .cta-row{padding:14px 24px 4px}
+  .cta{display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(160deg,var(--gold-bright),var(--gold));color:#1C1503;border:none;border-radius:13px;font-weight:800;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;padding:15px;min-height:52px;cursor:pointer;width:100%;box-shadow:0 10px 26px -10px rgba(228,180,64,.5);transition:filter .18s ease,transform .18s ease}
+  .cta:hover{filter:brightness(1.07);transform:translateY(-1px)}
+  .cta:active{transform:translateY(0)}
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+  .micro{padding:10px 24px 12px;text-align:center;font-size:.63rem;color:var(--faint);letter-spacing:.06em}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold-bright)}
+
+  nav{display:flex;border-top:1px solid var(--border-soft);background:rgba(9,12,19,.94);backdrop-filter:blur(12px);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-height:44px;border-radius:8px;transition:color .2s ease}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active svg{stroke:var(--gold-bright)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <div class="hdr">
+      <span class="p">4,278.30</span><span class="c">+12.40</span>
+      <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- ZONE 1: the verdict field -->
+    <section class="verdict" aria-label="15 minute consensus: LONG, 4 of 5 sources agree">
+      <div class="tf">15M Consensus</div>
+      <div class="word">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        LONG
+      </div>
+      <div class="srcstrip" role="img" aria-label="4 sources agree, 1 disagrees">
+        <i></i><i></i><i></i><i></i><i class="short"></i>
+      </div>
+      <div class="sub"><b>4 / 5</b> sources agree · strength ahead</div>
+    </section>
+
+    <!-- ZONE 2: precision panel -->
+    <div class="panel">
+      <div class="strength">
+        <span class="lbl">Strength</span>
+        <div class="track" role="img" aria-label="Consensus strength 82 out of 100, strong">
+          <div class="fill"></div><div class="marker"></div>
+        </div>
+        <span class="val">STRONG<span>82</span></span>
+      </div>
+
+      <div class="numbers">
+        <div class="num entry"><div class="k">Entry</div><div class="v">4,275–80</div><div class="s">zone</div></div>
+        <div class="num sl"><div class="k">Stop</div><div class="v">4,262</div><div class="s">−16 pts</div></div>
+        <div class="num tp"><div class="k">Targets</div><div class="v">4,295 +</div><div class="s">3 levels</div></div>
+      </div>
+    </div>
+
+    <div class="cta-row">
+      <button class="cta" type="button">View Full Setup
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+
+    <div class="micro">1H <span class="ok">SUPPORTIVE</span> · 5M <span class="wait">READY</span> · updated 14s ago</div>
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.51 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.23.6.83 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>Settings</a>
+  </nav>
+</div>
+</body>
+</html>
