@@ -44,3 +44,18 @@
 - **errors:** mockup-3 initially had two 8.96px context labels → bumped to 9.6px
 - **lessons:** ui-ux-pro-max `--design-system` gave teal/light palette unsuited to trader dark-first expectations — domain-specific judgment (gold-on-dark) overrode generic palette match; kept typography (Inter) and avoid-list guidance
 - **tags:** ui, mockups, design-system
+
+---
+
+## EVT-20260926-0004
+
+- **id:** EVT-20260926-0004
+- **timestamp:** 2026-09-27T00:05:00+03:00
+- **mode:** BUILD (UI design iteration)
+- **action:** Refine chosen direction (Mockup 1) per user critique "best but bad and not unique"
+- **summary:** User picked Command Deck structure but criticized craft + distinctiveness. Built mockup-1R: same trusted layout, plus (1) signature RADAR SWEEP dial behind the verdict — rotating conic sweep + source blips plotted on dial (agreeing cluster north/LONG, dissenter south), the app's namesake made visual; (2) bullet-chart strength gauge with labeled WEAK→V.STRONG bands (AAA pattern from charts DB: value always visible as text); (3) craft upgrades: instrument corner ticks, grain overlay, deeper shadows, gradient gold CTA. Verified via DOM checks: 390px, zero overflow, no sub-9px text, blips inside dial, fits one screen. Design-intelligence inputs: bento/swiss style search + chart DB (bullet chart chosen over gauge for space, then hybridized as band+fill).
+- **result:** success — awaiting user confirmation of refined direction
+- **files:** docs/mockups/mockup-1R-command-deck-refined.html, preview-1R-command-deck-refined.png
+- **errors:** none
+- **lessons:** "Familiar but generic" critique is best answered by keeping layout and adding ONE ownable signature element rather than redesigning — radar sweep ties directly to brand name
+- **tags:** ui, mockups, refinement, radar-sweep
