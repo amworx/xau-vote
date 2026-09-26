@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 3: Aurum</title>
+<style>
+  /* ══════════ MOCKUP 3: AURUM ══════════
+     Warm obsidian + champagne gold. Editorial, premium.
+     Serif display numerals (Georgia/Didot stack) + clean sans UI.
+     Generous whitespace, hairline rules, soft radial glow. */
+  :root{
+    --bg:#12100C;
+    --surface:#1B1813;
+    --surface-2:#221E17;
+    --line:#2E2920;
+    --line-soft:#252119;
+    --text:#F2EDE3;
+    --dim:#A89F8D;
+    --faint:#6E6656;
+    --gold:#D4AF6A;
+    --gold-bright:#EBCB8B;
+    --gold-deep:#9A7B42;
+    --gold-glow:rgba(212,175,106,.16);
+    --long:#7FB685;
+    --short:#D4756B;
+    --serif:"Didot","Playfair Display",Georgia,"Times New Roman",serif;
+    --sans:"Inter",-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --nums:"SF Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:var(--sans);
+    background:#0A0906;
+    color:var(--text);
+    display:flex;justify-content:center;
+    min-height:100vh;
+  }
+  .phone{
+    width:390px;max-width:100%;
+    min-height:844px;
+    background:var(--bg);
+    position:relative;
+    display:flex;flex-direction:column;
+    overflow:hidden;
+  }
+  /* ambient glow */
+  .phone::before{
+    content:"";position:absolute;top:-140px;left:50%;transform:translateX(-50%);
+    width:480px;height:340px;border-radius:50%;
+    background:radial-gradient(closest-side,var(--gold-glow),transparent 72%);
+    pointer-events:none;
+  }
+  .statusbar{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 24px 6px;
+    font-size:.72rem;color:var(--dim);
+    position:relative;
+  }
+  header{
+    text-align:center;
+    padding:14px 20px 16px;
+    position:relative;
+  }
+  .brand .name{
+    font-family:var(--serif);
+    font-size:1.3rem;font-weight:700;letter-spacing:.30em;
+    color:var(--text);
+  }
+  .brand .name span{color:var(--gold)}
+  .brand .rule{
+    display:flex;align-items:center;gap:10px;justify-content:center;
+    margin-top:8px;
+  }
+  .brand .rule::before,.brand .rule::after{
+    content:"";width:42px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-deep));
+  }
+  .brand .rule::after{transform:scaleX(-1)}
+  .brand .sub{
+    font-size:.6rem;letter-spacing:.28em;color:var(--dim);text-transform:uppercase;
+  }
+  .live-chip{
+    position:absolute;top:16px;right:20px;
+    display:flex;align-items:center;gap:7px;
+    font-size:.62rem;font-weight:600;letter-spacing:.14em;color:var(--long);
+    min-height:44px;padding:0 4px;
+  }
+  .live-chip i{
+    width:7px;height:7px;border-radius:50%;background:var(--long);
+    box-shadow:0 0 10px rgba(127,182,133,.8);
+    animation:breathe 2.4s ease-in-out infinite;
+  }
+  @keyframes breathe{0%,100%{opacity:1}50%{opacity:.4}}
+  @media (prefers-reduced-motion:reduce){.live-chip i{animation:none}}
+
+  main{flex:1;padding:8px 22px 12px;display:flex;flex-direction:column;gap:18px;position:relative}
+
+  /* price — editorial */
+  .price-block{text-align:center;padding:6px 0 0}
+  .price-block .label{
+    font-size:.6rem;letter-spacing:.3em;color:var(--faint);text-transform:uppercase;
+  }
+  .price-now{
+    font-family:var(--serif);
+    font-size:3.4rem;font-weight:400;letter-spacing:.01em;
+    line-height:1.15;margin-top:2px;
+    color:var(--text);
+  }
+  .price-now .dec{font-size:1.7rem;color:var(--dim)}
+  .price-sub{
+    display:flex;justify-content:center;gap:16px;margin-top:6px;
+    font-size:.7rem;color:var(--dim);
+  }
+  .price-sub .up{color:var(--long);font-family:var(--nums);font-size:.72rem}
+
+  /* signal card */
+  .signal{
+    background:linear-gradient(175deg,var(--surface) 0%,var(--surface-2) 100%);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:20px 20px 6px;
+    position:relative;
+  }
+  .signal::before{
+    content:"";position:absolute;inset:0;border-radius:20px;
+    background:radial-gradient(120% 60% at 50% 0%,var(--gold-glow),transparent 60%);
+    pointer-events:none;
+  }
+  .signal .tf-row{
+    display:flex;justify-content:space-between;align-items:center;
+    position:relative;
+  }
+  .signal .tf{
+    font-size:.6rem;letter-spacing:.26em;color:var(--dim);text-transform:uppercase;font-weight:600;
+  }
+  .strength-ring{
+    display:flex;align-items:center;gap:8px;
+    font-size:.62rem;letter-spacing:.14em;color:var(--gold-bright);font-weight:700;
+  }
+  .ring{
+    width:34px;height:34px;border-radius:50%;
+    background:
+      radial-gradient(closest-side,var(--surface) 76%,transparent 77% 100%),
+      conic-gradient(var(--gold) 0 82%,var(--line) 82% 100%);
+  }
+
+  .dir-block{
+    text-align:center;padding:18px 0 14px;position:relative;
+  }
+  .dir-chevron{
+    width:34px;height:34px;margin:0 auto 8px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--gold);
+  }
+  .dir-chevron svg{width:30px;height:30px}
+  .dir-word{
+    font-family:var(--serif);
+    font-size:2rem;font-weight:700;letter-spacing:.34em;text-indent:.34em;
+    color:var(--gold-bright);
+  }
+  .dir-sub{
+    margin-top:8px;font-size:.68rem;letter-spacing:.18em;color:var(--dim);
+    text-transform:uppercase;
+  }
+  .dir-sub b{color:var(--text);font-family:var(--nums);letter-spacing:0}
+
+  .hairline{
+    height:1px;margin:2px 0;
+    background:linear-gradient(90deg,transparent,var(--line) 18%,var(--line) 82%,transparent);
+  }
+
+  .lvls{padding:6px 0 10px;position:relative}
+  .lvl{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:11px 2px;
+    min-height:46px;
+  }
+  .lvl + .lvl{border-top:1px solid var(--line-soft)}
+  .lvl .k{
+    font-size:.66rem;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;font-weight:500;
+  }
+  .lvl .v{
+    font-family:var(--nums);
+    font-size:.92rem;font-weight:600;color:var(--text);
+    font-variant-numeric:tabular-nums;
+  }
+  .lvl .v.sl{color:var(--short)}
+  .lvl .v.tp{color:var(--long)}
+  .lvl .rr{
+    display:block;text-align:right;
+    font-family:var(--nums);font-size:.6rem;color:var(--faint);margin-top:2px;
+  }
+
+  .ctx-row{
+    display:flex;gap:10px;
+  }
+  .ctx{
+    flex:1;text-align:center;
+    border:1px solid var(--line-soft);
+    border-radius:14px;
+    padding:12px 8px;
+    background:var(--surface);
+    min-height:44px;
+  }
+  .ctx .h{font-size:.6rem;letter-spacing:.22em;color:var(--faint);text-transform:uppercase}
+  .ctx .v{font-size:.72rem;font-weight:700;letter-spacing:.1em;margin-top:6px}
+  .ctx .v.ok{color:var(--long)}
+  .ctx .v.wait{color:var(--gold-bright)}
+
+  .cta{
+    display:flex;align-items:center;justify-content:center;gap:12px;
+    background:linear-gradient(160deg,var(--gold-bright),var(--gold));
+    color:#241A08;
+    border:none;border-radius:16px;
+    font-weight:700;font-size:.8rem;letter-spacing:.24em;text-transform:uppercase;
+    padding:16px;
+    min-height:54px;
+    cursor:pointer;
+    box-shadow:0 8px 24px -8px rgba(212,175,106,.45);
+    transition:transform .18s ease,box-shadow .18s ease;
+  }
+  .cta:hover{transform:translateY(-1px);box-shadow:0 12px 28px -8px rgba(212,175,106,.55)}
+  .cta:active{transform:translateY(0)}
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px}
+  .cta svg{width:15px;height:15px;stroke:currentColor}
+
+  .src-line{
+    text-align:center;
+    font-size:.66rem;letter-spacing:.14em;color:var(--dim);
+  }
+  .src-line b{color:var(--text);font-family:var(--nums)}
+
+  nav{
+    display:flex;justify-content:space-around;
+    border-top:1px solid var(--line-soft);
+    background:rgba(18,16,12,.94);
+    backdrop-filter:blur(10px);
+    padding:8px 6px calc(12px + env(safe-area-inset-bottom));
+    position:relative;
+  }
+  nav a{
+    display:flex;flex-direction:column;align-items:center;gap:5px;
+    color:var(--faint);
+    text-decoration:none;
+    font-size:.56rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+    padding:6px 10px;
+    min-height:44px;min-width:56px;
+    transition:color .2s ease;
+  }
+  nav a svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.6}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active::after{
+    content:"";width:16px;height:2px;border-radius:1px;background:var(--gold);
+  }
+  nav a:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <div class="statusbar">
+    <span>21:47</span>
+    <span>●●●●&nbsp;&nbsp;100%</span>
+  </div>
+
+  <header>
+    <div class="live-chip" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</div>
+    <div class="brand">
+      <div class="name">XAU <span>RADAR</span></div>
+      <div class="rule"><span class="sub">Gold · XAUUSD</span></div>
+    </div>
+  </header>
+
+  <main>
+
+    <div class="price-block">
+      <div class="label">Current Price</div>
+      <div class="price-now">4,278<span class="dec">.30</span></div>
+      <div class="price-sub">
+        <span class="up">+12.40</span>
+        <span>21:47:12 UTC+3</span>
+      </div>
+    </div>
+
+    <section class="signal" aria-label="15 minute consensus">
+      <div class="tf-row">
+        <span class="tf">15M Consensus</span>
+        <div class="strength-ring">
+          <div class="ring" role="img" aria-label="Consensus strength 82 out of 100"></div>
+          <span>STRONG</span>
+        </div>
+      </div>
+
+      <div class="dir-block">
+        <div class="dir-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15l8-8 8 8"/></svg>
+        </div>
+        <div class="dir-word">LONG</div>
+        <div class="dir-sub"><b>4 / 5</b> sources agree</div>
+      </div>
+
+      <div class="hairline" aria-hidden="true"></div>
+
+      <div class="lvls">
+        <div class="lvl">
+          <span class="k">Entry</span>
+          <span class="v">4,275 – 4,280</span>
+        </div>
+        <div class="lvl">
+          <span class="k">Stop</span>
+          <span class="v sl">4,262</span>
+        </div>
+        <div class="lvl">
+          <span class="k">Target 1</span>
+          <span><span class="v tp">4,295</span><span class="rr">R 1 : 1.5</span></span>
+        </div>
+        <div class="lvl">
+          <span class="k">Target 2</span>
+          <span><span class="v tp">4,315</span><span class="rr">R 1 : 3.0</span></span>
+        </div>
+        <div class="lvl">
+          <span class="k">Target 3</span>
+          <span><span class="v tp">4,340</span><span class="rr">R 1 : 4.1</span></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="ctx-row">
+      <div class="ctx">
+        <div class="h">1H Trend</div>
+        <div class="v ok">SUPPORTIVE</div>
+      </div>
+      <div class="ctx">
+        <div class="h">5M Confirm</div>
+        <div class="v wait">READY</div>
+      </div>
+    </div>
+
+    <div class="src-line">strength <b>82</b>/100 · updated 14s ago</div>
+
+    <button class="cta" type="button">
+      View Analysis
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5" fill="currentColor"/></svg>
+      Radar
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
+      Signal
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>
+      Sources
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+      History
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>
+      Settings
+    </a>
+  </nav>
+
+</div>
+</body>
+</html>
