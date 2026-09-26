@@ -74,3 +74,18 @@
 - **errors:** 2A/2B/2C initially had sub-9px micro-labels → bumped to ≥9.6px, re-verified + re-screenshotted
 - **lessons:** clarity-first constraint (one question per zone) produces stronger differentiation than styling alone; all three share information architecture, differ only in personality
 - **tags:** ui, mockups, clarity-first
+
+---
+
+## EVT-20260926-0006
+
+- **id:** EVT-20260926-0006
+- **timestamp:** 2026-09-27T00:40:00+03:00
+- **mode:** BUILD (UI design iteration)
+- **action:** Generate three structurally distinct mockups per user feedback (same layout critique)
+- **summary:** User rejected 2R/2A/2B/2C for sharing one vertical-stack layout. Built three mockups sharing ONLY data + spec rules, with different geometry, motion, and composition: (3A) **Orbit** — radial dial composition, verdict core + 270° strength arc + orbiting source blips + satellite level chips, no cards/rows; (3B) **Ticket** — boarding-pass composition, gold direction stub + perforated body + barcode source strip + route header, slide-up + shimmer + bar-grow motion; (3C) **Chart** — layered composition, live canvas price chart (entry band, SL/TP lines, drawing price line) + floating verdict pill overlapping a bottom sheet. Verified: zero overflow, no sub-9px text, no console errors; screenshots visually reviewed. Fixed during review: ticket notches moved from middle to top/bottom edges; chart seed clamped into visible range (TP1 line now visible).
+- **result:** success — awaiting user selection
+- **files:** docs/mockups/mockup-3A-orbit.html, mockup-3B-ticket.html, mockup-3C-chart.html, preview-3A/3B/3C.png
+- **errors:** two visual defects caught in screenshot review and fixed (notch placement, chart range)
+- **lessons:** screenshot review catches what DOM checks cannot (notch position, data-range aesthetics) — always visually inspect canvas/data-driven mockups, never rely on rect checks alone
+- **tags:** ui, mockups, distinct-layouts

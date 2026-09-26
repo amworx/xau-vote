@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 3B: Ticket</title>
+<style>
+  /* ══════════ MOCKUP 3B: TICKET ══════════
+     BOARDING-PASS composition. The setup is one horizontal ticket:
+     a gold direction STUB + perforated main body with the levels,
+     a barcode source strip, route-style header.
+     Shapes: notched ticket, dashed perforation, barcode bars.
+     Motion: ticket slides up on load; shimmer sweeps the stub;
+     barcode bars grow. */
+  :root{
+    --bg:#0B0D12;
+    --ticket:#141824;
+    --ticket-2:#181D2B;
+    --text:#EEF1F8;
+    --dim:#98A1B8;
+    --faint:#5E6878;
+    --gold:#E5B93F;
+    --gold-bright:#F7D266;
+    --gold-ink:#221A05;
+    --long:#3ED598;
+    --short:#EC6060;
+    --info:#6AA5FF;
+    --perf:#2A3040;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#05060A;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 4px}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long);box-shadow:0 0 8px rgba(62,213,152,.9);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @media (prefers-reduced-motion:reduce){.live i,.ticket,.stub::after,.barcode i{animation:none!important}}
+
+  main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:6px 20px 12px}
+
+  /* route header */
+  .route{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .route .from,.route .to{font-family:var(--mono);font-size:.8rem;font-weight:700}
+  .route .from{color:var(--text)}
+  .route .to{color:var(--gold-bright)}
+  .route .line{flex:1;height:1px;background:repeating-linear-gradient(90deg,var(--perf) 0 6px,transparent 6px 11px);position:relative}
+  .route .line::after{content:"";position:absolute;right:-1px;top:-3px;width:7px;height:7px;border-top:1.5px solid var(--gold);border-right:1.5px solid var(--gold);transform:rotate(45deg)}
+  .route .price{font-family:var(--mono);font-size:.8rem;font-weight:700;color:var(--long)}
+
+  /* ── THE TICKET ── */
+  .ticket{
+    position:relative;
+    display:flex;
+    background:linear-gradient(180deg,var(--ticket-2),var(--ticket));
+    border:1px solid #242B3D;
+    border-radius:18px;
+    overflow:visible;
+    animation:rise .7s cubic-bezier(.2,.9,.25,1) both;
+    box-shadow:0 24px 50px -20px rgba(0,0,0,.8);
+  }
+  @keyframes rise{from{transform:translateY(26px);opacity:0}to{transform:none;opacity:1}}
+  /* notch cutouts */
+  .ticket::before,.ticket::after{
+    content:"";position:absolute;left:31%;width:26px;height:26px;border-radius:50%;
+    background:var(--bg);transform:translateX(-50%);z-index:3;
+    box-shadow:inset 0 0 0 1px #242B3D;
+  }
+  .ticket::before{top:-14px}
+  .ticket::after{bottom:-14px}
+
+  /* stub */
+  .stub{
+    width:31%;flex-shrink:0;
+    background:linear-gradient(165deg,var(--gold-bright),var(--gold) 60%,#C99A2E);
+    border-radius:18px 0 0 18px;
+    color:var(--gold-ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:26px 6px;gap:6px;position:relative;overflow:hidden;
+  }
+  .stub::after{
+    content:"";position:absolute;top:-40%;bottom:-40%;width:44px;left:-70%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);
+    transform:skewX(-18deg);
+    animation:shine 4.5s ease-in-out infinite;
+  }
+  @keyframes shine{0%,55%{left:-70%}90%,100%{left:140%}}
+  .stub svg{width:30px;height:30px;stroke:var(--gold-ink)}
+  .stub .word{font-size:1.45rem;font-weight:800;letter-spacing:.06em;line-height:1}
+  .stub .tf{font-size:.6rem;font-weight:800;letter-spacing:.2em}
+  .stub .str{font-family:var(--mono);font-size:.66rem;font-weight:700;background:rgba(0,0,0,.18);border-radius:6px;padding:3px 8px}
+
+  /* perforation */
+  .perf{
+    width:0;flex-shrink:0;position:relative;
+    border-left:2px dashed #2E3650;
+    margin:14px 0;
+  }
+
+  /* body */
+  .tbody{flex:1;padding:18px 16px 14px;min-width:0}
+  .tbody .row{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;min-height:44px}
+  .tbody .row + .row{border-top:1px solid #222839}
+  .tbody .k{font-size:.62rem;font-weight:700;letter-spacing:.18em;color:var(--dim)}
+  .tbody .v{font-family:var(--mono);font-size:.98rem;font-weight:700}
+  .tbody .v.entry{color:var(--info)}
+  .tbody .v.sl{color:var(--short)}
+  .tbody .v.tp{color:var(--long)}
+  .tbody .rr{font-family:var(--mono);font-size:.62rem;color:var(--faint);margin-left:8px}
+  /* barcode source strip */
+  .barcode{display:flex;align-items:flex-end;gap:4px;height:30px;margin-top:12px}
+  .barcode i{width:9px;border-radius:2px;background:var(--long);transform-origin:bottom;animation:grow .8s cubic-bezier(.2,.9,.25,1) both}
+  .barcode i:nth-child(1){height:100%}
+  .barcode i:nth-child(2){height:100%;animation-delay:.06s}
+  .barcode i:nth-child(3){height:100%;animation-delay:.12s}
+  .barcode i:nth-child(4){height:100%;animation-delay:.18s}
+  .barcode i.bad{height:42%;background:var(--short);animation-delay:.24s}
+  @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  .barcap{display:flex;justify-content:space-between;margin-top:7px;font-size:.62rem;color:var(--dim)}
+  .barcap b{color:var(--text);font-family:var(--mono)}
+
+  .micro{margin-top:12px;text-align:center;font-size:.64rem;color:var(--faint);letter-spacing:.06em}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold-bright)}
+
+  .cta{
+    margin-top:12px;width:100%;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:transparent;color:var(--gold-bright);
+    border:1px solid var(--gold);border-radius:14px;
+    font-weight:800;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;
+    padding:15px;min-height:52px;cursor:pointer;
+    transition:background .2s ease,color .2s ease;
+  }
+  .cta:hover{background:var(--gold);color:var(--gold-ink)}
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+
+  nav{display:flex;border-top:1px solid #1A2133;background:rgba(9,11,17,.94);backdrop-filter:blur(12px);padding:6px 8px calc(10px + env(safe-area-inset-bottom));margin-top:12px}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-height:44px;border-radius:8px;transition:color .2s ease}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active svg{stroke:var(--gold-bright)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+  </header>
+
+  <main>
+    <div class="route" aria-hidden="true">
+      <span class="from">XAUUSD</span>
+      <span class="line"></span>
+      <span class="to">15M</span>
+      <span class="price">4,278.30</span>
+    </div>
+
+    <section class="ticket" aria-label="LONG setup ticket. Entry 4275 to 4280, stop 4262, targets from 4295. 4 of 5 sources agree, strong 82 of 100.">
+      <div class="stub">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        <div class="word">LONG</div>
+        <div class="tf">15M</div>
+        <div class="str">STRONG · 82</div>
+      </div>
+      <div class="perf" aria-hidden="true"></div>
+      <div class="tbody">
+        <div class="row"><span class="k">ENTRY</span><span class="v entry">4,275–80</span></div>
+        <div class="row"><span class="k">STOP</span><span class="v sl">4,262</span></div>
+        <div class="row"><span class="k">TARGETS</span><span class="v tp">4,295 +<span class="rr">×3</span></span></div>
+        <div class="barcode" role="img" aria-label="4 of 5 sources agree">
+          <i></i><i></i><i></i><i></i><i class="bad"></i>
+        </div>
+        <div class="barcap"><span><b>4/5</b> sources</span><span>ADMIT ONE SETUP</span></div>
+      </div>
+    </section>
+
+    <div class="micro">1H <span class="ok">SUPPORTIVE</span> · 5M <span class="wait">READY</span> · updated 14s ago</div>
+
+    <button class="cta" type="button">View Full Setup
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.51 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.23.6.83 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>Settings</a>
+  </nav>
+</div>
+</body>
+</html>

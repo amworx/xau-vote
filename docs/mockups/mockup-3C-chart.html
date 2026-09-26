@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 3C: Chart</title>
+<style>
+  /* ══════════ MOCKUP 3C: CHART ══════════
+     LAYERED composition. Top 45% is a LIVE price chart (canvas):
+     entry zone band, SL/TP lines, drawing price line.
+     The verdict is a floating pill straddling chart + sheet.
+     Bottom sheet with drag handle holds strength + numbers.
+     Shapes: chart field + overlapping pill + sheet.
+     Motion: price line draws in a live loop; last-price dot pulses. */
+  :root{
+    --bg:#070B12;
+    --sheet:#101724;
+    --text:#ECF0F9;
+    --dim:#8C9CBB;
+    --faint:#5A6989;
+    --gold:#E4B43F;
+    --gold-bright:#F7CF63;
+    --long:#3BD09A;
+    --short:#E85D5D;
+    --info:#5E9BFF;
+    --line:#1C2742;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#04060B;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 8px}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long);box-shadow:0 0 8px rgba(59,208,154,.9);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @media (prefers-reduced-motion:reduce){.live i{animation:none}}
+
+  main{flex:1;display:flex;flex-direction:column;position:relative}
+
+  /* ── chart field ── */
+  .chart-field{position:relative;height:305px;flex-shrink:0}
+  #chart{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .chart-top{
+    position:absolute;top:10px;left:20px;right:20px;
+    display:flex;justify-content:space-between;align-items:baseline;
+    pointer-events:none;
+  }
+  .chart-top .sym{font-size:.62rem;font-weight:700;letter-spacing:.2em;color:var(--dim)}
+  .chart-top .px{font-family:var(--mono);font-size:1.25rem;font-weight:700}
+  .chart-top .px small{font-size:.72rem;color:var(--long);margin-left:8px}
+
+  /* floating verdict pill overlapping chart + sheet */
+  .verdict{
+    position:absolute;left:50%;bottom:-24px;transform:translateX(-50%);z-index:3;
+    display:flex;align-items:center;gap:10px;
+    background:linear-gradient(160deg,#1B2233,#121828);
+    border:1px solid #2B3866;
+    border-radius:999px;
+    padding:13px 20px;
+    box-shadow:0 14px 34px -10px rgba(0,0,0,.75), 0 0 0 6px rgba(7,11,18,.55);
+    white-space:nowrap;
+  }
+  .verdict svg{width:18px;height:18px;stroke:var(--gold-bright)}
+  .verdict .w{font-size:1.02rem;font-weight:800;letter-spacing:.1em;color:var(--gold-bright)}
+  .verdict .sep{width:1px;height:18px;background:#2B3866}
+  .verdict .s{font-size:.68rem;color:var(--dim)}
+  .verdict .s b{color:var(--text);font-family:var(--mono)}
+  .verdict .st{font-size:.68rem;font-weight:800;letter-spacing:.1em;color:var(--long)}
+
+  /* ── bottom sheet ── */
+  .sheet{
+    flex:1;
+    background:var(--sheet);
+    border-radius:22px 22px 0 0;
+    border-top:1px solid var(--line);
+    padding:34px 20px 12px;
+    display:flex;flex-direction:column;
+  }
+  .grab{width:40px;height:4px;border-radius:2px;background:#2A3552;margin:0 auto 14px;flex-shrink:0}
+
+  .strength{display:flex;align-items:center;gap:12px}
+  .strength .lbl{font-size:.6rem;font-weight:700;letter-spacing:.16em;color:var(--faint);text-transform:uppercase;flex-shrink:0}
+  .track{position:relative;flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,rgba(232,93,93,.3) 0 39%,rgba(228,180,63,.26) 39% 59%,rgba(94,155,255,.22) 59% 74%,rgba(59,208,154,.32) 74% 89%,rgba(59,208,154,.58) 89% 100%)}
+  .fill{position:absolute;top:0;left:0;bottom:0;width:82%;border-radius:3px;background:linear-gradient(90deg,rgba(247,207,99,.3),var(--gold))}
+  .marker{position:absolute;top:-3px;bottom:-3px;left:82%;width:2px;background:var(--gold-bright);box-shadow:0 0 7px rgba(247,207,99,.9)}
+  .strength .val{font-size:.74rem;font-weight:800;letter-spacing:.08em;color:var(--gold-bright);flex-shrink:0}
+  .strength .val span{font-family:var(--mono);font-size:.66rem;font-weight:600;margin-left:5px}
+
+  .levels{display:flex;margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .lvl{flex:1;text-align:center;padding:12px 2px 10px;min-height:44px;background:rgba(255,255,255,.012)}
+  .lvl + .lvl{border-left:1px solid var(--line)}
+  .lvl .k{font-size:.58rem;font-weight:700;letter-spacing:.14em;color:var(--faint);text-transform:uppercase}
+  .lvl .v{font-family:var(--mono);font-size:.9rem;font-weight:700;margin-top:5px}
+  .lvl.entry .v{color:var(--info)}
+  .lvl.sl .v{color:var(--short)}
+  .lvl.tp .v{color:var(--long)}
+  .lvl .s{font-size:.58rem;color:var(--faint);margin-top:2px;font-family:var(--mono)}
+
+  .cta{
+    margin-top:14px;width:100%;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:linear-gradient(160deg,var(--gold-bright),var(--gold));color:#1C1503;
+    border:none;border-radius:13px;
+    font-weight:800;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;
+    padding:15px;min-height:52px;cursor:pointer;
+    box-shadow:0 10px 26px -10px rgba(228,180,63,.5);
+    transition:filter .18s ease,transform .18s ease;
+  }
+  .cta:hover{filter:brightness(1.07);transform:translateY(-1px)}
+  .cta:active{transform:translateY(0)}
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+  .micro{margin-top:10px;text-align:center;font-size:.62rem;color:var(--faint);letter-spacing:.06em}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold-bright)}
+
+  nav{display:flex;border-top:1px solid var(--line);background:rgba(10,14,24,.96);backdrop-filter:blur(12px);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-height:44px;border-radius:8px;transition:color .2s ease}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active svg{stroke:var(--gold-bright)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+  </header>
+
+  <main>
+    <div class="chart-field">
+      <canvas id="chart" role="img" aria-label="Gold price chart rising into the 4275 to 4280 entry zone. Stop loss 4262, first target 4295."></canvas>
+      <div class="chart-top">
+        <span class="sym">XAUUSD · 5M</span>
+        <span class="px">4,278.30<small>+12.40</small></span>
+      </div>
+      <div class="verdict" aria-label="LONG, 4 of 5 agree, strong 82">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        <span class="w">LONG</span>
+        <span class="sep" aria-hidden="true"></span>
+        <span class="s"><b>4/5</b></span>
+        <span class="sep" aria-hidden="true"></span>
+        <span class="st">STRONG 82</span>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <div class="grab" aria-hidden="true"></div>
+      <div class="strength">
+        <span class="lbl">Strength</span>
+        <div class="track" role="img" aria-label="Consensus strength 82 out of 100, strong">
+          <div class="fill"></div><div class="marker"></div>
+        </div>
+        <span class="val">STRONG<span>82</span></span>
+      </div>
+
+      <div class="levels">
+        <div class="lvl entry"><div class="k">Entry</div><div class="v">4,275–80</div><div class="s">zone</div></div>
+        <div class="lvl sl"><div class="k">Stop</div><div class="v">4,262</div><div class="s">−16 pts</div></div>
+        <div class="lvl tp"><div class="k">Target</div><div class="v">4,295 +</div><div class="s">×3</div></div>
+      </div>
+
+      <button class="cta" type="button">View Full Setup
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+
+      <div class="micro">1H <span class="ok">SUPPORTIVE</span> · 5M <span class="wait">READY</span> · updated 14s ago</div>
+    </div>
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.51 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.23.6.83 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>Settings</a>
+  </nav>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('chart');
+  var ctx = cv.getContext('2d');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // price model: gentle climb 4259 → 4278, stays inside the visible range
+  var P_MIN = 4255, P_MAX = 4300;
+  var ENTRY_LO = 4275, ENTRY_HI = 4280, SL = 4262, TP1 = 4295;
+  var N = 90, t = 0;
+  var prices = [];
+  (function seed(){
+    var p = 4259;
+    for (var i = 0; i < N; i++){
+      p += (Math.sin(i*.3)*.35 + (Math.random()-.42)*.9 + .18);
+      if (p < 4257) p = 4257 + Math.random();
+      if (p > 4284) p = 4284 - Math.random();
+      prices.push(p);
+    }
+  })();
+  function size(){
+    var r = cv.parentElement.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, r.width * dpr); cv.height = Math.max(1, r.height * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function y(p, H){
+    var pad = 26;
+    return pad + (1 - (p - P_MIN) / (P_MAX - P_MIN)) * (H - pad*2);
+  }
+  function draw(progress){
+    var W = cv.clientWidth, H = cv.clientHeight;
+    ctx.clearRect(0,0,W,H);
+    // grid
+    ctx.strokeStyle = 'rgba(120,140,175,.10)'; ctx.lineWidth = 1;
+    for (var g = 1; g < 5; g++){ var gy = H*g/5; ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
+    // entry zone band
+    var ey1 = y(ENTRY_HI,H), ey2 = y(ENTRY_LO,H);
+    var grd = ctx.createLinearGradient(0,ey1,0,ey2);
+    grd.addColorStop(0,'rgba(228,180,63,.20)'); grd.addColorStop(1,'rgba(228,180,63,.06)');
+    ctx.fillStyle = grd; ctx.fillRect(0,ey1,W,ey2-ey1);
+    ctx.fillStyle = 'rgba(228,180,63,.75)'; ctx.font = '600 9px Inter, sans-serif';
+    ctx.fillText('ENTRY 4275–80', 8, ey1 - 5);
+    // SL line
+    ctx.strokeStyle = 'rgba(232,93,93,.65)'; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(0,y(SL,H)); ctx.lineTo(W,y(SL,H)); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = 'rgba(232,93,93,.9)';
+    ctx.fillText('SL 4262', 8, y(SL,H) - 5);
+    // TP1 line
+    ctx.strokeStyle = 'rgba(59,208,154,.5)'; ctx.setLineDash([2,4]);
+    ctx.beginPath(); ctx.moveTo(0,y(TP1,H)); ctx.lineTo(W,y(TP1,H)); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = 'rgba(59,208,154,.9)';
+    ctx.fillText('TP1 4295', 8, y(TP1,H) - 5);
+    // price line (progressive)
+    var count = Math.max(2, Math.floor(N * progress));
+    var x = function(i){ return 8 + (W-16) * i/(N-1); };
+    var lg = ctx.createLinearGradient(0,0,W,0);
+    lg.addColorStop(0,'rgba(94,155,255,.25)'); lg.addColorStop(1,'#E4B43F');
+    ctx.strokeStyle = lg; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath();
+    for (var i = 0; i < count; i++){ var px = x(i), py = y(prices[i],H); i ? ctx.lineTo(px,py) : ctx.moveTo(px,py); }
+    ctx.stroke();
+    // area under line
+    ctx.lineTo(x(count-1), H); ctx.lineTo(x(0), H); ctx.closePath();
+    var ag = ctx.createLinearGradient(0,0,0,H);
+    ag.addColorStop(0,'rgba(228,180,63,.16)'); ag.addColorStop(1,'rgba(228,180,63,0)');
+    ctx.fillStyle = ag; ctx.fill();
+    // last price dot + tag
+    var lx = x(count-1), ly = y(prices[count-1],H);
+    var pulse = reduce ? 0 : (Date.now()/600 % 2 < 1 ? 5 : 8);
+    if (pulse){ ctx.fillStyle = 'rgba(228,180,63,.25)'; ctx.beginPath(); ctx.arc(lx,ly,8+pulse*.6,0,7); ctx.fill(); }
+    ctx.fillStyle = '#E4B43F'; ctx.beginPath(); ctx.arc(lx,ly,4,0,7); ctx.fill();
+    ctx.fillStyle = '#0A0E16'; ctx.font = '700 9px Inter, sans-serif';
+    var label = '4278.30';
+    var tw = ctx.measureText(label).width + 12;
+    ctx.fillStyle = '#E4B43F';
+    var bx = Math.min(lx+8, W-tw-4);
+    ctx.beginPath(); ctx.roundRect(bx, ly-22, tw, 16, 4); ctx.fill();
+    ctx.fillStyle = '#0A0E16'; ctx.fillText(label, bx+6, ly-10);
+  }
+  size(); window.addEventListener('resize', function(){ size(); draw(reduce?1:t); });
+  if (reduce){ draw(1); return; }
+  var start = null;
+  function frame(ts){
+    if (!start) start = ts;
+    var p = Math.min(1, (ts - start) / 2600);
+    t = p; draw(p);
+    if (p < 1) requestAnimationFrame(frame);
+    else setTimeout(function(){ start = null; requestAnimationFrame(frame); }, 2600);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
