@@ -197,6 +197,21 @@
 
 ---
 
+## EVT-20260927-0015
+
+- **id:** EVT-20260927-0015
+- **timestamp:** 2026-09-27T03:45:00+03:00
+- **mode:** PLAN
+- **action:** Queue next tasks (user leaving, continue tomorrow)
+- **summary:** User queued two tasks for next session: (1) per-source toggle switches + target-hit state/percentage on Sources screen (TASK-08); (2) Events filters giving full user control over which events impact signals (TASK-09). Pip-convention question still open (FXPro/Vantage user — asked 1-pip vs 10-pips for a 0.10 move). Session paused by user.
+- **result:** queued
+- **files:** tasks/TASK-08_source-toggles-hit-stats.md, tasks/TASK-09_events-filters.md
+- **errors:** none
+- **lessons:** —
+- **tags:** plan, queued, next-session
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013
