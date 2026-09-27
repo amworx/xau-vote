@@ -149,3 +149,18 @@
 - **errors:** devtools screenshot flakiness (timeouts that still write files); fullPage stitching duplicated content — used viewport captures instead
 - **lessons:** prefer viewport screenshots over fullPage in this environment; verify file mtime+size after every timeout
 - **tags:** ui, mockups, rail-variants, material3
+
+---
+
+## EVT-20260927-0011
+
+- **id:** EVT-20260927-0011
+- **timestamp:** 2026-09-27T02:30:00+03:00
+- **mode:** BUILD (UI design iteration)
+- **action:** Apply direction colors, pip distances, position status, copy/share to round-8 mockups
+- **summary:** Three user directives applied to all five round-8 mockups: (1) direction in red/green trading colors — LONG verdicts turned green in 8A/8B/8C/8D/8E (SHORT would be red; gold retained for brand/CTA/strength); (2) pip distances on every SL/TP level — SL −160, TP1 +170, TP2 +370, TP3 +620 pips from 4,278 entry ref, entry zone labeled 50-pip zone (D-20260927-003: 1 pip = 0.10); (3) live position status — IN-PROFIT +3 PIPS chip/strip/stamp/route-stop per layout; (4) Copy + Share ghost buttons with clipboard API + execCommand fallback and Web Share API, "Copied ✓" feedback — click-tested working. Verified: zero overflow, no sub-9px text, exact 844px, previews reviewed.
+- **result:** success
+- **files:** docs/mockups/mockup-8A..8E.html, preview-8A..8E.png, memory/decisions.md (D-003)
+- **errors:** none
+- **lessons:** pip convention must be a recorded decision — it affects every number in the app, not just mockups
+- **tags:** ui, mockups, direction-colors, pips, copy-share

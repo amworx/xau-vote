@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 8E: Journey</title>
+<style>
+  /* ══════════ MOCKUP 8E: JOURNEY ══════════
+     Lifecycle-as-journey composition. The trade is a vertical
+     route: consensus → entry (you are here) → TP1 → TP2 → TP3,
+     with the stop as a red siding. Fully static. */
+  :root{
+    --bg:#090C12;
+    --text:#ECEFF7;
+    --dim:#8C99B8;
+    --faint:#59637E;
+    --gold:#E3B23E;
+    --gold-bright:#F5CC60;
+    --long:#3BD09A;
+    --short:#E85D5D;
+    --info:#5E9BFF;
+    --rail:#22304F;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#04060B;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 4px}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .hdr{display:flex;align-items:center;gap:9px}
+  .hdr .p{font-family:var(--mono);font-size:1rem;font-weight:700}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;padding:6px 22px 12px}
+  .dest{display:flex;align-items:baseline;gap:12px}
+  .dest .arrow{font-size:1.6rem;color:var(--gold-bright);font-weight:800}
+  .dest .w{font-size:1.9rem;font-weight:800;letter-spacing:.08em;color:var(--long)}
+  .dest .s{margin-left:auto;font-family:var(--mono);font-size:.66rem;color:var(--dim)}
+  .dest .s b{color:var(--text)}
+  /* the route */
+  .route{position:relative;margin:14px 0 0;padding-left:26px}
+  .route::before{content:"";position:absolute;left:8px;top:14px;bottom:14px;width:2px;background:var(--rail)}
+  .stop{
+    position:relative;padding:11px 0 11px 8px;min-height:44px;
+    display:flex;align-items:baseline;gap:10px;
+  }
+  .stop::before{
+    content:"";position:absolute;left:-24px;top:15px;width:14px;height:14px;border-radius:50%;
+    background:var(--bg);border:3px solid var(--faint);
+  }
+  .stop.done::before{border-color:var(--long);background:var(--long)}
+  .stop.here::before{border-color:var(--gold);background:var(--gold);box-shadow:0 0 12px rgba(227,178,62,.8)}
+  .stop.next::before{border-style:dashed}
+  .stop .t{font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.16em;color:var(--faint);width:86px;flex-shrink:0}
+  .stop .v{font-family:var(--mono);font-size:1rem;font-weight:700;flex:1}
+  .stop.done .v{color:var(--dim)}
+  .stop.here .v{color:var(--info);font-size:1.15rem}
+  .stop.next .v{color:var(--long)}
+  .stop .tag{font-family:var(--mono);font-size:.58rem;color:var(--gold);border:1px solid var(--gold);border-radius:4px;padding:2px 7px;white-space:nowrap}
+  .stop .rr{font-family:var(--mono);font-size:.6rem;color:var(--faint)}
+  /* stop-loss siding */
+  .siding{
+    position:relative;margin:2px 0 2px 26px;padding:10px 0 10px 26px;min-height:44px;
+    border-left:2px dashed rgba(232,93,93,.5);
+    display:flex;align-items:baseline;gap:10px;
+  }
+  .siding::before{content:"";position:absolute;left:-7px;top:14px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:3px solid var(--short)}
+  .siding .t{font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.16em;color:var(--short)}
+  .siding .v{font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--short);flex:1}
+  .siding .rr{font-family:var(--mono);font-size:.6rem;color:var(--faint);white-space:nowrap}
+  .stop.live::before{border-color:var(--long);background:var(--long);box-shadow:0 0 10px rgba(59,208,154,.7)}
+  .stop.live .v{color:var(--long);font-size:.85rem}
+  .share-row{display:flex;gap:10px;margin-top:12px}
+  .ghost{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid var(--rail);color:var(--text);border-radius:10px;font-family:var(--mono);font-weight:700;font-size:.7rem;letter-spacing:.1em;padding:13px;min-height:48px;cursor:pointer}
+  .ghost svg{width:15px;height:15px;flex-shrink:0}
+  .ghost:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .cta{
+    margin-top:14px;width:100%;background:var(--gold);color:#1C1503;border:none;border-radius:12px;
+    font-weight:800;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;
+    padding:15px;min-height:54px;cursor:pointer;
+  }
+  .cta:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--faint)}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold)}
+  nav{display:flex;border-top:1px solid var(--rail);background:rgba(9,12,18,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.1em;min-height:48px;min-width:48px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+  nav a.active{color:var(--gold)}
+  nav a.active svg{stroke:var(--gold)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <div class="hdr"><span class="p">4,278.30</span>
+      <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+    </div>
+  </header>
+  <main>
+    <div class="dest">
+      <span class="arrow">▲</span><span class="w">LONG</span>
+      <span class="s"><b>4/5</b> · STRONG 82</span>
+    </div>
+    <div class="route">
+      <div class="stop live"><span class="t">STATUS</span><span class="v">IN-PROFIT +3 PIPS</span></div>
+      <div class="stop done"><span class="t">CONSENSUS</span><span class="v">4 desks aligned</span></div>
+      <div class="stop here"><span class="t">ENTRY · NOW</span><span class="v">4,275 – 4,280</span><span class="rr">50P ZONE</span><span class="tag">YOU ARE HERE</span></div>
+      <div class="siding"><span class="t">STOP</span><span class="v">4,262</span><span class="rr">−160 PIPS</span></div>
+      <div class="stop next"><span class="t">TP1 · 1:1.5</span><span class="v">4,295</span><span class="rr">+170 P</span></div>
+      <div class="stop next"><span class="t">TP2 · 1:3.0</span><span class="v">4,315</span><span class="rr">+370 P</span></div>
+      <div class="stop next"><span class="t">TP3 · 1:4.1</span><span class="v">4,340</span><span class="rr">+620 P</span></div>
+    </div>
+    <button class="cta" type="button">Board this setup →</button>
+    <div class="share-row">
+      <button class="ghost" id="copyBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
+      <button class="ghost" id="shareBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>Share</button>
+    </div>
+    <div class="micro">1H <span class="ok">SUPPORTIVE</span> · 5M <span class="wait">READY</span> · 14S AGO</div>
+  </main>
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Journey</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="6"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/></svg>More</a>
+  </nav>
+</div>
+<script>
+(function(){
+  var TEXT = 'XAUUSD 15M — LONG\nEntry 4,275–4,280\nSL 4,262 (−160 pips)\nTP1 4,295 (+170) · TP2 4,315 (+370) · TP3 4,340 (+620)\nConsensus STRONG 82/100 · 4/5 agree\n— via XAU Radar';
+  var copyBtn = document.getElementById('copyBtn');
+  var shareBtn = document.getElementById('shareBtn');
+  function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
+  function copyText(t, ok){
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); ok();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
+    else { fallback(); }
+  }
+  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  shareBtn.addEventListener('click', function(){
+    if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
+    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+  });
+})();
+</script>
+</body>
+</html>

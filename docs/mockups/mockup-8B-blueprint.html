@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 8B: Blueprint</title>
+<style>
+  /* ══════════ MOCKUP 8B: BLUEPRINT ══════════
+     Engineering-drawing composition: grid sheet, crosshairs,
+     title block, spec table, approval stamp CTA. Static. */
+  :root{
+    --bg:#0C1A2E;
+    --paper:#0E2038;
+    --ink:#DCE8F7;
+    --dim:#7E97B8;
+    --faint:#48617E;
+    --line:#2B4A73;
+    --gold:#E8C35A;
+    --long:#4ADE9E;
+    --short:#F0716F;
+    --info:#7DB4FF;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#050B16;color:var(--ink);
+    display:flex;justify-content:center;min-height:100vh;
+  }
+  .phone{
+    width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;
+    display:flex;flex-direction:column;overflow:hidden;
+    background-image:linear-gradient(rgba(125,180,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(125,180,255,.06) 1px,transparent 1px);
+    background-size:22px 22px;
+  }
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim);font-family:var(--mono)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 6px;font-family:var(--mono)}
+  .brand .name{font-size:.82rem;font-weight:700;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;padding:8px 22px 12px}
+  .dwg{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--faint)}
+  /* crosshair verdict */
+  .sheet{position:relative;border:1px solid var(--line);margin-top:10px;padding:26px 18px 20px}
+  .sheet .cross{position:absolute;top:50%;left:0;right:0;height:1px;background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 16px);opacity:.6}
+  .sheet .cross.v{top:0;bottom:0;left:50%;right:auto;width:1px;background:repeating-linear-gradient(180deg,var(--line) 0 8px,transparent 8px 16px)}
+  .sheet .corner{position:absolute;width:14px;height:14px;border:1.5px solid var(--gold)}
+  .sheet .c1{top:-1px;left:-1px;border-right:none;border-bottom:none}
+  .sheet .c2{top:-1px;right:-1px;border-left:none;border-bottom:none}
+  .sheet .c3{bottom:-1px;left:-1px;border-right:none;border-top:none}
+  .sheet .c4{bottom:-1px;right:-1px;border-left:none;border-top:none}
+  .sheet .dir{position:relative;text-align:center;font-family:var(--mono);font-size:3rem;font-weight:700;letter-spacing:.14em;color:var(--long)}
+  .sheet .sub{position:relative;text-align:center;font-family:var(--mono);font-size:.68rem;color:var(--dim);margin-top:8px}
+  .sheet .sub b{color:var(--ink)}
+  /* spec table */
+  .spec{margin-top:14px;border:1px solid var(--line);font-family:var(--mono)}
+  .spec .sr{display:flex;justify-content:space-between;padding:11px 14px;min-height:44px;font-size:.82rem}
+  .spec .sr + .sr{border-top:1px solid var(--line)}
+  .spec .k{color:var(--faint);font-size:.64rem;letter-spacing:.14em}
+  .spec .v{font-weight:700}
+  .spec .rv{display:flex;flex-direction:column;align-items:flex-end}
+  .spec .pp{font-size:.58rem;letter-spacing:.1em;color:var(--faint);margin-top:3px}
+  .pstrip{display:flex;justify-content:space-between;align-items:center;margin-top:14px;border:1px solid var(--line);padding:11px 14px;min-height:48px;font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;color:var(--dim)}
+  .pstrip b{color:var(--long);font-size:.72rem}
+  .share-row{display:flex;gap:10px;margin-top:10px}
+  .ghost{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:4px;font-family:var(--mono);font-weight:700;font-size:.7rem;letter-spacing:.1em;padding:13px;min-height:48px;cursor:pointer}
+  .ghost svg{width:15px;height:15px;flex-shrink:0}
+  .ghost:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .spec .entry .v{color:var(--info)}
+  .spec .sl .v{color:var(--short)}
+  .spec .tp .v{color:var(--long)}
+  /* title block */
+  .tblock{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--line);border-top:none;font-family:var(--mono)}
+  .tblock div{padding:8px 10px;font-size:.6rem;color:var(--dim);letter-spacing:.08em}
+  .tblock div + div{border-left:1px solid var(--line)}
+  .tblock b{display:block;color:var(--ink);font-size:.72rem;margin-top:2px;letter-spacing:0}
+  .cta{
+    margin-top:14px;width:100%;background:transparent;color:var(--gold);
+    border:2px solid var(--gold);border-radius:4px;
+    font-family:var(--mono);font-weight:700;font-size:.85rem;letter-spacing:.16em;
+    padding:15px;min-height:54px;cursor:pointer;
+  }
+  .cta:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--faint)}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold)}
+  nav{display:flex;border-top:1px solid var(--line);background:rgba(10,22,38,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.1em;min-height:48px;min-width:48px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6}
+  nav a.active{color:var(--gold)}
+  nav a.active svg{stroke:var(--gold)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span> · DWG-15M-01</div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>REV C</span>
+  </header>
+  <main>
+    <div class="dwg">FIG.1 — CONSENSUS ASSEMBLY · SCALE 15M · Au</div>
+    <div class="sheet" role="img" aria-label="Verdict LONG, 4 of 5 agree">
+      <i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i>
+      <div class="cross"></div><div class="cross v"></div>
+      <div class="dir">LONG ↑</div>
+      <div class="sub"><b>4/5</b> AGREE · TOL ±5 PTS</div>
+    </div>
+    <div class="spec">
+      <div class="sr px"><span class="k">DATUM / PRICE</span><span class="v">4,278.30</span></div>
+      <div class="sr entry"><span class="k">ENTRY ZONE</span><span class="rv"><span class="v">4,275 – 4,280</span><span class="pp">50-PIP ZONE</span></span></div>
+      <div class="sr sl"><span class="k">LIMIT / STOP</span><span class="rv"><span class="v">4,262</span><span class="pp">−160 PIPS</span></span></div>
+      <div class="sr tp"><span class="k">TARGETS ×3</span><span class="rv"><span class="v">4,295 +</span><span class="pp">+170 – +620 PIPS</span></span></div>
+    </div>
+    <div class="tblock">
+      <div>STRENGTH<b>STRONG · 82</b></div>
+      <div>CONTEXT<b>1H SUPP</b></div>
+      <div>CONFIRM<b>5M READY</b></div>
+    </div>
+    <button class="cta" type="button">APPROVED — OPEN SIGNAL ⧉</button>
+    <div class="pstrip"><span>POSITION STATUS</span><b>● IN-PROFIT +3 PIPS</b></div>
+    <div class="share-row">
+      <button class="ghost" id="copyBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
+      <button class="ghost" id="shareBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>Share</button>
+    </div>
+    <div class="micro">DRAWN 21:47:12 · <span class="ok">1H SUPP</span> · <span class="wait">5M READY</span></div>
+  </main>
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10M12 20V4M18 20v-8"/></svg>RADAR</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>SIGNAL</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/></svg>SOURCES</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>HISTORY</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>CONFIG</a>
+  </nav>
+</div>
+<script>
+(function(){
+  var TEXT = 'XAUUSD 15M — LONG\nEntry 4,275–4,280\nSL 4,262 (−160 pips)\nTP1 4,295 (+170) · TP2 4,315 (+370) · TP3 4,340 (+620)\nConsensus STRONG 82/100 · 4/5 agree\n— via XAU Radar';
+  var copyBtn = document.getElementById('copyBtn');
+  var shareBtn = document.getElementById('shareBtn');
+  function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
+  function copyText(t, ok){
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); ok();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
+    else { fallback(); }
+  }
+  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  shareBtn.addEventListener('click', function(){
+    if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
+    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 8C: Aurora</title>
+<style>
+  /* ══════════ MOCKUP 8C: AURORA ══════════
+     Ambient gradient-mesh calm. Centered whisper type, hairline
+     strength thread, levels as quiet centered lines. Static. */
+  :root{
+    --text:#F4F2EC;
+    --dim:#A9A89F;
+    --faint:#6B6A61;
+    --gold:#E9C46A;
+    --long:#8FD6B4;
+    --short:#E0958D;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#060809;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;position:relative;display:flex;flex-direction:column;overflow:hidden;background:#060809}
+  .blob{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none}
+  .b1{width:340px;height:340px;left:-120px;top:-80px;background:radial-gradient(circle,rgba(233,196,106,.20),transparent 70%)}
+  .b2{width:380px;height:380px;right:-160px;top:220px;background:radial-gradient(circle,rgba(64,150,130,.16),transparent 70%)}
+  .b3{width:300px;height:300px;left:-100px;bottom:-60px;background:radial-gradient(circle,rgba(90,110,180,.14),transparent 70%)}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px 4px;font-size:.73rem;color:var(--dim);position:relative}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+  header{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;position:relative}
+  .brand .name{font-size:.82rem;font-weight:600;letter-spacing:.34em}
+  .brand .name span{color:var(--gold)}
+  .live{font-size:.6rem;letter-spacing:.2em;color:var(--long);min-height:44px;display:flex;align-items:center;gap:7px}
+  .live i{width:6px;height:6px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 30px 12px;position:relative}
+  .kick{font-size:.6rem;letter-spacing:.4em;color:var(--faint)}
+  .word{font-weight:200;font-size:4.4rem;letter-spacing:.06em;color:var(--long);margin-top:14px;line-height:1}
+  .agree{font-size:.78rem;color:var(--dim);margin-top:12px}
+  .agree b{color:var(--text);font-family:var(--mono)}
+  .thread{display:flex;align-items:center;gap:10px;width:100%;margin-top:20px}
+  .thread::before,.thread::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(233,196,106,.5),transparent)}
+  .thread span{font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;color:var(--gold)}
+  .levels{margin-top:20px;display:flex;flex-direction:column;gap:13px;width:100%}
+  .lvl .k{font-size:.58rem;letter-spacing:.34em;color:var(--faint)}
+  .lvl .v{font-family:var(--mono);font-size:1.15rem;margin-top:5px}
+  .lvl .p{font-family:var(--mono);font-size:.6rem;letter-spacing:.24em;color:var(--faint);margin-top:5px}
+  .pill{align-self:center;font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;color:var(--long);border:1px solid rgba(143,214,180,.45);border-radius:999px;padding:8px 18px;margin-top:14px;white-space:nowrap}
+  .share-row{display:flex;gap:10px;width:100%;margin-top:14px}
+  .ghost{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(244,242,236,.06);color:var(--text);border:1px solid rgba(244,242,236,.25);border-radius:999px;font-size:.68rem;font-weight:600;letter-spacing:.24em;padding:14px;min-height:50px;cursor:pointer}
+  .ghost svg{width:15px;height:15px;flex-shrink:0}
+  .ghost:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .lvl.entry .v{color:var(--text)}
+  .lvl.sl .v{color:var(--short)}
+  .lvl.tp .v{color:var(--long)}
+  .cta{
+    margin-top:auto;width:100%;background:rgba(244,242,236,.08);color:var(--text);
+    border:1px solid rgba(244,242,236,.25);border-radius:999px;
+    backdrop-filter:blur(8px);
+    font-size:.78rem;font-weight:600;letter-spacing:.3em;text-transform:uppercase;
+    padding:17px;min-height:56px;cursor:pointer;
+  }
+  .cta:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+  .micro{margin-top:12px;font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;color:var(--faint)}
+  nav{display:flex;justify-content:space-around;padding:10px 6px calc(14px + env(safe-area-inset-bottom));position:relative;border-top:1px solid rgba(244,242,236,.08)}
+  nav a{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--faint);text-decoration:none;font-size:.54rem;font-weight:600;letter-spacing:.24em;padding:6px 10px;min-height:48px;min-width:56px}
+  nav a svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.5}
+  nav a.active{color:var(--gold)}
+  nav a:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+  <header>
+    <div class="brand"><div class="name">XAU <span>RADAR</span></div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE · 4,278.30</span>
+  </header>
+  <main>
+    <div class="kick">15M CONSENSUS</div>
+    <div class="word">Long</div>
+    <div class="agree"><b>4 / 5</b> desks agree</div>
+    <div class="pill">● IN-PROFIT · +3 PIPS</div>
+    <div class="thread"><span>STRONG · 82</span></div>
+    <div class="levels">
+      <div class="lvl entry"><div class="k">ENTRY</div><div class="v">4,275 – 4,280</div><div class="p">50-PIP ZONE</div></div>
+      <div class="lvl sl"><div class="k">STOP</div><div class="v">4,262</div><div class="p">−160 PIPS</div></div>
+      <div class="lvl tp"><div class="k">TARGETS</div><div class="v">4,295 +</div><div class="p">+170 – +620 PIPS</div></div>
+    </div>
+    <button class="cta" type="button">View full setup</button>
+    <div class="share-row">
+      <button class="ghost" id="copyBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
+      <button class="ghost" id="shareBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>Share</button>
+    </div>
+    <div class="micro">1H SUPPORTIVE · 5M READY · 14S</div>
+  </main>
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12h3M17 12h3M12 4v3M12 17v3"/></svg>More</a>
+  </nav>
+</div>
+<script>
+(function(){
+  var TEXT = 'XAUUSD 15M — LONG\nEntry 4,275–4,280\nSL 4,262 (−160 pips)\nTP1 4,295 (+170) · TP2 4,315 (+370) · TP3 4,340 (+620)\nConsensus STRONG 82/100 · 4/5 agree\n— via XAU Radar';
+  var copyBtn = document.getElementById('copyBtn');
+  var shareBtn = document.getElementById('shareBtn');
+  function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
+  function copyText(t, ok){
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); ok();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
+    else { fallback(); }
+  }
+  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  shareBtn.addEventListener('click', function(){
+    if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
+    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+  });
+})();
+</script>
+</body>
+</html>

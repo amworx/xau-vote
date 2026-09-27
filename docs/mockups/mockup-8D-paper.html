@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 8D: Paper</title>
+<style>
+  /* ══════════ MOCKUP 8D: PAPER ══════════
+     Light-theme broadsheet card. Ink on paper, rubber-stamp
+     strength badge, red-ink stop. The only light mockup.
+     Fully static. */
+  :root{
+    --paper:#F3EFE4;
+    --paper-2:#EAE4D3;
+    --ink:#1C1811;
+    --dim:#6E6350;
+    --faint:#A39880;
+    --gold:#8A6414;
+    --gold-soft:#C9A227;
+    --long:#1E7A4C;
+    --short:#B3372E;
+    --info:#2B5FA6;
+    --hair:#D5CCB4;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --serif:Georgia,"Times New Roman",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#D8D2C0;color:var(--ink);
+    display:flex;justify-content:center;min-height:100vh;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--paper);position:relative;display:flex;flex-direction:column;overflow:hidden}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 8px;border-bottom:2px solid var(--ink)}
+  .brand .name{font-family:var(--serif);font-size:1rem;font-weight:700;letter-spacing:.12em}
+  .live{font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px;display:flex;align-items:center;gap:6px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;padding:14px 22px 12px}
+  .folio{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;color:var(--dim)}
+  .head{font-family:var(--serif);font-size:3rem;font-weight:700;color:var(--ink);margin-top:8px;line-height:1}
+  .head em{font-style:italic;color:var(--long)}
+  .standfirst{font-family:var(--serif);font-style:italic;font-size:.9rem;color:var(--dim);margin-top:8px;line-height:1.5}
+  /* stamp */
+  .stamprow{display:flex;align-items:center;gap:14px;margin-top:14px}
+  .stamp{
+    font-family:var(--mono);font-weight:700;font-size:.68rem;letter-spacing:.14em;color:var(--gold);
+    border:2px solid var(--gold);border-radius:6px;padding:8px 12px;
+    transform:rotate(-3deg);white-space:nowrap;
+  }
+  .stamp small{display:block;font-size:.6rem;letter-spacing:.2em}
+  .price{font-family:var(--mono);font-size:.8rem;color:var(--dim)}
+  .price b{color:var(--ink);font-size:1rem}
+  /* ledger */
+  .ledger{margin-top:12px;border-top:2px solid var(--ink)}
+  .row{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;min-height:44px;border-bottom:1px solid var(--hair)}
+  .row .k{font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.18em;color:var(--dim)}
+  .row .v{font-family:var(--mono);font-size:1.02rem;font-weight:700}
+  .row .rv{display:flex;flex-direction:column;align-items:flex-end}
+  .row .pp{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;color:var(--faint);margin-top:2px}
+  .stamp.profit{color:var(--long);border-color:var(--long);transform:rotate(2deg)}
+  .share-row{display:flex;gap:10px;margin-top:12px}
+  .ghost{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid var(--ink);color:var(--ink);border-radius:2px;font-family:var(--mono);font-weight:700;font-size:.7rem;letter-spacing:.1em;padding:13px;min-height:48px;cursor:pointer}
+  .ghost svg{width:15px;height:15px;flex-shrink:0}
+  .ghost:focus-visible{outline:2px solid var(--gold-soft);outline-offset:2px}
+  .row.entry .v{color:var(--info)}
+  .row.sl .v{color:var(--short)}
+  .row.tp .v{color:var(--long)}
+  .row .rr{font-family:var(--mono);font-size:.6rem;color:var(--faint)}
+  .cta{
+    margin-top:16px;width:100%;background:var(--ink);color:var(--paper);
+    border:none;border-radius:2px;
+    font-family:var(--serif);font-weight:700;font-size:.95rem;letter-spacing:.2em;text-transform:uppercase;
+    padding:16px;min-height:54px;cursor:pointer;
+  }
+  .cta:focus-visible{outline:2px solid var(--gold-soft);outline-offset:2px}
+  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;color:var(--faint)}
+  nav{display:flex;border-top:2px solid var(--ink);background:var(--paper-2);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--dim);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.1em;min-height:48px;min-width:48px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+  nav a.active{color:var(--gold)}
+  nav a.active svg{stroke:var(--gold)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+  <header>
+    <div class="brand"><div class="name">XAU Radar</div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+  </header>
+  <main>
+    <div class="folio"><span>No. 15M — GOLD</span><span>4,278.30 ▲</span></div>
+    <div class="head">Long <em>holds.</em></div>
+    <div class="standfirst">Four of five desks concur; price knocks at the entry zone.</div>
+    <div class="stamprow">
+      <div class="stamp">STRONG · 82<small>4/5 AGREE</small></div>
+      <div class="stamp profit">IN-PROFIT<small>+3 PIPS</small></div>
+    </div>
+    <div class="price">XAUUSD <b>4,278.30</b> +12.40</div>
+    <div class="ledger">
+      <div class="row entry"><span class="k">ENTRY</span><span class="rv"><span class="v">4,275 – 4,280</span><span class="pp">50-PIP ZONE</span></span></div>
+      <div class="row sl"><span class="k">STOP</span><span class="rv"><span class="v">4,262</span><span class="pp">−160 PIPS</span></span></div>
+      <div class="row tp"><span class="k">TP1 / TP2 / TP3</span><span class="rv"><span class="v">4,295 +</span><span class="pp">+170 – +620 PIPS</span></span></div>
+    </div>
+    <button class="cta" type="button">Read the full setup</button>
+    <div class="share-row">
+      <button class="ghost" id="copyBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
+      <button class="ghost" id="shareBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>Share</button>
+    </div>
+    <div class="micro">1H SUPPORTIVE · 5M READY · 14S AGO</div>
+  </main>
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="6"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/></svg>More</a>
+  </nav>
+</div>
+<script>
+(function(){
+  var TEXT = 'XAUUSD 15M — LONG\nEntry 4,275–4,280\nSL 4,262 (−160 pips)\nTP1 4,295 (+170) · TP2 4,315 (+370) · TP3 4,340 (+620)\nConsensus STRONG 82/100 · 4/5 agree\n— via XAU Radar';
+  var copyBtn = document.getElementById('copyBtn');
+  var shareBtn = document.getElementById('shareBtn');
+  function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
+  function copyText(t, ok){
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); ok();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
+    else { fallback(); }
+  }
+  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  shareBtn.addEventListener('click', function(){
+    if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
+    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+  });
+})();
+</script>
+</body>
+</html>
