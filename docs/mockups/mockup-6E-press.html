@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 6E: Press</title>
+<style>
+  /* ══════════ MOCKUP 6E: PRESS ══════════
+     Broadsheet composition. Masthead, headline, two hairline
+     columns, byline of desks. Print discipline, serif voice.
+     Fully static — zero animation of any kind. */
+  :root{
+    --bg:#0B0A08;
+    --text:#F0EAD9;
+    --dim:#A79C83;
+    --faint:#6E6450;
+    --gold:#D9B36C;
+    --gold-bright:#EFCE8F;
+    --long:#9DC4A3;
+    --short:#D99A90;
+    --info:#A9BEDD;
+    --hair:#2C271D;
+    --serif:"Didot","Playfair Display",Georgia,"Times New Roman",serif;
+    --sans:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:var(--sans);
+    background:#060504;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px 4px;font-size:.73rem;color:var(--dim);font-family:var(--sans)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  .masthead{text-align:center;padding:12px 24px 0}
+  .masthead .name{font-family:var(--serif);font-size:1.35rem;font-weight:700;letter-spacing:.24em}
+  .masthead .name span{color:var(--gold)}
+  .dateline{
+    display:flex;align-items:center;gap:10px;justify-content:center;
+    margin-top:8px;font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;color:var(--dim);
+  }
+  .dateline::before,.dateline::after{content:"";flex:1;height:1px;background:var(--hair)}
+  .dateline .live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--long);margin-right:5px;vertical-align:1px}
+
+  main{flex:1;display:flex;flex-direction:column;padding:14px 26px 12px}
+  .kicker{font-family:var(--mono);font-size:.6rem;letter-spacing:.3em;color:var(--gold)}
+  .headline{
+    font-family:var(--serif);font-size:3.6rem;font-weight:700;line-height:1.04;
+    color:var(--gold-bright);margin-top:6px;
+  }
+  .dek{font-family:var(--serif);font-style:italic;font-size:.95rem;line-height:1.55;color:var(--dim);margin-top:10px}
+  .dek b{color:var(--text);font-style:normal}
+
+  .rule{height:1px;background:var(--hair);margin:16px 0 0}
+  .rule.double{height:4px;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);background:transparent}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:2px}
+  .col{padding:12px 0}
+  .col:first-child{border-right:1px solid var(--hair);padding-right:16px}
+  .col:last-child{padding-left:16px}
+  .col .ch{font-family:var(--mono);font-size:.58rem;letter-spacing:.24em;color:var(--faint);margin-bottom:10px}
+  .fig{margin-bottom:14px}
+  .fig .l{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;color:var(--faint)}
+  .fig .n{font-family:var(--mono);font-size:1.05rem;font-weight:700;margin-top:4px}
+  .fig.entry .n{color:var(--info)}
+  .fig.sl .n{color:var(--short)}
+  .fig.tp .n{color:var(--long)}
+  .fig .s{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:2px}
+
+  .byline{
+    border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
+    padding:10px 0;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--dim);
+    display:flex;justify-content:space-between;
+  }
+  .byline b{color:var(--text)}
+
+  .cta{
+    margin-top:18px;width:100%;
+    display:flex;align-items:center;justify-content:center;gap:12px;
+    background:transparent;color:var(--gold-bright);
+    border:1px solid var(--gold);border-radius:2px;
+    font-family:var(--serif);font-weight:700;font-size:.9rem;letter-spacing:.22em;text-transform:uppercase;
+    padding:16px;min-height:54px;cursor:pointer;
+  }
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px}
+  .micro{margin-top:12px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;color:var(--faint)}
+
+  nav{display:flex;justify-content:space-around;border-top:1px solid var(--hair);background:rgba(11,10,8,.96);padding:8px 6px calc(12px + env(safe-area-inset-bottom))}
+  nav a{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.56rem;font-weight:700;letter-spacing:.18em;padding:6px 10px;min-height:44px;min-width:56px}
+  nav a svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.6}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active::after{content:"";width:14px;height:1.5px;background:var(--gold)}
+  nav a:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <div class="masthead">
+    <div class="name">XAU <span>RADAR</span></div>
+    <div class="dateline"><span><span class="live-dot"></span>LIVE · 21:47 · 4,278.30 (+12.40)</span></div>
+  </div>
+
+  <main>
+    <div class="kicker">15M CONSENSUS · GOLD</div>
+    <div class="headline">Long.</div>
+    <div class="dek"><b>Four of five desks agree</b> — strong consensus at 82 of 100. Price presses the entry zone; the bears stand alone.</div>
+
+    <div class="rule double"></div>
+    <div class="cols">
+      <div class="col">
+        <div class="ch">THE TERMS</div>
+        <div class="fig entry"><div class="l">ENTRY</div><div class="n">4,275–80</div><div class="s">the zone</div></div>
+        <div class="fig sl"><div class="l">STOP</div><div class="n">4,262</div><div class="s">−16 pts</div></div>
+      </div>
+      <div class="col">
+        <div class="ch">THE TARGETS</div>
+        <div class="fig tp"><div class="l">TP1 · 1:1.5</div><div class="n">4,295</div></div>
+        <div class="fig tp"><div class="l">TP2 · 1:3.0</div><div class="n">4,315</div></div>
+        <div class="fig tp"><div class="l">TP3 · 1:4.1</div><div class="n">4,340</div></div>
+      </div>
+    </div>
+
+    <div class="byline"><span>BY DESKS <b>A · B · C · E</b></span><span>DISSENT: <b>D</b></span></div>
+
+    <button class="cta" type="button">Continued on Signal →</button>
+    <div class="micro">1H SUPPORTIVE · 5M READY · 14S AGO</div>
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5" fill="currentColor"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>Press</a>
+  </nav>
+</div>
+</body>
+</html>

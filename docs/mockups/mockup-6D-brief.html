@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 6D: Brief</title>
+<style>
+  /* ══════════ MOCKUP 6D: BRIEF ══════════
+     Signal-feed composition. The setup arrives as a briefing
+     message thread: day divider, analyst bubble with attachment,
+     system note, quick-reply CTA. Fully static. */
+  :root{
+    --bg:#0A0D14;
+    --bubble:#131A29;
+    --bubble-line:#1F2942;
+    --text:#EBEFF7;
+    --dim:#8C99B8;
+    --faint:#5B657E;
+    --gold:#E3B23E;
+    --gold-bright:#F5CC60;
+    --long:#3BD09A;
+    --short:#E85D5D;
+    --info:#5E9BFF;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#04060B;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 10px;border-bottom:1px solid #141B2E}
+  .brand{display:flex;align-items:center;gap:10px}
+  .avatar{
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(150deg,var(--gold-bright),#B98A2B);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:.8rem;color:#231A05;
+  }
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.1em}
+  .brand .name span{color:var(--gold)}
+  .brand .st{font-size:.62rem;color:var(--long)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+
+  main{flex:1;display:flex;flex-direction:column;padding:14px 16px 12px;gap:10px}
+  .day{align-self:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;color:var(--faint);background:#121829;border:1px solid #1C2540;border-radius:999px;padding:5px 14px}
+
+  .msgrow{display:flex;gap:9px;align-items:flex-end}
+  .mini-av{width:28px;height:28px;border-radius:50%;flex-shrink:0;background:linear-gradient(150deg,var(--gold-bright),#B98A2B);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.66rem;color:#231A05}
+  .bubble{
+    max-width:86%;background:var(--bubble);border:1px solid var(--bubble-line);
+    border-radius:5px 18px 18px 18px;
+    padding:14px 15px;
+  }
+  .bubble .who{font-size:.6rem;font-weight:700;letter-spacing:.14em;color:var(--gold-bright)}
+  .bubble .txt{font-size:.86rem;line-height:1.5;margin-top:6px}
+  .bubble .txt b{color:var(--gold-bright)}
+  .bubble .time{display:block;text-align:right;font-family:var(--mono);font-size:.58rem;color:var(--faint);margin-top:8px}
+  /* attachment */
+  .attach{margin-top:12px;border:1px solid var(--bubble-line);border-radius:12px;overflow:hidden}
+  .attach .arow{display:flex;justify-content:space-between;align-items:baseline;padding:10px 12px;min-height:44px;background:rgba(255,255,255,.015)}
+  .attach .arow + .arow{border-top:1px solid var(--bubble-line)}
+  .attach .k{font-size:.6rem;font-weight:700;letter-spacing:.16em;color:var(--dim)}
+  .attach .v{font-family:var(--mono);font-size:.9rem;font-weight:700}
+  .attach .entry .v{color:var(--info)}
+  .attach .sl .v{color:var(--short)}
+  .attach .tp .v{color:var(--long)}
+  .sys{align-self:center;font-size:.62rem;color:var(--faint);letter-spacing:.04em}
+  .sys .ok{color:var(--long)}
+  .sys .wait{color:var(--gold-bright)}
+
+  .cta{
+    margin:4px 0 0;width:100%;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:linear-gradient(160deg,var(--gold-bright),var(--gold));color:#231A05;
+    border:none;border-radius:18px;
+    font-weight:800;font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;
+    padding:15px;min-height:52px;cursor:pointer;
+  }
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+
+  nav{display:flex;border-top:1px solid #141B2E;background:rgba(9,12,19,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-height:44px;border-radius:8px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active svg{stroke:var(--gold-bright)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand">
+      <div class="avatar">X</div>
+      <div>
+        <div class="name">XAU <span>RADAR</span></div>
+        <div class="st">analyst desk · online</div>
+      </div>
+    </div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+  </header>
+
+  <main>
+    <div class="day">TODAY · 21:47</div>
+
+    <div class="msgrow">
+      <div class="mini-av">X</div>
+      <div class="bubble">
+        <div class="who">XAU RADAR · 15M CONSENSUS</div>
+        <div class="txt"><b>LONG gold.</b> Four of five desks agree — strong consensus, 82/100. Price 4,278.30 is pressing the entry zone.</div>
+        <div class="attach">
+          <div class="arow entry"><span class="k">ENTRY</span><span class="v">4,275 – 4,280</span></div>
+          <div class="arow sl"><span class="k">STOP</span><span class="v">4,262</span></div>
+          <div class="arow tp"><span class="k">TP1 · TP2 · TP3</span><span class="v">4,295 +</span></div>
+        </div>
+        <span class="time">21:47 ✓✓</span>
+      </div>
+    </div>
+
+    <div class="sys">1H <span class="ok">supportive</span> · 5M <span class="wait">ready</span> · dissent: desk D short</div>
+
+    <button class="cta" type="button">View full setup
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12a8 8 0 0 1 16 0"/></svg>Config</a>
+  </nav>
+</div>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 6B: Rail</title>
+<style>
+  /* ══════════ MOCKUP 6B: RAIL ══════════
+     Asymmetric split: a gold vertical LONG rail (1/3) beside a
+     scrolling content column (2/3) with a horizontal source tape.
+     Motion: tape cards slide in ONCE (staggered). No loops. */
+  :root{
+    --bg:#0A0C11;
+    --text:#EDF0F7;
+    --dim:#8E9CBB;
+    --faint:#5B6884;
+    --gold:#E5B93F;
+    --gold-bright:#F7D266;
+    --gold-ink:#231A05;
+    --long:#3BD09A;
+    --short:#E85D5D;
+    --info:#5E9BFF;
+    --card:#121826;
+    --line:#1D2742;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#04060B;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 10px}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+
+  .split{flex:1;display:flex;min-height:0}
+  /* the rail */
+  .rail{
+    width:33%;flex-shrink:0;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold) 55%,#C99A2E);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    border-radius:0 18px 18px 0;
+    color:var(--gold-ink);
+    padding:18px 0;
+  }
+  .rail svg{width:30px;height:30px;stroke:var(--gold-ink)}
+  .rail .word{
+    writing-mode:vertical-rl;transform:rotate(180deg);
+    font-size:2.9rem;font-weight:800;letter-spacing:.18em;line-height:1;
+  }
+  .rail .tf{font-family:var(--mono);font-size:.64rem;font-weight:700;letter-spacing:.2em}
+  .rail .str{font-family:var(--mono);font-size:.62rem;font-weight:700;background:rgba(0,0,0,.2);border-radius:6px;padding:4px 9px}
+
+  /* content column */
+  .col{flex:1;display:flex;flex-direction:column;padding:2px 16px 12px 14px;min-width:0}
+  .price .p{font-family:var(--mono);font-size:1.7rem;font-weight:700}
+  .price .c{font-family:var(--mono);font-size:.72rem;color:var(--long);margin-left:8px}
+  .price .t{font-size:.62rem;color:var(--faint);margin-top:3px;letter-spacing:.08em}
+
+  .tape-label{font-size:.58rem;font-weight:700;letter-spacing:.2em;color:var(--faint);margin:14px 0 8px}
+  .tape{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+  .tape::-webkit-scrollbar{display:none}
+  .tcard{
+    flex:0 0 64px;background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:10px 4px;text-align:center;
+    animation:slidein .5s cubic-bezier(.2,.9,.3,1) both;
+  }
+  .tcard .l{font-family:var(--mono);font-size:.62rem;font-weight:700;color:var(--dim)}
+  .tcard .d{font-size:.66rem;font-weight:800;margin-top:4px}
+  .tcard .m{font-size:.72rem;font-weight:700;margin-top:2px}
+  .tcard.yes .d{color:var(--long)}
+  .tcard.no .d{color:var(--short)}
+  .tcard.no{border-color:rgba(232,93,93,.4)}
+  @keyframes slidein{from{transform:translateX(22px);opacity:0}to{transform:none;opacity:1}}
+  @media (prefers-reduced-motion:reduce){.tcard{animation:none}}
+
+  .nums{margin-top:12px;border-top:1px solid var(--line)}
+  .nrow{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;min-height:44px;border-bottom:1px solid var(--line)}
+  .nrow .k{font-size:.6rem;font-weight:700;letter-spacing:.16em;color:var(--faint)}
+  .nrow .v{font-family:var(--mono);font-size:.95rem;font-weight:700}
+  .nrow.entry .v{color:var(--info)}
+  .nrow.sl .v{color:var(--short)}
+  .nrow.tp .v{color:var(--long)}
+
+  .cta{
+    margin:14px 16px 0 0;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:transparent;color:var(--gold-bright);
+    border:1px solid var(--gold);border-radius:12px;
+    font-weight:800;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;
+    padding:14px;min-height:52px;cursor:pointer;
+  }
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+  .micro{margin:10px 16px 0 0;text-align:center;font-size:.6rem;color:var(--faint);letter-spacing:.06em}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold-bright)}
+
+  nav{display:flex;border-top:1px solid var(--line);background:rgba(9,11,17,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-height:44px;border-radius:8px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active svg{stroke:var(--gold-bright)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+  </header>
+
+  <div class="split">
+    <div class="rail" role="img" aria-label="Verdict: LONG">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      <div class="word">LONG</div>
+      <div class="tf">15M</div>
+      <div class="str">82/100</div>
+    </div>
+
+    <div class="col">
+      <div class="price">
+        <span class="p">4,278.30</span><span class="c">+12.40</span>
+        <div class="t">GOLD · XAUUSD · 21:47:12</div>
+      </div>
+
+      <div class="tape-label">SOURCES · 4/5 AGREE</div>
+      <div class="tape">
+        <div class="tcard yes" style="animation-delay:.05s"><div class="l">A</div><div class="d">LONG</div><div class="m">✓</div></div>
+        <div class="tcard yes" style="animation-delay:.12s"><div class="l">B</div><div class="d">LONG</div><div class="m">✓</div></div>
+        <div class="tcard yes" style="animation-delay:.19s"><div class="l">C</div><div class="d">LONG</div><div class="m">✓</div></div>
+        <div class="tcard yes" style="animation-delay:.26s"><div class="l">E</div><div class="d">LONG</div><div class="m">✓</div></div>
+        <div class="tcard no" style="animation-delay:.33s"><div class="l">D</div><div class="d">SHORT</div><div class="m">✗</div></div>
+      </div>
+
+      <div class="nums">
+        <div class="nrow entry"><span class="k">ENTRY</span><span class="v">4,275–80</span></div>
+        <div class="nrow sl"><span class="k">STOP</span><span class="v">4,262</span></div>
+        <div class="nrow tp"><span class="k">TARGETS</span><span class="v">4,295 +</span></div>
+      </div>
+
+      <button class="cta" type="button">Full Setup →</button>
+      <div class="micro">1H <span class="ok">SUPP</span> · 5M <span class="wait">READY</span> · 14s</div>
+    </div>
+  </div>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12a8 8 0 0 1 16 0"/></svg>Config</a>
+  </nav>
+</div>
+</body>
+</html>

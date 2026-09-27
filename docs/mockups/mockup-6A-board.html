@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 6A: Board</title>
+<style>
+  /* ══════════ MOCKUP 6A: BOARD ══════════
+     Split-flap departure-board composition. The verdict is
+     mechanical flip tiles; every level is a board row.
+     Motion: tiles flip in ONCE on load (staggered). No loops. */
+  :root{
+    --bg:#090B0F;
+    --tile:#151A25;
+    --tile-line:#242C40;
+    --text:#EDEFF6;
+    --dim:#8B96B0;
+    --faint:#59637A;
+    --gold:#E8BC45;
+    --gold-ink:#241A04;
+    --long:#3BD09A;
+    --short:#E85D5D;
+    --info:#6AA5FF;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#04050A;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 6px}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+
+  main{flex:1;display:flex;flex-direction:column;padding:8px 22px 12px}
+  .board-label{font-size:.6rem;font-weight:700;letter-spacing:.26em;color:var(--faint);margin-bottom:10px}
+
+  /* flap tiles */
+  .flaps{display:flex;gap:6px;margin-bottom:6px}
+  .flap{
+    flex:1;background:linear-gradient(180deg,#1B2130 49.5%,#121722 49.5%,#171D2B 50.5%,#10141D 50.5%);
+    border:1px solid var(--tile-line);
+    border-radius:7px;
+    font-family:var(--mono);font-size:1.9rem;font-weight:700;text-align:center;
+    padding:12px 0;color:var(--text);
+    animation:flip .55s cubic-bezier(.3,1.4,.5,1) both;
+    position:relative;
+  }
+  .flap::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.75)}
+  .flap.gold{background:linear-gradient(180deg,#F2CB61 49.5%,#DFAF35 49.5%,#E4B73E 50.5%,#C99F2D 50.5%);color:var(--gold-ink);border-color:#8A6D1F}
+  @keyframes flip{from{transform:perspective(240px) rotateX(-75deg);opacity:0}to{transform:none;opacity:1}}
+  @media (prefers-reduced-motion:reduce){.flap{animation:none}}
+
+  .under-flap{display:flex;justify-content:space-between;align-items:baseline;margin:2px 0 14px}
+  .under-flap .a{font-size:.72rem;color:var(--dim)}
+  .under-flap .a b{color:var(--text);font-family:var(--mono)}
+  .under-flap .s{font-family:var(--mono);font-size:.72rem;font-weight:700;color:var(--gold)}
+
+  /* board rows */
+  .rows{border-top:2px solid var(--tile-line)}
+  .row{display:flex;align-items:baseline;gap:10px;padding:12px 2px;min-height:44px;border-bottom:1px solid #1A2130}
+  .row .k{font-family:var(--mono);font-size:.66rem;font-weight:700;letter-spacing:.16em;color:var(--faint);width:58px;flex-shrink:0}
+  .row .dots{flex:1;border-bottom:2px dotted #2A3348;transform:translateY(-4px)}
+  .row .v{font-family:var(--mono);font-size:1.02rem;font-weight:700}
+  .row.entry .v{color:var(--info)}
+  .row.sl .v{color:var(--short)}
+  .row.tp .v{color:var(--long)}
+  .row.px .v{color:var(--text);font-size:1.15rem}
+  .row .rr{font-family:var(--mono);font-size:.62rem;color:var(--faint)}
+
+  .cta{
+    margin-top:16px;width:100%;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:var(--gold);color:var(--gold-ink);
+    border:none;border-radius:9px;
+    font-family:var(--mono);font-weight:700;font-size:.85rem;letter-spacing:.1em;
+    padding:15px;min-height:52px;cursor:pointer;
+  }
+  .cta:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.62rem;color:var(--faint);letter-spacing:.06em}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold)}
+
+  nav{display:flex;border-top:1px solid #1A2130;background:rgba(9,11,15,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.1em;min-height:44px;border-radius:8px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold)}
+  nav a.active svg{stroke:var(--gold)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+  </header>
+
+  <main>
+    <div class="board-label">XAUUSD · 15M · DEPARTURES</div>
+    <div class="flaps" role="img" aria-label="Consensus verdict: LONG">
+      <span class="flap gold" style="animation-delay:.05s">L</span>
+      <span class="flap gold" style="animation-delay:.12s">O</span>
+      <span class="flap gold" style="animation-delay:.19s">N</span>
+      <span class="flap gold" style="animation-delay:.26s">G</span>
+    </div>
+    <div class="under-flap">
+      <span class="a"><b>4/5</b> sources agree</span>
+      <span class="s">STRONG · 82/100</span>
+    </div>
+
+    <div class="rows">
+      <div class="row px"><span class="k">PRICE</span><span class="dots"></span><span class="v">4,278.30</span></div>
+      <div class="row entry"><span class="k">ENTRY</span><span class="dots"></span><span class="v">4,275–80</span></div>
+      <div class="row sl"><span class="k">STOP</span><span class="dots"></span><span class="v">4,262</span></div>
+      <div class="row tp"><span class="k">TP1</span><span class="dots"></span><span class="v">4,295</span><span class="rr">1:1.5</span></div>
+      <div class="row tp"><span class="k">TP2</span><span class="dots"></span><span class="v">4,315</span><span class="rr">1:3.0</span></div>
+      <div class="row tp"><span class="k">TP3</span><span class="dots"></span><span class="v">4,340</span><span class="rr">1:4.1</span></div>
+    </div>
+
+    <button class="cta" type="button">VIEW FULL SETUP →</button>
+    <div class="micro">1H <span class="ok">SUPPORTIVE</span> · 5M <span class="wait">READY</span> · 14s AGO</div>
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>RADAR</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>SIGNAL</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>SOURCES</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>HISTORY</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12a8 8 0 0 1 16 0"/></svg>CONFIG</a>
+  </nav>
+</div>
+</body>
+</html>

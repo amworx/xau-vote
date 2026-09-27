@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 6C: Bento</title>
+<style>
+  /* ══════════ MOCKUP 6C: BENTO ══════════
+     Modular tile grid: varied-size rounded tiles, one per fact.
+     Motion: tiles settle in ONCE (staggered). No loops. */
+  :root{
+    --bg:#080B12;
+    --tile:#121828;
+    --tile-line:#1E2947;
+    --text:#EBF0FA;
+    --dim:#8E9FBE;
+    --faint:#5A6B8C;
+    --gold:#E3B23E;
+    --gold-bright:#F5CC60;
+    --long:#3BD09A;
+    --short:#E85D5D;
+    --info:#5E9BFF;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#04060B;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 12px}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+
+  main{flex:1;display:flex;flex-direction:column;padding:0 16px 12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .tile{
+    background:var(--tile);border:1px solid var(--tile-line);border-radius:20px;
+    padding:14px;min-height:44px;
+    animation:settle .5s cubic-bezier(.2,.9,.3,1) both;
+  }
+  @keyframes settle{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+  @media (prefers-reduced-motion:reduce){.tile{animation:none}}
+  .tile .h{font-size:.58rem;font-weight:700;letter-spacing:.18em;color:var(--faint);text-transform:uppercase}
+  .tile.wide{grid-column:span 2}
+  .tile.price .v{font-family:var(--mono);font-size:1.9rem;font-weight:700;margin-top:6px}
+  .tile.price .c{font-family:var(--mono);font-size:.72rem;color:var(--long);margin-left:10px}
+  .tile.price .t{font-size:.62rem;color:var(--faint);margin-top:4px;letter-spacing:.06em}
+  .tile.verdict{background:linear-gradient(150deg,#241C08,#141A29 65%);border-color:#4A3A14}
+  .tile.verdict .row{display:flex;align-items:center;gap:12px;margin-top:8px}
+  .tile.verdict svg{width:30px;height:30px;stroke:var(--gold-bright);flex-shrink:0}
+  .tile.verdict .w{font-size:1.9rem;font-weight:800;letter-spacing:.08em;color:var(--gold-bright)}
+  .tile.verdict .s{font-size:.68rem;color:var(--dim);margin-top:6px}
+  .tile.verdict .s b{color:var(--text);font-family:var(--mono)}
+  .tile.strength .v{font-size:1.05rem;font-weight:800;letter-spacing:.08em;color:var(--gold-bright);margin-top:8px}
+  .tile.strength .bar{height:6px;border-radius:3px;background:#232E4D;margin-top:10px;position:relative}
+  .tile.strength .bar i{position:absolute;top:0;left:0;bottom:0;width:82%;border-radius:3px;background:var(--gold)}
+  .tile.strength .n{font-family:var(--mono);font-size:.66rem;color:var(--dim);margin-top:8px}
+  .tile.srcs .dots{display:flex;gap:7px;margin-top:10px}
+  .tile.srcs .dots i{width:26px;height:26px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.62rem;font-weight:700;font-style:normal;background:rgba(59,208,154,.12);color:var(--long);border:1px solid rgba(59,208,154,.3)}
+  .tile.srcs .dots i.no{background:rgba(232,93,93,.1);color:var(--short);border-color:rgba(232,93,93,.3)}
+  .tile.srcs .n{font-size:.64rem;color:var(--dim);margin-top:10px}
+  .tile.srcs .n b{color:var(--text);font-family:var(--mono)}
+  .tile.lvl .v{font-family:var(--mono);font-size:1.05rem;font-weight:700;margin-top:8px}
+  .tile.lvl .s{font-size:.6rem;color:var(--faint);margin-top:4px;font-family:var(--mono)}
+  .tile.entry .v{color:var(--info)}
+  .tile.sl .v{color:var(--short)}
+  .tile.tp{grid-column:span 2}
+  .tile.tp .v{color:var(--long)}
+
+  .cta{
+    margin-top:12px;width:100%;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:linear-gradient(160deg,var(--gold-bright),var(--gold));color:#1C1503;
+    border:none;border-radius:16px;
+    font-weight:800;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;
+    padding:15px;min-height:52px;cursor:pointer;
+  }
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+  .micro{margin-top:10px;text-align:center;font-size:.62rem;color:var(--faint);letter-spacing:.06em}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold-bright)}
+
+  nav{display:flex;border-top:1px solid var(--tile-line);background:rgba(8,11,18,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-height:44px;border-radius:8px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active svg{stroke:var(--gold-bright)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+  </header>
+
+  <main>
+    <div class="grid">
+      <div class="tile wide price" style="animation-delay:.02s">
+        <div class="h">Gold · XAUUSD</div>
+        <div class="v">4,278.30<span class="c">+12.40</span></div>
+        <div class="t">21:47:12 · spread 0.35</div>
+      </div>
+      <div class="tile wide verdict" style="animation-delay:.08s" role="img" aria-label="LONG, 4 of 5 agree, strong 82">
+        <div class="h">15M Consensus</div>
+        <div class="row">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          <div class="w">LONG</div>
+        </div>
+        <div class="s"><b>4/5</b> sources agree · STRONG 82/100</div>
+      </div>
+      <div class="tile strength" style="animation-delay:.14s">
+        <div class="h">Strength</div>
+        <div class="v">STRONG</div>
+        <div class="bar"><i></i></div>
+        <div class="n">82 / 100</div>
+      </div>
+      <div class="tile srcs" style="animation-delay:.2s">
+        <div class="h">Sources</div>
+        <div class="dots" aria-hidden="true"><i>A</i><i>B</i><i>C</i><i>E</i><i class="no">D</i></div>
+        <div class="n"><b>4/5</b> agree</div>
+      </div>
+      <div class="tile lvl entry" style="animation-delay:.26s">
+        <div class="h">Entry</div>
+        <div class="v">4,275–80</div>
+        <div class="s">zone</div>
+      </div>
+      <div class="tile lvl sl" style="animation-delay:.3s">
+        <div class="h">Stop</div>
+        <div class="v">4,262</div>
+        <div class="s">−16 pts</div>
+      </div>
+      <div class="tile wide lvl tp" style="animation-delay:.34s">
+        <div class="h">Targets</div>
+        <div class="v">4,295 · 4,315 · 4,340</div>
+        <div class="s">TP1 + TP2 + TP3</div>
+      </div>
+    </div>
+
+    <button class="cta" type="button" style="animation-delay:.4s">View Full Setup
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+
+    <div class="micro">1H <span class="ok">SUPPORTIVE</span> · 5M <span class="wait">READY</span> · updated 14s ago</div>
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12a8 8 0 0 1 16 0"/></svg>Config</a>
+  </nav>
+</div>
+</body>
+</html>

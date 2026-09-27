@@ -119,3 +119,18 @@
 - **errors:** none
 - **lessons:** when the user rejects motion, remove ALL of it rather than softening — static confidence beats animated decoration for this audience
 - **tags:** ui, mockups, static
+
+---
+
+## EVT-20260926-0009
+
+- **id:** EVT-20260926-0009
+- **timestamp:** 2026-09-27T01:45:00+03:00
+- **mode:** BUILD (UI design iteration)
+- **action:** Fresh restart — five radically distinct mockups, no shared skeleton
+- **summary:** User judged all prior rounds non-unique. Fresh start, five compositions sharing ONLY data + spec rules: (6A) **Board** — split-flap departure board, flip-tile LONG, dot-leader level rows; (6B) **Rail** — asymmetric split, gold vertical LONG rail + content column with horizontal source tape; (6C) **Bento** — modular tile grid (price/verdict/strength/sources/levels tiles); (6D) **Brief** — analyst signal-feed thread with attachment card; (6E) **Press** — serif broadsheet with masthead, headline, two-column figures, desk byline. Zero dials/orbits/loops anywhere; only one-time entrance settles or fully static. DOM checks passed on all five (zero overflow, no sub-9px text, exact 844px fit). Note: chrome-devtools connection died before screenshots — no preview PNGs this round; HTML files opened directly in user browser instead.
+- **result:** success — awaiting user selection
+- **files:** docs/mockups/mockup-6A-board.html, mockup-6B-rail.html, mockup-6C-bento.html, mockup-6D-brief.html, mockup-6E-press.html
+- **errors:** devtools timeouts (screenshots + page mgmt) — worked around via Start-Process
+- **lessons:** keep browser page count low; devtools becomes unstable past ~8 pages — close stale pages aggressively
+- **tags:** ui, mockups, fresh-start
