@@ -134,3 +134,18 @@
 - **errors:** devtools timeouts (screenshots + page mgmt) — worked around via Start-Process
 - **lessons:** keep browser page count low; devtools becomes unstable past ~8 pages — close stale pages aggressively
 - **tags:** ui, mockups, fresh-start
+
+---
+
+## EVT-20260926-0010
+
+- **id:** EVT-20260926-0010
+- **timestamp:** 2026-09-27T02:00:00+03:00
+- **mode:** BUILD (UI design iteration)
+- **action:** Four Rail-based variants per user pick (6B best) + Material 3 alignment
+- **summary:** User picked 6B Rail, asked for more variants. Read mobile-android-design details (M3 nav rail pattern, 48dp targets, tonal surfaces) and built four rail layouts: (7A) **Rail Chart** — same left rail + chart-strip-first column; (7B) **Rail Ledger** — mirrored right rail + full TP1-3/R:R ledger; (7C) **Gauge Rail** — rail itself is the strength meter (82% gold fill + ticks + marker); (7D) **Slim Rail** — 76px M3-style rail (verdict pill + vertical meter) + card column. All static, zero dials/orbits/loops. Verified: zero overflow, no sub-9px text, exact 844px fit; previews visually reviewed. Nav targets bumped to 48px per M3.
+- **result:** success — awaiting user selection
+- **files:** docs/mockups/mockup-7A-rail-chart.html, mockup-7B-rail-ledger.html, mockup-7C-gauge-rail.html, mockup-7D-slim-rail.html, preview-7A/7B/7C/7D.png
+- **errors:** devtools screenshot flakiness (timeouts that still write files); fullPage stitching duplicated content — used viewport captures instead
+- **lessons:** prefer viewport screenshots over fullPage in this environment; verify file mtime+size after every timeout
+- **tags:** ui, mockups, rail-variants, material3

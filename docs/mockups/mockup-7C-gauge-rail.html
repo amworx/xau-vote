@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 7C: Gauge Rail</title>
+<style>
+  /* ══════════ MOCKUP 7C: GAUGE RAIL ══════════
+     Rail variant 3 — the rail IS the strength meter: a vertical
+     gauge filled to 82 with tick marks, verdict riding on it.
+     Fully static. */
+  :root{
+    --bg:#0A0C11;
+    --text:#EDF0F7;
+    --dim:#8E9CBB;
+    --faint:#5B6884;
+    --gold:#E5B93F;
+    --gold-bright:#F7D266;
+    --gold-ink:#231A05;
+    --long:#3BD09A;
+    --short:#E85D5D;
+    --info:#5E9BFF;
+    --card:#121826;
+    --line:#1D2742;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#04060B;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 10px}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .hdr{display:flex;align-items:center;gap:9px}
+  .hdr .p{font-family:var(--mono);font-size:1rem;font-weight:700}
+  .hdr .c{font-family:var(--mono);font-size:.64rem;font-weight:600;color:var(--long)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+
+  .split{flex:1;display:flex;min-height:0}
+  /* gauge rail */
+  .grail{
+    width:38%;flex-shrink:0;position:relative;
+    background:#141A29;
+    border-radius:0 18px 18px 0;
+    border:1px solid var(--line);border-left:none;
+    overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    padding:18px 0;
+  }
+  .gfill{
+    position:absolute;left:0;right:0;bottom:0;height:82%;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold) 60%,#C99A2E);
+  }
+  .ticks{
+    position:absolute;inset:0;
+    background:repeating-linear-gradient(180deg,transparent 0 22px,rgba(0,0,0,.28) 22px 24px);
+  }
+  .gmark{
+    position:absolute;left:0;right:0;top:18%;
+    border-top:2px dashed rgba(35,26,5,.55);
+  }
+  .gmark span{
+    position:absolute;right:6px;top:-9px;
+    font-family:var(--mono);font-size:.58rem;font-weight:700;color:var(--gold-ink);
+    background:rgba(255,255,255,.35);border-radius:4px;padding:1px 5px;
+  }
+  .grail .word{
+    position:relative;writing-mode:vertical-rl;transform:rotate(180deg);
+    font-size:2.5rem;font-weight:800;letter-spacing:.16em;line-height:1;color:var(--gold-ink);
+  }
+  .grail .pct{position:relative;font-family:var(--mono);font-size:1.25rem;font-weight:700;color:var(--gold-ink)}
+  .grail .cap{position:relative;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.18em;color:var(--gold-ink)}
+
+  .col{flex:1;display:flex;flex-direction:column;padding:2px 16px 12px 14px;min-width:0}
+  .lbl{font-size:.58rem;font-weight:700;letter-spacing:.2em;color:var(--faint)}
+  .agree{font-size:.78rem;color:var(--dim);margin-top:6px}
+  .agree b{color:var(--text);font-family:var(--mono)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center;min-height:48px}
+  .cell .k{font-size:.6rem;font-weight:700;letter-spacing:.14em;color:var(--faint)}
+  .cell .v{font-family:var(--mono);font-size:.88rem;font-weight:700;margin-top:5px}
+  .cell.entry .v{color:var(--info)}
+  .cell.sl .v{color:var(--short)}
+  .cell.tp{grid-column:span 2}
+  .cell.tp .v{color:var(--long)}
+  .cell .s{font-size:.6rem;color:var(--faint);margin-top:2px;font-family:var(--mono)}
+
+  .srcs{display:flex;gap:5px;margin-top:10px}
+  .srcs i{flex:1 1 0;font-style:normal;font-family:var(--mono);font-size:.6rem;font-weight:700;text-align:center;background:rgba(59,208,154,.1);color:var(--long);border:1px solid rgba(59,208,154,.3);border-radius:8px;padding:7px 0}
+  .srcs i.no{background:rgba(232,93,93,.1);color:var(--short);border-color:rgba(232,93,93,.3)}
+
+  .cta{
+    margin:12px 0 0;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:var(--gold);color:var(--gold-ink);
+    border:none;border-radius:12px;
+    font-weight:800;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;
+    padding:14px;min-height:52px;cursor:pointer;
+  }
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+  .micro{margin:7px 0 0;text-align:center;font-size:.58rem;color:var(--faint);letter-spacing:.06em}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold-bright)}
+
+  nav{display:flex;border-top:1px solid var(--line);background:rgba(9,11,17,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-height:48px;min-width:48px;border-radius:8px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active svg{stroke:var(--gold-bright)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <div class="hdr">
+      <span class="p">4,278.30</span><span class="c">+12.40</span>
+      <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+    </div>
+  </header>
+
+  <div class="split">
+    <div class="grail" role="img" aria-label="LONG, strength gauge filled to 82 of 100">
+      <div class="gfill"></div>
+      <div class="ticks"></div>
+      <div class="gmark"><span>82</span></div>
+      <div class="word">LONG</div>
+      <div class="pct">82</div>
+      <div class="cap">STRONG / 100</div>
+    </div>
+
+    <div class="col">
+      <div class="lbl">15M CONSENSUS</div>
+      <div class="agree"><b>4/5</b> desks agree</div>
+
+      <div class="grid2">
+        <div class="cell entry"><div class="k">Entry</div><div class="v">4,275–80</div><div class="s">zone</div></div>
+        <div class="cell sl"><div class="k">Stop</div><div class="v">4,262</div><div class="s">−16 pts</div></div>
+        <div class="cell tp"><div class="k">Targets</div><div class="v">4,295 +</div><div class="s">TP1 · TP2 · TP3</div></div>
+      </div>
+
+      <div class="srcs" role="img" aria-label="Sources A, B, C and E agree; D disagrees">
+        <i>A✓</i><i>B✓</i><i>C✓</i><i>E✓</i><i class="no">D✗</i>
+      </div>
+
+      <button class="cta" type="button">Full Setup →</button>
+      <div class="micro">1H <span class="ok">SUPP</span> · 5M <span class="wait">READY</span> · 14s</div>
+    </div>
+  </div>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12a8 8 0 0 1 16 0"/></svg>Config</a>
+  </nav>
+</div>
+</body>
+</html>

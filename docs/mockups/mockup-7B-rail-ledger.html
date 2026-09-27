@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 7B: Rail Ledger</title>
+<style>
+  /* ══════════ MOCKUP 7B: RAIL LEDGER ══════════
+     Rail variant 2 — mirrored: content ledger on the LEFT, gold
+     rail docked RIGHT. Full ledger with every TP + R:R.
+     Fully static. */
+  :root{
+    --bg:#0A0C11;
+    --text:#EDF0F7;
+    --dim:#8E9CBB;
+    --faint:#5B6884;
+    --gold:#E5B93F;
+    --gold-bright:#F7D266;
+    --gold-ink:#231A05;
+    --long:#3BD09A;
+    --short:#E85D5D;
+    --info:#5E9BFF;
+    --line:#1D2742;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#04060B;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 10px}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+
+  .split{flex:1;display:flex;min-height:0}
+  .col{flex:1;display:flex;flex-direction:column;padding:2px 14px 12px 20px;min-width:0}
+  .price .p{font-family:var(--mono);font-size:1.65rem;font-weight:700}
+  .price .c{font-family:var(--mono);font-size:.7rem;color:var(--long);margin-left:8px}
+  .price .t{font-size:.6rem;color:var(--faint);margin-top:3px;letter-spacing:.1em}
+
+  .ledger{margin-top:14px;border-top:2px solid var(--line)}
+  .lrow{display:flex;align-items:baseline;gap:8px;padding:11px 0;min-height:44px;border-bottom:1px solid var(--line)}
+  .lrow .k{font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.14em;color:var(--faint);width:44px;flex-shrink:0}
+  .lrow .v{font-family:var(--mono);font-size:.98rem;font-weight:700;flex:1;text-align:right}
+  .lrow .rr{font-family:var(--mono);font-size:.6rem;color:var(--faint);width:44px;flex-shrink:0;text-align:right}
+  .lrow.entry .v{color:var(--info)}
+  .lrow.sl .v{color:var(--short)}
+  .lrow.tp .v{color:var(--long)}
+
+  .srcnote{margin-top:12px;font-family:var(--mono);font-size:.64rem;color:var(--dim);letter-spacing:.04em}
+  .srcnote .y{color:var(--long)}
+  .srcnote .n{color:var(--short)}
+
+  .cta{
+    margin:14px 0 0;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:transparent;color:var(--gold-bright);
+    border:1px solid var(--gold);border-radius:12px;
+    font-weight:800;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;
+    padding:14px;min-height:52px;cursor:pointer;
+  }
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+  .micro{margin:9px 0 0;font-size:.58rem;color:var(--faint);letter-spacing:.06em}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold-bright)}
+
+  .rail{
+    width:30%;flex-shrink:0;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold) 55%,#C99A2E);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    border-radius:18px 0 0 18px;
+    color:var(--gold-ink);
+    padding:18px 0;
+  }
+  .rail svg{width:28px;height:28px;stroke:var(--gold-ink)}
+  .rail .word{writing-mode:vertical-rl;transform:rotate(180deg);font-size:2.6rem;font-weight:800;letter-spacing:.18em;line-height:1}
+  .rail .tf{font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.2em}
+  .rail .str{font-family:var(--mono);font-size:.6rem;font-weight:700;background:rgba(0,0,0,.2);border-radius:6px;padding:4px 8px}
+
+  nav{display:flex;border-top:1px solid var(--line);background:rgba(9,11,17,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-height:48px;min-width:48px;border-radius:8px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active svg{stroke:var(--gold-bright)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+  </header>
+
+  <div class="split">
+    <div class="col">
+      <div class="price">
+        <span class="p">4,278.30</span><span class="c">+12.40</span>
+        <div class="t">GOLD · XAUUSD · 15M</div>
+      </div>
+
+      <div class="ledger">
+        <div class="lrow entry"><span class="k">ENTRY</span><span class="v">4,275–80</span><span class="rr">zone</span></div>
+        <div class="lrow sl"><span class="k">STOP</span><span class="v">4,262</span><span class="rr">−16</span></div>
+        <div class="lrow tp"><span class="k">TP1</span><span class="v">4,295</span><span class="rr">1:1.5</span></div>
+        <div class="lrow tp"><span class="k">TP2</span><span class="v">4,315</span><span class="rr">1:3.0</span></div>
+        <div class="lrow tp"><span class="k">TP3</span><span class="v">4,340</span><span class="rr">1:4.1</span></div>
+      </div>
+
+      <div class="srcnote"><span class="y">A✓ B✓ C✓ E✓</span> · <span class="n">D✗</span> · STRONG 82/100</div>
+
+      <button class="cta" type="button">Full Setup →</button>
+      <div class="micro">1H <span class="ok">SUPP</span> · 5M <span class="wait">READY</span> · 14s</div>
+    </div>
+
+    <div class="rail" role="img" aria-label="Verdict: LONG, strong 82 of 100">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      <div class="word">LONG</div>
+      <div class="tf">15M</div>
+      <div class="str">82/100</div>
+    </div>
+  </div>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12a8 8 0 0 1 16 0"/></svg>Config</a>
+  </nav>
+</div>
+</body>
+</html>
