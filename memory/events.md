@@ -89,3 +89,18 @@
 - **errors:** two visual defects caught in screenshot review and fixed (notch placement, chart range)
 - **lessons:** screenshot review catches what DOM checks cannot (notch position, data-range aesthetics) — always visually inspect canvas/data-driven mockups, never rely on rect checks alone
 - **tags:** ui, mockups, distinct-layouts
+
+---
+
+## EVT-20260926-0007
+
+- **id:** EVT-20260926-0007
+- **timestamp:** 2026-09-27T01:00:00+03:00
+- **mode:** BUILD (UI design iteration)
+- **action:** Generate three Orbit×Chart fusion mockups (Ticket refused)
+- **summary:** User refused 3B Ticket; requested three new mockups combining 3A Orbit + 3C Chart. Built: (4A) **Scope** — orbit dial floating over a live full-bleed price-terrain canvas; (4B) **Halo** — 3C chart+sheet layout with the verdict pill replaced by a mini orbit dial (arc + revolving blips) overlapping the boundary; (4C) **Cockpit** — dual instruments: compact orbit dial over a live chart strip carrying the same levels, numbers row below, fits exactly one 844px screen. Verified: zero overflow, no sub-9px text, no JS errors; screenshots reviewed. Fixed: 4C preview timing (added progress probe, captured full draw).
+- **result:** success — awaiting user selection
+- **files:** docs/mockups/mockup-4A-scope.html, mockup-4B-halo.html, mockup-4C-cockpit.html, preview-4A/4B/4C.png
+- **errors:** none in code; preview timing issue handled via progress probe
+- **lessons:** looping canvas animations need a test hook (progress flag) for deterministic screenshot capture
+- **tags:** ui, mockups, fusion
