@@ -5,17 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>XAU Radar — Mockup 8B: Blueprint</title>
 <style>
-  /* ══════════ MOCKUP 8B: BLUEPRINT ══════════
-     Engineering-drawing composition: grid sheet, crosshairs,
-     title block, spec table, approval stamp CTA. Static. */
+  /* ══════════ MOCKUP 8B: BLUEPRINT (r2) ══════════
+     Clarity pass + working TimeFrame switcher (5M / 15M / 1H).
+     Each TF renders its own prediction; 1H is context-only
+     (bias, no entry/SL) per product spec. */
   :root{
     --bg:#0C1A2E;
-    --paper:#0E2038;
     --ink:#DCE8F7;
-    --dim:#7E97B8;
-    --faint:#48617E;
+    --dim:#8AA2C0;
+    --faint:#5A7396;
     --line:#2B4A73;
     --gold:#E8C35A;
+    --gold-ink:#2A2008;
     --long:#4ADE9E;
     --short:#F0716F;
     --info:#7DB4FF;
@@ -43,47 +44,78 @@
   .live i{width:7px;height:7px;background:var(--long)}
   main{flex:1;display:flex;flex-direction:column;padding:8px 22px 12px}
   .dwg{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--faint)}
+
+  /* ── TF switcher ── */
+  .tfswitch{
+    display:flex;gap:0;margin-top:10px;
+    border:1px solid var(--line);border-radius:8px;overflow:hidden;
+  }
+  .tfswitch button{
+    flex:1;background:transparent;border:none;color:var(--dim);
+    font-family:var(--mono);font-weight:700;font-size:.78rem;letter-spacing:.1em;
+    padding:13px 0;min-height:48px;cursor:pointer;
+    border-left:1px solid var(--line);
+    transition:background .15s ease,color .15s ease;
+  }
+  .tfswitch button:first-child{border-left:none}
+  .tfswitch button .sub{display:block;font-size:.54rem;font-weight:400;letter-spacing:.14em;color:var(--faint);margin-top:2px}
+  .tfswitch button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink)}
+  .tfswitch button[aria-pressed="true"] .sub{color:rgba(42,32,8,.7)}
+  .tfswitch button:focus-visible{outline:2px solid #fff;outline-offset:-2px}
+
   /* crosshair verdict */
-  .sheet{position:relative;border:1px solid var(--line);margin-top:10px;padding:26px 18px 20px}
-  .sheet .cross{position:absolute;top:50%;left:0;right:0;height:1px;background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 16px);opacity:.6}
+  .sheet{position:relative;border:1px solid var(--line);margin-top:12px;padding:24px 18px 20px;background:rgba(10,22,38,.55)}
+  .sheet .cross{position:absolute;top:50%;left:0;right:0;height:1px;background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 16px);opacity:.55}
   .sheet .cross.v{top:0;bottom:0;left:50%;right:auto;width:1px;background:repeating-linear-gradient(180deg,var(--line) 0 8px,transparent 8px 16px)}
   .sheet .corner{position:absolute;width:14px;height:14px;border:1.5px solid var(--gold)}
   .sheet .c1{top:-1px;left:-1px;border-right:none;border-bottom:none}
   .sheet .c2{top:-1px;right:-1px;border-left:none;border-bottom:none}
   .sheet .c3{bottom:-1px;left:-1px;border-right:none;border-top:none}
   .sheet .c4{bottom:-1px;right:-1px;border-left:none;border-top:none}
-  .sheet .dir{position:relative;text-align:center;font-family:var(--mono);font-size:3rem;font-weight:700;letter-spacing:.14em;color:var(--long)}
-  .sheet .sub{position:relative;text-align:center;font-family:var(--mono);font-size:.68rem;color:var(--dim);margin-top:8px}
+  .sheet .dir{position:relative;text-align:center;font-family:var(--mono);font-size:3.2rem;font-weight:700;letter-spacing:.12em;line-height:1.05}
+  .sheet .dir.long{color:var(--long)}
+  .sheet .dir.short{color:var(--short)}
+  .sheet .dir.bias{color:var(--gold)}
+  .sheet .sub{position:relative;text-align:center;font-family:var(--mono);font-size:.7rem;color:var(--dim);margin-top:10px;letter-spacing:.06em}
   .sheet .sub b{color:var(--ink)}
+  .sheet .ctxflag{position:relative;text-align:center;font-family:var(--mono);font-size:.58rem;letter-spacing:.22em;color:var(--gold);margin-top:8px}
+
   /* spec table */
-  .spec{margin-top:14px;border:1px solid var(--line);font-family:var(--mono)}
-  .spec .sr{display:flex;justify-content:space-between;padding:11px 14px;min-height:44px;font-size:.82rem}
+  .spec{margin-top:12px;border:1px solid var(--line);font-family:var(--mono);background:rgba(10,22,38,.55)}
+  .spec .sr{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;min-height:48px;font-size:.82rem}
   .spec .sr + .sr{border-top:1px solid var(--line)}
   .spec .k{color:var(--faint);font-size:.64rem;letter-spacing:.14em}
-  .spec .v{font-weight:700}
   .spec .rv{display:flex;flex-direction:column;align-items:flex-end}
+  .spec .v{font-weight:700;font-size:1.02rem}
   .spec .pp{font-size:.58rem;letter-spacing:.1em;color:var(--faint);margin-top:3px}
-  .pstrip{display:flex;justify-content:space-between;align-items:center;margin-top:14px;border:1px solid var(--line);padding:11px 14px;min-height:48px;font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;color:var(--dim)}
-  .pstrip b{color:var(--long);font-size:.72rem}
-  .share-row{display:flex;gap:10px;margin-top:10px}
-  .ghost{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:4px;font-family:var(--mono);font-weight:700;font-size:.7rem;letter-spacing:.1em;padding:13px;min-height:48px;cursor:pointer}
-  .ghost svg{width:15px;height:15px;flex-shrink:0}
-  .ghost:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   .spec .entry .v{color:var(--info)}
   .spec .sl .v{color:var(--short)}
   .spec .tp .v{color:var(--long)}
   /* title block */
   .tblock{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--line);border-top:none;font-family:var(--mono)}
-  .tblock div{padding:8px 10px;font-size:.6rem;color:var(--dim);letter-spacing:.08em}
+  .tblock div{padding:9px 10px;font-size:.6rem;color:var(--dim);letter-spacing:.08em}
   .tblock div + div{border-left:1px solid var(--line)}
-  .tblock b{display:block;color:var(--ink);font-size:.72rem;margin-top:2px;letter-spacing:0}
+  .tblock b{display:block;color:var(--ink);font-size:.74rem;margin-top:3px;letter-spacing:0}
+  .tblock b.g{color:var(--long)}
+  .tblock b.r{color:var(--short)}
+  .tblock b.y{color:var(--gold)}
+
+  .pstrip{display:flex;justify-content:space-between;align-items:center;margin-top:12px;border:1px solid var(--line);padding:12px 14px;min-height:48px;font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;color:var(--dim);background:rgba(10,22,38,.55)}
+  .pstrip b{font-size:.72rem}
+  .pstrip b.g{color:var(--long)}
+  .pstrip b.y{color:var(--gold)}
+
   .cta{
-    margin-top:14px;width:100%;background:transparent;color:var(--gold);
-    border:2px solid var(--gold);border-radius:4px;
-    font-family:var(--mono);font-weight:700;font-size:.85rem;letter-spacing:.16em;
+    margin-top:12px;width:100%;background:var(--gold);color:var(--gold-ink);
+    border:none;border-radius:4px;
+    font-family:var(--mono);font-weight:700;font-size:.85rem;letter-spacing:.14em;
     padding:15px;min-height:54px;cursor:pointer;
   }
   .cta:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .share-row{display:flex;gap:10px;margin-top:10px}
+  .ghost{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:4px;font-family:var(--mono);font-weight:700;font-size:.7rem;letter-spacing:.1em;padding:13px;min-height:48px;cursor:pointer}
+  .ghost svg{width:15px;height:15px;flex-shrink:0}
+  .ghost:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--faint)}
   .micro .ok{color:var(--long)}
   .micro .wait{color:var(--gold)}
@@ -102,30 +134,37 @@
     <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
   </span></div>
   <header>
-    <div class="brand"><div class="name">XAU<span>RADAR</span> · DWG-15M-01</div></div>
+    <div class="brand"><div class="name">XAU<span>RADAR</span> · <span id="dwgTf">DWG-15M-01</span></div></div>
     <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>REV C</span>
   </header>
   <main>
-    <div class="dwg">FIG.1 — CONSENSUS ASSEMBLY · SCALE 15M · Au</div>
-    <div class="sheet" role="img" aria-label="Verdict LONG, 4 of 5 agree">
+    <div class="dwg" id="figLabel">FIG.1 — CONSENSUS ASSEMBLY · SCALE 15M · Au</div>
+
+    <div class="tfswitch" role="group" aria-label="Select timeframe">
+      <button type="button" data-tf="5M" aria-pressed="false">5M<span class="sub">CONFIRM</span></button>
+      <button type="button" data-tf="15M" aria-pressed="true">15M<span class="sub">SIGNAL</span></button>
+      <button type="button" data-tf="1H" aria-pressed="false">1H<span class="sub">CONTEXT</span></button>
+    </div>
+
+    <div class="sheet" role="img" aria-label="Verdict" id="sheetBox">
       <i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i>
       <div class="cross"></div><div class="cross v"></div>
-      <div class="dir">LONG ↑</div>
-      <div class="sub"><b>4/5</b> AGREE · TOL ±5 PTS</div>
+      <div class="dir long" id="verdict">LONG ↑</div>
+      <div class="sub" id="verdictSub"><b>4/5</b> AGREE · TOL ±5 PTS</div>
+      <div class="ctxflag" id="ctxFlag" hidden>CONTEXT ONLY — NOT A TRADE SIGNAL</div>
     </div>
-    <div class="spec">
-      <div class="sr px"><span class="k">DATUM / PRICE</span><span class="v">4,278.30</span></div>
-      <div class="sr entry"><span class="k">ENTRY ZONE</span><span class="rv"><span class="v">4,275 – 4,280</span><span class="pp">50-PIP ZONE</span></span></div>
-      <div class="sr sl"><span class="k">LIMIT / STOP</span><span class="rv"><span class="v">4,262</span><span class="pp">−160 PIPS</span></span></div>
-      <div class="sr tp"><span class="k">TARGETS ×3</span><span class="rv"><span class="v">4,295 +</span><span class="pp">+170 – +620 PIPS</span></span></div>
-    </div>
+
+    <div class="spec" id="specRows"></div>
+
     <div class="tblock">
-      <div>STRENGTH<b>STRONG · 82</b></div>
-      <div>CONTEXT<b>1H SUPP</b></div>
-      <div>CONFIRM<b>5M READY</b></div>
+      <div>STRENGTH<b id="mStrength" class="g">STRONG · 82</b></div>
+      <div>CONTEXT<b id="mContext">1H SUPP</b></div>
+      <div>CONFIRM<b id="mConfirm">5M READY</b></div>
     </div>
-    <button class="cta" type="button">APPROVED — OPEN SIGNAL ⧉</button>
-    <div class="pstrip"><span>POSITION STATUS</span><b>● IN-PROFIT +3 PIPS</b></div>
+
+    <div class="pstrip"><span id="pstripLabel">POSITION STATUS</span><b id="pstripVal" class="g">● IN-PROFIT +3 PIPS</b></div>
+
+    <button class="cta" type="button" id="ctaBtn">APPROVED — OPEN SIGNAL ⧉</button>
     <div class="share-row">
       <button class="ghost" id="copyBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
       <button class="ghost" id="shareBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>Share</button>
@@ -140,11 +179,100 @@
     <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>CONFIG</a>
   </nav>
 </div>
+
 <script>
 (function(){
-  var TEXT = 'XAUUSD 15M — LONG\nEntry 4,275–4,280\nSL 4,262 (−160 pips)\nTP1 4,295 (+170) · TP2 4,315 (+370) · TP3 4,340 (+620)\nConsensus STRONG 82/100 · 4/5 agree\n— via XAU Radar';
-  var copyBtn = document.getElementById('copyBtn');
-  var shareBtn = document.getElementById('shareBtn');
+  /* Per-timeframe predictions. 1H is context-only (bias, no entry/SL). */
+  var DATA = {
+    '15M': {
+      dwg: 'DWG-15M-01', fig: 'FIG.1 — CONSENSUS ASSEMBLY · SCALE 15M · Au',
+      verdict: 'LONG ↑', vclass: 'long', sub: '<b>4/5</b> AGREE · TOL ±5 PTS',
+      ctxOnly: false,
+      rows: [
+        { k: 'DATUM / PRICE', v: '4,278.30', pp: '', cls: '' },
+        { k: 'ENTRY ZONE', v: '4,275 – 4,280', pp: '50-PIP ZONE', cls: 'entry' },
+        { k: 'LIMIT / STOP', v: '4,262', pp: '−160 PIPS', cls: 'sl' },
+        { k: 'TARGETS ×3', v: '4,295 +', pp: '+170 – +620 PIPS', cls: 'tp' }
+      ],
+      strength: ['STRONG · 82', 'g'], context: '1H SUPP', confirm: '5M READY',
+      pstrip: ['POSITION STATUS', '● IN-PROFIT +3 PIPS', 'g'],
+      cta: 'APPROVED — OPEN SIGNAL ⧉', ctaGoto: null,
+      copy: 'XAUUSD 15M — LONG\nEntry 4,275–4,280\nSL 4,262 (−160 pips)\nTP1 4,295 (+170) · TP2 4,315 (+370) · TP3 4,340 (+620)\nConsensus STRONG 82/100 · 4/5 agree\n— via XAU Radar'
+    },
+    '5M': {
+      dwg: 'DWG-5M-02', fig: 'FIG.2 — CONFIRMATION DETAIL · SCALE 5M · Au',
+      verdict: 'SHORT ↓', vclass: 'short', sub: '<b>3/5</b> AGREE · TOL ±3 PTS',
+      ctxOnly: false,
+      rows: [
+        { k: 'DATUM / PRICE', v: '4,278.30', pp: '', cls: '' },
+        { k: 'ENTRY ZONE', v: '4,279 – 4,282', pp: '30-PIP ZONE', cls: 'entry' },
+        { k: 'LIMIT / STOP', v: '4,289', pp: '−80 PIPS', cls: 'sl' },
+        { k: 'TARGETS ×3', v: '4,268 +', pp: '+130 – +290 PIPS', cls: 'tp' }
+      ],
+      strength: ['MODERATE · 64', 'y'], context: '15M LONG', confirm: 'WATCHING',
+      pstrip: ['POSITION STATUS', '● IN-PROFIT +27 PIPS', 'g'],
+      cta: 'APPROVED — OPEN SIGNAL ⧉', ctaGoto: null,
+      copy: 'XAUUSD 5M — SHORT\nEntry 4,279–4,282\nSL 4,289 (−80 pips)\nTP1 4,268 (+130) · TP2 4,260 (+210) · TP3 4,252 (+290)\nConsensus MODERATE 64/100 · 3/5 agree\n— via XAU Radar'
+    },
+    '1H': {
+      dwg: 'DWG-1H-03', fig: 'FIG.3 — TREND CONTEXT · SCALE 1H · Au',
+      verdict: 'BULLISH', vclass: 'bias', sub: '<b>4/5</b> DESKS ALIGNED',
+      ctxOnly: true,
+      rows: [
+        { k: 'DATUM / PRICE', v: '4,278.30', pp: '', cls: '' },
+        { k: 'SUPPORT', v: '4,255', pp: '−233 PIPS', cls: 'sl' },
+        { k: 'RESISTANCE', v: '4,315', pp: '+367 PIPS', cls: 'tp' },
+        { k: 'TREND LINE', v: 'RISING', pp: 'HIGHER HIGHS', cls: 'entry' }
+      ],
+      strength: ['STRONG · 76', 'y'], context: '—', confirm: '—',
+      pstrip: ['TREND STATUS', '● BULLISH · NO ENTRY SIGNAL', 'y'],
+      cta: 'VIEW 15M SETUP →', ctaGoto: '15M',
+      copy: 'XAUUSD 1H — BULLISH bias (context only)\nSupport 4,255 (−233 pips) · Resistance 4,315 (+367 pips)\nTrend STRONG 76/100 · 4/5 desks aligned\n— via XAU Radar'
+    }
+  };
+  var current = '15M';
+  var $ = function(id){ return document.getElementById(id); };
+  var specRows = $('specRows'), verdict = $('verdict'), verdictSub = $('verdictSub'),
+      ctxFlag = $('ctxFlag'), mStrength = $('mStrength'), mContext = $('mContext'),
+      mConfirm = $('mConfirm'), pstripLabel = $('pstripLabel'), pstripVal = $('pstripVal'),
+      ctaBtn = $('ctaBtn'), dwgTf = $('dwgTf'), figLabel = $('figLabel');
+
+  function render(tf){
+    current = tf;
+    var d = DATA[tf];
+    document.querySelectorAll('.tfswitch button').forEach(function(b){
+      b.setAttribute('aria-pressed', b.dataset.tf === tf ? 'true' : 'false');
+    });
+    dwgTf.textContent = d.dwg;
+    figLabel.textContent = d.fig;
+    verdict.textContent = d.verdict;
+    verdict.className = 'dir ' + d.vclass;
+    verdictSub.innerHTML = d.sub;
+    ctxFlag.hidden = !d.ctxOnly;
+    specRows.innerHTML = d.rows.map(function(r){
+      return '<div class="sr ' + r.cls + '"><span class="k">' + r.k + '</span>' +
+        '<span class="rv"><span class="v">' + r.v + '</span>' +
+        (r.pp ? '<span class="pp">' + r.pp + '</span>' : '') + '</span></div>';
+    }).join('');
+    mStrength.textContent = d.strength[0];
+    mStrength.className = d.strength[1];
+    mContext.textContent = d.context;
+    mConfirm.textContent = d.confirm;
+    pstripLabel.textContent = d.pstrip[0];
+    pstripVal.textContent = d.pstrip[1];
+    pstripVal.className = d.pstrip[2];
+    ctaBtn.textContent = d.cta;
+  }
+  document.querySelectorAll('.tfswitch button').forEach(function(b){
+    b.addEventListener('click', function(){ render(b.dataset.tf); });
+  });
+  ctaBtn.addEventListener('click', function(){
+    var d = DATA[current];
+    if (d.ctaGoto){ render(d.ctaGoto); }
+  });
+
+  /* Copy / Share (per-TF text) */
+  var copyBtn = $('copyBtn'), shareBtn = $('shareBtn');
   function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
   function copyText(t, ok){
     function fallback(){
@@ -157,11 +285,13 @@
     if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
     else { fallback(); }
   }
-  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  copyBtn.addEventListener('click', function(){ copyText(DATA[current].copy, function(){ flash(copyBtn, 'Copied ✓'); }); });
   shareBtn.addEventListener('click', function(){
-    if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
-    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+    if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: DATA[current].copy }).catch(function(){}); }
+    else { copyText(DATA[current].copy, function(){ flash(shareBtn, 'Copied ✓'); }); }
   });
+
+  render('15M');
 })();
 </script>
 </body>

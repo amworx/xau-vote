@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Splash Screen</title>
+<!--
+  Candle loader adapted from "Candle Loader" by Bilal Bostan (bilal_9731),
+  https://uiverse.io/bilal_9731/new-moose-50 — MIT License, Copyright 2026.
+  Recolored from white to XAU Radar gold; choreography unchanged.
+-->
+<style>
+  :root{
+    --bg:#0C1A2E;
+    --ink:#DCE8F7;
+    --dim:#8AA2C0;
+    --faint:#5A7396;
+    --line:#2B4A73;
+    --gold:#E8C35A;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#050B16;color:var(--ink);
+    display:flex;justify-content:center;min-height:100vh;
+  }
+  .phone{
+    width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;
+    background-image:linear-gradient(rgba(125,180,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(125,180,255,.06) 1px,transparent 1px);
+    background-size:22px 22px;
+  }
+  .brand{font-family:var(--mono);font-size:1rem;font-weight:700;letter-spacing:.3em}
+  .brand span{color:var(--gold)}
+  .sub{font-family:var(--mono);font-size:.6rem;letter-spacing:.34em;color:var(--faint);margin-top:10px}
+
+  /* ── Candle Loader (bilal_9731, MIT — recolored gold) ── */
+  .candle-wrapper{
+    display:flex;justify-content:center;
+    padding:34px 20px 10px;
+    background:#00000000;
+  }
+  .candle-chart{
+    display:flex;align-items:flex-end;
+    height:96px;
+    gap:5px;
+  }
+  .candle{
+    width:7px;height:110%;position:relative;
+    animation:fade 2.6s infinite ease-in-out;
+    filter:drop-shadow(0 0 3px var(--gold));
+  }
+  .candle::after{
+    content:"";position:absolute;left:0;width:100%;
+    background:var(--gold);border:1px solid var(--gold);
+    bottom:var(--b);height:var(--h);
+  }
+  .candle::before{
+    content:"";position:absolute;left:63%;transform:translateX(-50%);width:1px;
+    background:var(--gold);
+    bottom:var(--wb);height:var(--wh);
+  }
+  .candle:nth-child(1){--b:7.1%;--h:18.93%;--wb:0%;--wh:31.95%;animation-delay:0s}
+  .candle:nth-child(2){--b:26.04%;--h:2.37%;--wb:19.41%;--wh:14.91%;animation-delay:.065s}
+  .candle:nth-child(3){--b:28.64%;--h:4.5%;--wb:16.92%;--wh:21.66%;animation-delay:.13s}
+  .candle:nth-child(4){--b:31.42%;--h:3.43%;--wb:19.76%;--wh:27.93%;animation-delay:.195s}
+  .candle:nth-child(5){--b:31.42%;--h:15.44%;--wb:27.43%;--wh:28.07%;animation-delay:.26s}
+  .candle:nth-child(6){--b:46.54%;--h:.28%;--wb:43.43%;--wh:24.38%;animation-delay:.325s}
+  .candle:nth-child(7){--b:35.86%;--h:8.7%;--wb:29.7%;--wh:24.5%;animation-delay:.39s}
+  .candle:nth-child(8){--b:11.67%;--h:24.19%;--wb:5.33%;--wh:31.83%;animation-delay:.455s}
+  .candle:nth-child(9){--b:11.83%;--h:15.1%;--wb:7.93%;--wh:24.97%;animation-delay:.52s}
+  .candle:nth-child(10){--b:27.81%;--h:12.04%;--wb:27.69%;--wh:28.17%;animation-delay:.585s}
+  .candle:nth-child(11){--b:39.85%;--h:28.25%;--wb:39.53%;--wh:28.58%;animation-delay:.65s}
+  .candle:nth-child(12){--b:70.8%;--h:6.27%;--wb:60.96%;--wh:24.84%;animation-delay:.715s}
+  .candle:nth-child(13){--b:75.8%;--h:2.71%;--wb:68.38%;--wh:31.62%;animation-delay:.78s}
+  .candle:nth-child(14){--b:67.23%;--h:8.71%;--wb:64.8%;--wh:24.97%;animation-delay:.845s}
+  .candle:nth-child(15){--b:67.81%;--h:7.85%;--wb:57.54%;--wh:27.55%;animation-delay:.91s}
+  .candle:nth-child(16){--b:70.08%;--h:6.14%;--wb:55.68%;--wh:21.83%;animation-delay:.975s}
+  .candle:nth-child(17){--b:66.39%;--h:3.69%;--wb:58.11%;--wh:26.11%;animation-delay:1.04s}
+  .candle:nth-child(18){--b:64.8%;--h:9.78%;--wb:45.47%;--wh:29.61%;animation-delay:1.105s}
+  @keyframes fade{
+    0%{opacity:0;transform:scaleY(0)}
+    10%{opacity:1;transform:scaleY(1.5)}
+    50%{opacity:1;transform:scaleY(1.35)}
+    70%{opacity:0;transform:scaleY(1.5)}
+    100%{opacity:0;transform:scaleY(0)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .candle{animation:none;opacity:1;transform:none}
+  }
+
+  .caption{
+    font-family:var(--mono);font-size:.64rem;letter-spacing:.26em;color:var(--dim);
+    margin-top:18px;min-height:20px;
+  }
+  .foot{
+    position:absolute;bottom:calc(26px + env(safe-area-inset-bottom));
+    font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;color:var(--faint);text-align:center;
+  }
+  .foot a{color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="brand">XAU <span>RADAR</span></div>
+  <div class="sub">GOLD · XAUUSD · 15M</div>
+
+  <div class="candle-wrapper" role="img" aria-label="Loading market data">
+    <div class="candle-chart" aria-hidden="true">
+      <div class="candle"></div><div class="candle"></div><div class="candle"></div>
+      <div class="candle"></div><div class="candle"></div><div class="candle"></div>
+      <div class="candle"></div><div class="candle"></div><div class="candle"></div>
+      <div class="candle"></div><div class="candle"></div><div class="candle"></div>
+      <div class="candle"></div><div class="candle"></div><div class="candle"></div>
+      <div class="candle"></div><div class="candle"></div><div class="candle"></div>
+    </div>
+  </div>
+
+  <div class="caption" id="caption" role="status">CONNECTING FEED…</div>
+
+  <div class="foot">LOADER © 2026 BILAL BOSTAN · MIT<br>XAU RADAR · DWG-SPLASH-01</div>
+</div>
+
+<script>
+(function(){
+  var el = document.getElementById('caption');
+  var steps = ['CONNECTING FEED…', 'READING DESKS…', 'BUILDING CONSENSUS…'];
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches){ el.textContent = steps[0]; return; }
+  var i = 0;
+  setInterval(function(){
+    i = (i + 1) % steps.length;
+    el.textContent = steps[i];
+  }, 1400);
+})();
+</script>
+</body>
+</html>
