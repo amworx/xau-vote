@@ -182,6 +182,21 @@
 
 ---
 
+## EVT-20260927-0014
+
+- **id:** EVT-20260927-0014
+- **timestamp:** 2026-09-27T03:30:00+03:00
+- **mode:** BUILD (UI design)
+- **action:** Complete Blueprint screen set (Signal, Sources, History, Settings, Events)
+- **summary:** User ordered mockup completion before anything else. Built 5 remaining screens in Blueprint language, same 15M LONG fixture throughout: Signal (lifecycle timeline, full TP1-3 + pips + R:R, context badges, working TP selector, copy/share wiring), Sources (5 desk cards with levels/age/reasoning/View Original, independence note), History (stat tiles incl. net pips, 5-row log with outcome pills + pip P&L), Settings (timeframes display, TP radios, signal + event notification toggles incl. always-on invalidation, blackout config), Events (Upcoming/Results/News tabs, JS-tested; blackout + surprise + backdrop content). Verified: zero overflow, no sub-9px text, tabs/TP-selector/copy click-tested, previews reviewed.
+- **result:** success — full 7-piece set (Radar, Signal, Sources, History, Settings, Events + Splash) now exists
+- **files:** docs/mockups/screen-2..6-*.html + previews
+- **errors:** devtools screenshot flakiness again (retry-with-file-check pattern held up)
+- **lessons:** fixture consistency across screens (same signal #A482 everywhere) makes the set feel like one app, not six mockups
+- **tags:** ui, mockups, full-set, blueprint
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013
