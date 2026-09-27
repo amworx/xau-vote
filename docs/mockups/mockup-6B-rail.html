@@ -68,18 +68,16 @@
   .price .t{font-size:.62rem;color:var(--faint);margin-top:3px;letter-spacing:.08em}
 
   .tape-label{font-size:.58rem;font-weight:700;letter-spacing:.2em;color:var(--faint);margin:14px 0 8px}
-  .tape{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
-  .tape::-webkit-scrollbar{display:none}
+  .tape{display:flex;gap:6px}
   .tcard{
-    flex:0 0 64px;background:var(--card);border:1px solid var(--line);border-radius:12px;
-    padding:10px 4px;text-align:center;
+    flex:1 1 0;background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:9px 2px;text-align:center;min-width:0;
     animation:slidein .5s cubic-bezier(.2,.9,.3,1) both;
   }
   .tcard .l{font-family:var(--mono);font-size:.62rem;font-weight:700;color:var(--dim)}
-  .tcard .d{font-size:.66rem;font-weight:800;margin-top:4px}
-  .tcard .m{font-size:.72rem;font-weight:700;margin-top:2px}
-  .tcard.yes .d{color:var(--long)}
-  .tcard.no .d{color:var(--short)}
+  .tcard .m{font-size:.95rem;font-weight:700;margin-top:3px}
+  .tcard.yes .m{color:var(--long)}
+  .tcard.no .m{color:var(--short)}
   .tcard.no{border-color:rgba(232,93,93,.4)}
   @keyframes slidein{from{transform:translateX(22px);opacity:0}to{transform:none;opacity:1}}
   @media (prefers-reduced-motion:reduce){.tcard{animation:none}}
@@ -140,12 +138,12 @@
       </div>
 
       <div class="tape-label">SOURCES · 4/5 AGREE</div>
-      <div class="tape">
-        <div class="tcard yes" style="animation-delay:.05s"><div class="l">A</div><div class="d">LONG</div><div class="m">✓</div></div>
-        <div class="tcard yes" style="animation-delay:.12s"><div class="l">B</div><div class="d">LONG</div><div class="m">✓</div></div>
-        <div class="tcard yes" style="animation-delay:.19s"><div class="l">C</div><div class="d">LONG</div><div class="m">✓</div></div>
-        <div class="tcard yes" style="animation-delay:.26s"><div class="l">E</div><div class="d">LONG</div><div class="m">✓</div></div>
-        <div class="tcard no" style="animation-delay:.33s"><div class="l">D</div><div class="d">SHORT</div><div class="m">✗</div></div>
+      <div class="tape" role="img" aria-label="Sources A, B, C and E agree LONG; source D disagrees SHORT">
+        <div class="tcard yes" style="animation-delay:.05s"><div class="l">A</div><div class="m">✓</div></div>
+        <div class="tcard yes" style="animation-delay:.12s"><div class="l">B</div><div class="m">✓</div></div>
+        <div class="tcard yes" style="animation-delay:.19s"><div class="l">C</div><div class="m">✓</div></div>
+        <div class="tcard yes" style="animation-delay:.26s"><div class="l">E</div><div class="m">✓</div></div>
+        <div class="tcard no" style="animation-delay:.33s"><div class="l">D</div><div class="m">✗</div></div>
       </div>
 
       <div class="nums">
