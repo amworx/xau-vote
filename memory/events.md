@@ -164,3 +164,18 @@
 - **errors:** none
 - **lessons:** pip convention must be a recorded decision — it affects every number in the app, not just mockups
 - **tags:** ui, mockups, direction-colors, pips, copy-share
+
+---
+
+## EVT-20260927-0012
+
+- **id:** EVT-20260927-0012
+- **timestamp:** 2026-09-27T02:50:00+03:00
+- **mode:** BUILD (UI design iteration)
+- **action:** Blueprint focus — clarity pass, TF switcher, refresh functionality
+- **summary:** Focused on mockup-8B-blueprint per user pick. (1) Clarity: larger verdict (3.2rem), brighter labels, 48px rows, meta triple with color-coded values. (2) Working TF switcher (5M CONFIRM / 15M SIGNAL / 1H CONTEXT): per-TF datasets — 15M LONG 82, 5M SHORT 64 (deliberately dissenting to prove switcher value), 1H BULLISH bias context-only with support/resistance instead of entry/SL and a CONTEXT ONLY flag; CTA on 1H jumps back to 15M; copy text is per-TF. (3) Refresh: header button spins once, content dims, datum price jitters ±0.45, DRAWN timestamp updates — click-tested (4,278.30 → 4,277.85). TF switching re-verified after all edits.
+- **result:** success
+- **files:** docs/mockups/mockup-8B-blueprint.html, preview-8B-blueprint.png
+- **errors:** none
+- **lessons:** per-TF datasets make switchers feel real in mockups — static labels would have hidden the 1H-context-only product rule
+- **tags:** ui, mockups, blueprint, tf-switcher, refresh

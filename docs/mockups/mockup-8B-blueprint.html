@@ -42,6 +42,23 @@
   .brand .name span{color:var(--gold)}
   .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
   .live i{width:7px;height:7px;background:var(--long)}
+  .hdract{display:flex;align-items:center;gap:8px}
+  .iconbtn{
+    background:transparent;border:1px solid var(--line);border-radius:8px;
+    width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+    color:var(--dim);cursor:pointer;transition:color .15s ease,border-color .15s ease;
+  }
+  .iconbtn:hover{color:var(--ink);border-color:var(--dim)}
+  .iconbtn svg{width:18px;height:18px}
+  .iconbtn.spinning svg{animation:spinonce .7s ease}
+  .iconbtn:disabled{opacity:.5;cursor:default}
+  @keyframes spinonce{to{transform:rotate(360deg)}}
+  main{transition:opacity .25s ease}
+  body.loading main{opacity:.4}
+  @media (prefers-reduced-motion:reduce){
+    .iconbtn.spinning svg{animation:none}
+    main{transition:none}
+  }
   main{flex:1;display:flex;flex-direction:column;padding:8px 22px 12px}
   .dwg{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--faint)}
 
@@ -135,7 +152,12 @@
   </span></div>
   <header>
     <div class="brand"><div class="name">XAU<span>RADAR</span> · <span id="dwgTf">DWG-15M-01</span></div></div>
-    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>REV C</span>
+    <div class="hdract">
+      <button class="iconbtn" id="refreshBtn" type="button" aria-label="Refresh market data">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      </button>
+      <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>REV C</span>
+    </div>
   </header>
   <main>
     <div class="dwg" id="figLabel">FIG.1 — CONSENSUS ASSEMBLY · SCALE 15M · Au</div>
@@ -169,7 +191,7 @@
       <button class="ghost" id="copyBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
       <button class="ghost" id="shareBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>Share</button>
     </div>
-    <div class="micro">DRAWN 21:47:12 · <span class="ok">1H SUPP</span> · <span class="wait">5M READY</span></div>
+    <div class="micro">DRAWN <span id="drawnAt">21:47:12</span> · <span class="ok">1H SUPP</span> · <span class="wait">5M READY</span></div>
   </main>
   <nav aria-label="Primary">
     <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10M12 20V4M18 20v-8"/></svg>RADAR</a>
@@ -250,8 +272,9 @@
     verdictSub.innerHTML = d.sub;
     ctxFlag.hidden = !d.ctxOnly;
     specRows.innerHTML = d.rows.map(function(r){
+      var val = (r.k.indexOf('DATUM') === 0) ? fmtPrice(livePrice) : r.v;
       return '<div class="sr ' + r.cls + '"><span class="k">' + r.k + '</span>' +
-        '<span class="rv"><span class="v">' + r.v + '</span>' +
+        '<span class="rv"><span class="v">' + val + '</span>' +
         (r.pp ? '<span class="pp">' + r.pp + '</span>' : '') + '</span></div>';
     }).join('');
     mStrength.textContent = d.strength[0];
@@ -289,6 +312,32 @@
   shareBtn.addEventListener('click', function(){
     if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: DATA[current].copy }).catch(function(){}); }
     else { copyText(DATA[current].copy, function(){ flash(shareBtn, 'Copied ✓'); }); }
+  });
+
+  /* Refresh: spin + dim, then new price print + timestamp */
+  var refreshBtn = $('refreshBtn'), drawnAt = $('drawnAt');
+  var livePrice = 4278.30, refreshing = false;
+  function fmtPrice(p){ return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function nowTime(){
+    var d = new Date();
+    function z(n){ return (n < 10 ? '0' : '') + n; }
+    return z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds());
+  }
+  refreshBtn.addEventListener('click', function(){
+    if (refreshing) return;
+    refreshing = true;
+    refreshBtn.disabled = true;
+    refreshBtn.classList.add('spinning');
+    document.body.classList.add('loading');
+    setTimeout(function(){
+      livePrice = Math.max(4270, Math.min(4290, livePrice + (Math.random() - .5) * .9));
+      drawnAt.textContent = nowTime();
+      render(current);
+      document.body.classList.remove('loading');
+      refreshBtn.classList.remove('spinning');
+      refreshBtn.disabled = false;
+      refreshing = false;
+    }, 900);
   });
 
   render('15M');
