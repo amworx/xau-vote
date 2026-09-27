@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 5A: Desk</title>
+<style>
+  /* ══════════ MOCKUP 5A: DESK ══════════
+     Static trading-desk layout. Chart on top (drawn once, never
+     loops), verdict as a strong horizontal banner, numbers grid.
+     Only motion on screen: the LIVE dot. Nothing revolves. */
+  :root{
+    --bg:#080B12;
+    --panel:#111827;
+    --text:#EBF0FA;
+    --dim:#8E9FBE;
+    --faint:#5A6B8C;
+    --gold:#E3B23E;
+    --gold-bright:#F5CC60;
+    --long:#3BD09A;
+    --short:#E85D5D;
+    --info:#5E9BFF;
+    --track:#1E2947;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#04060B;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 8px}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+
+  main{flex:1;display:flex;flex-direction:column}
+
+  .chart-field{position:relative;height:252px;flex-shrink:0}
+  #chart{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .chart-top{position:absolute;top:10px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:baseline;pointer-events:none}
+  .chart-top .sym{font-size:.62rem;font-weight:700;letter-spacing:.2em;color:var(--dim)}
+  .chart-top .px{font-family:var(--mono);font-size:1.3rem;font-weight:700}
+  .chart-top .px small{font-size:.72rem;color:var(--long);margin-left:8px}
+
+  /* verdict banner */
+  .banner{
+    display:flex;align-items:center;gap:14px;
+    margin:0 20px;padding:16px;
+    background:var(--panel);
+    border:1px solid var(--track);
+    border-left:4px solid var(--gold);
+    border-radius:0 14px 14px 0;
+  }
+  .banner svg{width:26px;height:26px;stroke:var(--gold-bright);flex-shrink:0}
+  .banner .w{font-size:1.7rem;font-weight:800;letter-spacing:.08em;color:var(--gold-bright);line-height:1}
+  .banner .meta{margin-left:auto;text-align:right}
+  .banner .meta .a{font-size:.72rem;color:var(--dim)}
+  .banner .meta .a b{color:var(--text);font-family:var(--mono)}
+  .banner .meta .s{font-size:.74rem;font-weight:800;letter-spacing:.1em;color:var(--long);margin-top:3px}
+  .banner .meta .s span{font-family:var(--mono);font-weight:600}
+
+  .strength{margin:14px 20px 0}
+  .track{position:relative;height:6px;border-radius:3px;background:linear-gradient(90deg,rgba(232,93,93,.3) 0 39%,rgba(227,178,62,.26) 39% 59%,rgba(94,155,255,.22) 59% 74%,rgba(59,208,154,.32) 74% 89%,rgba(59,208,154,.58) 89% 100%)}
+  .fill{position:absolute;top:0;left:0;bottom:0;width:82%;border-radius:3px;background:linear-gradient(90deg,rgba(245,204,96,.3),var(--gold))}
+  .marker{position:absolute;top:-3px;bottom:-3px;left:82%;width:2px;background:var(--gold-bright)}
+
+  .numbers{display:flex;gap:10px;margin:14px 20px 0}
+  .num{flex:1;background:var(--panel);border:1px solid #1A2440;border-radius:12px;padding:12px 4px 10px;text-align:center;min-height:44px}
+  .num .k{font-size:.58rem;font-weight:700;letter-spacing:.14em;color:var(--faint);text-transform:uppercase}
+  .num .v{font-family:var(--mono);font-size:.9rem;font-weight:700;margin-top:5px}
+  .num.entry .v{color:var(--info)}
+  .num.sl .v{color:var(--short)}
+  .num.tp .v{color:var(--long)}
+  .num .s{font-size:.58rem;color:var(--faint);margin-top:2px;font-family:var(--mono)}
+
+  .cta-row{padding:14px 20px 0}
+  .cta{display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(160deg,var(--gold-bright),var(--gold));color:#1C1503;border:none;border-radius:13px;font-weight:800;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;padding:15px;min-height:52px;cursor:pointer;width:100%;box-shadow:0 10px 26px -10px rgba(227,178,62,.5)}
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+  .micro{padding:10px 20px 12px;text-align:center;font-size:.62rem;color:var(--faint);letter-spacing:.06em}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold-bright)}
+
+  nav{display:flex;border-top:1px solid #16203A;background:rgba(8,12,21,.94);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-height:44px;border-radius:8px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active svg{stroke:var(--gold-bright)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+  </header>
+
+  <main>
+    <div class="chart-field">
+      <canvas id="chart" role="img" aria-label="Gold price chart rising into the 4275 to 4280 entry zone. Stop loss 4262, first target 4295."></canvas>
+      <div class="chart-top">
+        <span class="sym">XAUUSD · 5M</span>
+        <span class="px">4,278.30<small>+12.40</small></span>
+      </div>
+    </div>
+
+    <section class="banner" aria-label="LONG, 4 of 5 agree, strong 82">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      <div class="w">LONG</div>
+      <div class="meta">
+        <div class="a"><b>4/5</b> sources agree</div>
+        <div class="s">STRONG <span>82/100</span></div>
+      </div>
+    </section>
+
+    <div class="strength">
+      <div class="track" role="img" aria-label="Consensus strength 82 out of 100, strong">
+        <div class="fill"></div><div class="marker"></div>
+      </div>
+    </div>
+
+    <div class="numbers">
+      <div class="num entry"><div class="k">Entry</div><div class="v">4,275–80</div><div class="s">zone</div></div>
+      <div class="num sl"><div class="k">Stop</div><div class="v">4,262</div><div class="s">−16 pts</div></div>
+      <div class="num tp"><div class="k">Targets</div><div class="v">4,295 +</div><div class="s">3 levels</div></div>
+    </div>
+
+    <div class="cta-row">
+      <button class="cta" type="button">View Full Setup
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+
+    <div class="micro">1H <span class="ok">SUPPORTIVE</span> · 5M <span class="wait">READY</span> · updated 14s ago</div>
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.51 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.23.6.83 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>Settings</a>
+  </nav>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('chart');
+  var ctx = cv.getContext('2d');
+  var P_MIN = 4255, P_MAX = 4300;
+  var ENTRY_LO = 4275, ENTRY_HI = 4280, SL = 4262, TP1 = 4295;
+  var N = 90, prices = [];
+  (function seed(){
+    var p = 4259;
+    for (var i = 0; i < N; i++){
+      p += (Math.sin(i*.3)*.35 + (Math.random()-.42)*.9 + .18);
+      if (p < 4257) p = 4257 + Math.random();
+      if (p > 4284) p = 4284 - Math.random();
+      prices.push(p);
+    }
+  })();
+  function size(){
+    var r = cv.parentElement.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, r.width * dpr); cv.height = Math.max(1, r.height * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function y(p, H){ var pad = 26; return pad + (1 - (p - P_MIN) / (P_MAX - P_MIN)) * (H - pad*2); }
+  function draw(){
+    var W = cv.clientWidth, H = cv.clientHeight;
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle = 'rgba(120,140,175,.10)'; ctx.lineWidth = 1;
+    for (var g = 1; g < 5; g++){ var gy = H*g/5; ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
+    var ey1 = y(ENTRY_HI,H), ey2 = y(ENTRY_LO,H);
+    var grd = ctx.createLinearGradient(0,ey1,0,ey2);
+    grd.addColorStop(0,'rgba(227,178,62,.20)'); grd.addColorStop(1,'rgba(227,178,62,.06)');
+    ctx.fillStyle = grd; ctx.fillRect(0,ey1,W,ey2-ey1);
+    ctx.fillStyle = 'rgba(227,178,62,.8)'; ctx.font = '600 9px Inter, sans-serif';
+    ctx.fillText('ENTRY 4275–80', 8, ey1 - 5);
+    ctx.strokeStyle = 'rgba(232,93,93,.65)'; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(0,y(SL,H)); ctx.lineTo(W,y(SL,H)); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = 'rgba(232,93,93,.9)';
+    ctx.fillText('SL 4262', 8, y(SL,H) - 5);
+    ctx.strokeStyle = 'rgba(59,208,154,.5)'; ctx.setLineDash([2,4]);
+    ctx.beginPath(); ctx.moveTo(0,y(TP1,H)); ctx.lineTo(W,y(TP1,H)); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = 'rgba(59,208,154,.9)';
+    ctx.fillText('TP1 4295', 8, y(TP1,H) - 5);
+    var x = function(i){ return 8 + (W-16) * i/(N-1); };
+    var lg = ctx.createLinearGradient(0,0,W,0);
+    lg.addColorStop(0,'rgba(94,155,255,.25)'); lg.addColorStop(1,'#E3B23E');
+    ctx.strokeStyle = lg; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath();
+    for (var i = 0; i < N; i++){ var px = x(i), py = y(prices[i],H); i ? ctx.lineTo(px,py) : ctx.moveTo(px,py); }
+    ctx.stroke();
+    var lx = x(N-1), ly = y(prices[N-1],H);
+    ctx.fillStyle = '#E3B23E'; ctx.beginPath(); ctx.arc(lx,ly,4,0,7); ctx.fill();
+    ctx.font = '700 9px Inter, sans-serif';
+    var label = '4278.30', tw = ctx.measureText(label).width + 12;
+    var bx = Math.min(lx+8, W-tw-4);
+    ctx.fillRect(bx, ly-22, tw, 16);
+    ctx.fillStyle = '#0A0E16'; ctx.fillText(label, bx+6, ly-10);
+  }
+  size(); window.addEventListener('resize', draw); draw();
+})();
+</script>
+</body>
+</html>

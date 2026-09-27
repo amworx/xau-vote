@@ -104,3 +104,18 @@
 - **errors:** none in code; preview timing issue handled via progress probe
 - **lessons:** looping canvas animations need a test hook (progress flag) for deterministic screenshot capture
 - **tags:** ui, mockups, fusion
+
+---
+
+## EVT-20260926-0008
+
+- **id:** EVT-20260926-0008
+- **timestamp:** 2026-09-27T01:20:00+03:00
+- **mode:** BUILD (UI design iteration)
+- **action:** Generate three static mockups, all radar/orbit animation removed
+- **summary:** User rejected all radar animation. Built three fully static directions (no loops, sweeps, orbits; charts draw once; only the LIVE dot remains): (5A) **Desk** — chart-first trading layout, verdict banner with gold spine, numbers grid; (5B) **Column** — verdict-first editorial, giant LONG, thin chart strip, full ledger with TP1/TP2/TP3 + R:R rows; (5C) **Card** — single floating card (gold top edge) over faint static chart backdrop. Verified: zero overflow, no sub-9px text, screenshots reviewed, 5B fits exactly 844px.
+- **result:** success — awaiting user selection
+- **files:** docs/mockups/mockup-5A-desk.html, mockup-5B-column.html, mockup-5C-card.html, preview-5A/5B/5C.png
+- **errors:** none
+- **lessons:** when the user rejects motion, remove ALL of it rather than softening — static confidence beats animated decoration for this audience
+- **tags:** ui, mockups, static

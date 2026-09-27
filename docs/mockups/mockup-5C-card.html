@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XAU Radar — Mockup 5C: Card</title>
+<style>
+  /* ══════════ MOCKUP 5C: CARD ══════════
+     One floating card over a faint static chart backdrop.
+     Gold top edge, verdict, strength, three mini-rows, CTA below.
+     Fully static — zero animation of any kind. */
+  :root{
+    --bg:#070A11;
+    --card:#121826;
+    --text:#EBF0FA;
+    --dim:#8E9FBE;
+    --faint:#5A6B8C;
+    --gold:#E3B23E;
+    --gold-bright:#F5CC60;
+    --long:#3BD09A;
+    --short:#E85D5D;
+    --info:#5E9BFF;
+    --hair:#232E4D;
+    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#04060B;color:var(--text);
+    display:flex;justify-content:center;min-height:100vh;
+    font-feature-settings:"tnum" 1;
+  }
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+  #bg{position:absolute;inset:0;width:100%;height:100%;opacity:.34}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim);position:relative;z-index:2}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 4px;position:relative;z-index:2}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .hdr{display:flex;align-items:center;gap:9px}
+  .hdr .p{font-family:var(--mono);font-size:1rem;font-weight:700}
+  .hdr .c{font-family:var(--mono);font-size:.66rem;font-weight:600;color:var(--long)}
+  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+
+  main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 24px 12px;position:relative;z-index:2}
+
+  .card{
+    background:linear-gradient(180deg,#151C2C,#111627);
+    border:1px solid #26314E;
+    border-top:3px solid var(--gold);
+    border-radius:18px;
+    padding:24px 22px 20px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.85);
+  }
+  .card .tf{font-size:.62rem;font-weight:700;letter-spacing:.24em;color:var(--faint);text-transform:uppercase;text-align:center}
+  .card .dir{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:10px}
+  .card .dir svg{width:28px;height:28px;stroke:var(--gold-bright)}
+  .card .dir .w{font-size:2.3rem;font-weight:800;letter-spacing:.08em;color:var(--gold-bright);line-height:1}
+  .card .sub{text-align:center;font-size:.74rem;color:var(--dim);margin-top:8px}
+  .card .sub b{color:var(--text);font-family:var(--mono)}
+
+  .srow{display:flex;align-items:center;gap:10px;margin-top:16px}
+  .srow .t{font-size:.6rem;font-weight:700;letter-spacing:.16em;color:var(--faint);flex-shrink:0}
+  .track{position:relative;flex:1;height:6px;border-radius:3px;background:#232E4D}
+  .fill{position:absolute;top:0;left:0;bottom:0;width:82%;border-radius:3px;background:var(--gold)}
+  .srow .n{font-family:var(--mono);font-size:.68rem;color:var(--gold-bright);font-weight:700;flex-shrink:0}
+
+  .mrows{margin-top:14px;border-top:1px solid var(--hair)}
+  .mrow{display:flex;align-items:baseline;padding:10px 0;min-height:44px;border-bottom:1px solid var(--hair)}
+  .mrow .k{font-size:.6rem;font-weight:700;letter-spacing:.18em;color:var(--faint);width:76px;flex-shrink:0}
+  .mrow .v{font-family:var(--mono);font-size:.95rem;font-weight:700;flex:1;text-align:right}
+  .mrow.entry .v{color:var(--info)}
+  .mrow.sl .v{color:var(--short)}
+  .mrow.tp .v{color:var(--long)}
+
+  .cta{
+    margin-top:18px;width:100%;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:linear-gradient(160deg,var(--gold-bright),var(--gold));color:#1C1503;
+    border:none;border-radius:14px;
+    font-weight:800;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;
+    padding:15px;min-height:52px;cursor:pointer;
+    box-shadow:0 10px 26px -10px rgba(227,178,62,.5);
+  }
+  .cta:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+  .micro{margin-top:12px;text-align:center;font-size:.62rem;color:var(--faint);letter-spacing:.06em}
+  .micro .ok{color:var(--long)}
+  .micro .wait{color:var(--gold-bright)}
+
+  nav{display:flex;border-top:1px solid #16203A;background:rgba(8,12,21,.94);padding:6px 8px calc(10px + env(safe-area-inset-bottom));position:relative;z-index:2}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-height:44px;border-radius:8px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--gold-bright)}
+  nav a.active svg{stroke:var(--gold-bright)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <div class="hdr">
+      <span class="p">4,278.30</span><span class="c">+12.40</span>
+      <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="card" aria-label="LONG, 4 of 5 agree, strong 82. Entry 4275 to 4280, stop 4262, targets from 4295.">
+      <div class="tf">15M Consensus</div>
+      <div class="dir">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        <div class="w">LONG</div>
+      </div>
+      <div class="sub"><b>4/5</b> sources agree</div>
+
+      <div class="srow">
+        <span class="t">STRONG</span>
+        <div class="track" role="img" aria-label="Consensus strength 82 out of 100"><div class="fill"></div></div>
+        <span class="n">82</span>
+      </div>
+
+      <div class="mrows">
+        <div class="mrow entry"><span class="k">ENTRY</span><span class="v">4,275 – 4,280</span></div>
+        <div class="mrow sl"><span class="k">STOP</span><span class="v">4,262</span></div>
+        <div class="mrow tp"><span class="k">TARGETS</span><span class="v">4,295 +</span></div>
+      </div>
+    </section>
+
+    <button class="cta" type="button">View Full Setup
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+
+    <div class="micro">1H <span class="ok">SUPPORTIVE</span> · 5M <span class="wait">READY</span> · updated 14s ago</div>
+  </main>
+
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.51 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.23.6.83 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>Settings</a>
+  </nav>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('bg');
+  var ctx = cv.getContext('2d');
+  var P_MIN = 4240, P_MAX = 4310;
+  var N = 110, prices = [];
+  (function seed(){
+    var p = 4248;
+    for (var i = 0; i < N; i++){
+      p += (Math.sin(i*.22)*.5 + (Math.random()-.40)*1.1 + .22);
+      if (p < 4244) p = 4244 + Math.random();
+      if (p > 4292) p = 4292 - Math.random();
+      prices.push(p);
+    }
+  })();
+  function size(){
+    var r = cv.parentElement.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, r.width * dpr); cv.height = Math.max(1, r.height * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function draw(){
+    var W = cv.clientWidth, H = cv.clientHeight;
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle = 'rgba(120,140,175,.08)'; ctx.lineWidth = 1;
+    for (var g = 1; g < 7; g++){ var gy = H*g/7; ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
+    function y(p){ return 20 + (1 - (p - P_MIN) / (P_MAX - P_MIN)) * (H - 40); }
+    var x = function(i){ return (W-8) * i/(N-1) + 4; };
+    ctx.strokeStyle = 'rgba(227,178,62,.35)'; ctx.lineWidth = 1.6; ctx.lineJoin = 'round'; ctx.beginPath();
+    for (var i = 0; i < N; i++){ var px = x(i), py = y(prices[i]); i ? ctx.lineTo(px,py) : ctx.moveTo(px,py); }
+    ctx.stroke();
+  }
+  size(); window.addEventListener('resize', draw); draw();
+})();
+</script>
+</body>
+</html>
