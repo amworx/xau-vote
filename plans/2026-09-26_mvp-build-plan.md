@@ -101,6 +101,12 @@ tick
 - **T6.2** Failure-mode tests: stale ideas only, all sources divided, missing levels → correct NO CONSENSUS / INSUFFICIENT DATA.
 - **T6.3** Legal checklist per source before any real adapter is enabled.
 
+### Phase 7 — Economic Calendar & News Intelligence
+- Defined in `docs/economic-calendar-news.md`, tracked in `tasks/TASK-07_economic-calendar-news.md`.
+- After Phase 4 (backend patterns); app work parallel with Phase 5.
+- Rollout: Event Guard → event notifications → news headlines → AI digest.
+- Gate G5: no provider enabled without recorded licensing review.
+
 ---
 
 ## 4. Build Order & Dependencies

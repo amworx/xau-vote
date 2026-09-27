@@ -179,3 +179,18 @@
 - **errors:** none
 - **lessons:** per-TF datasets make switchers feel real in mockups — static labels would have hidden the 1H-context-only product rule
 - **tags:** ui, mockups, blueprint, tf-switcher, refresh
+
+---
+
+## EVT-20260927-0013
+
+- **id:** EVT-20260927-0013
+- **timestamp:** 2026-09-27T03:10:00+03:00
+- **mode:** PLAN
+- **action:** Design economic calendar + news intelligence feature
+- **summary:** User requested event awareness/notifications + news analysis for signal quality. Researched free options: FMP economic calendar free (~250/day) as primary CANDIDATE (Gate G5); Finnhub calendar is paid territory; ForexFactory has no API + scraping stays GATED OFF per licensing rule; GNews free is dev-only (non-commercial + 12h delay); ForexNewsAPI/MarketAux unvetted. Designed `docs/economic-calendar-news.md`: Event Guard blackouts (HIGH USD T−30→T+15, badges not closures), news digest with fixed schema + UNCLEAR fallback, surprise tracking, 5 new notification types, Events screen (6th), radar blackout banner + macro backdrop strip, 3 new tables, 3 new edge functions, provider/licensing table with quota math, 8 new acceptance steps (16–23) incl. never-vote regression. Added plan Phase 7, TASK-07, AGENTS.md rule 9 (context-never-votes). Rollout: guard first (no AI needed), digest last.
+- **result:** success — proposed, awaiting user approval + G5 reviews
+- **files:** docs/economic-calendar-news.md, tasks/TASK-07_economic-calendar-news.md, plans/2026-09-26_mvp-build-plan.md, AGENTS.md
+- **errors:** none
+- **lessons:** the licensing gate already in AGENTS.md decided the FF question before it was asked — good rules pay off
+- **tags:** plan, economic-calendar, news, feature-design

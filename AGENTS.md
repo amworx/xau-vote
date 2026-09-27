@@ -63,6 +63,10 @@ xau-radar/
    stale ideas are rejected or demoted to context-only.
 8. **Provider abstraction.** Market data and idea sources live behind
    interfaces with mock providers for dev/test.
+9. **Events and news are context, never votes.** Economic calendar events and
+   news digests (see `docs/economic-calendar-news.md`) may suppress, delay,
+   annotate, or explain a signal — never create or flip one. AI summarizes
+   news into fixed-schema themes; it never forecasts direction or levels.
 
 ## Data model (minimum, from spec §21)
 
