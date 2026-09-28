@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="XAU Radar concept: four-zone control grid.">
+<meta name="theme-color" content="#080C12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23080C12'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%2327C7D9' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<title>XAU Radar - 12C Grid</title>
+<style>
+  /* 12C GRID (from consultant direction 3): four-zone control surface,
+     candle strip, tick-illuminated blocks. */
+  :root{
+    --bg:#080C12;
+    --panel:#17202B;
+    --ink:#DDE7EE;
+    --dim:#8FA0B0;
+    --faint:#54626E;
+    --line:#22303D;
+    --cyan:#27C7D9;
+    --long:#3BD08A;
+    --short:#E86A6A;
+    --mono:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{font-family:"Sora",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#02040A;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 4px;font-size:.74rem;color:var(--dim);font-family:var(--mono)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 12px}
+  .brand .name{font-size:.85rem;font-weight:800;letter-spacing:.14em}
+  .brand .name span{color:var(--cyan)}
+  .live{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;padding:0 14px}
+  /* four-zone grid */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .zone{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;min-height:44px;position:relative;overflow:hidden}
+  .zone .h{font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;color:var(--faint)}
+  .zone.dir .w{font-size:1.9rem;font-weight:800;letter-spacing:.04em;color:var(--long);margin-top:8px}
+  .zone.dir .s{font-family:var(--mono);font-size:.64rem;color:var(--dim);margin-top:6px}
+  .zone.dir .s b{color:var(--ink)}
+  /* candle strip behind direction */
+  .candles{position:absolute;right:10px;top:12px;bottom:12px;display:flex;align-items:flex-end;gap:4px;opacity:.85}
+  .candles i{width:7px;border-radius:2px;background:var(--long);position:relative;transition:opacity .3s ease,filter .3s ease}
+  .candles i::after{content:"";position:absolute;left:3px;top:-7px;bottom:-7px;width:1px;background:inherit}
+  .candles i.lit{filter:brightness(1.8)}
+  .zone.str .v{font-size:1.9rem;font-weight:800;margin-top:8px}
+  .zone.str .v small{font-size:.85rem;color:var(--dim);font-weight:600}
+  .zone.str .bar{height:6px;border-radius:3px;background:#0E141C;margin-top:10px;overflow:hidden}
+  .zone.str .bar b{display:block;height:100%;width:82%;background:var(--cyan);border-radius:3px}
+  .zone.px .v{font-family:var(--mono);font-size:1.35rem;font-weight:700;margin-top:8px;font-variant-numeric:tabular-nums}
+  .zone.px .c{font-family:var(--mono);font-size:.66rem;color:var(--long);margin-top:6px}
+  .zone.lv{grid-column:span 2}
+  .zone.lv .rows{margin-top:6px}
+  .zone.lv .r{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;min-height:44px;font-family:var(--mono);font-size:.82rem}
+  .zone.lv .r + .r{border-top:1px solid var(--line)}
+  .zone.lv .k{font-size:.6rem;letter-spacing:.16em;color:var(--faint)}
+  .zone.lv .v{font-weight:700}
+  .zone.lv .entry .v{color:var(--cyan)}
+  .zone.lv .sl .v{color:var(--short)}
+  .zone.lv .tp .v{color:var(--long)}
+  .cta{margin:12px 0 0;background:var(--cyan);color:#04262B;border:none;border-radius:12px;font-weight:800;font-size:.85rem;letter-spacing:.1em;padding:16px;min-height:54px;cursor:pointer;width:100%}
+  .cta:hover{filter:brightness(1.08)}
+  .cta:active{transform:translateY(1px)}
+  .cta:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .tertiary{display:flex;justify-content:center;gap:28px}
+  .tertiary button{background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;cursor:pointer;padding:13px 8px;min-height:48px;text-decoration:underline;text-underline-offset:4px}
+  .tertiary button:hover{color:var(--ink)}
+  .tertiary button:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+  .micro{margin-top:auto;padding:12px 0 calc(10px + env(safe-area-inset-bottom));text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;color:var(--faint)}
+  nav{display:flex;background:var(--panel);border-top:1px solid var(--line);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:500;letter-spacing:.08em;min-height:48px;min-width:48px;border-radius:10px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--cyan)}
+  nav a.active svg{stroke:var(--cyan)}
+  nav a:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+  </header>
+  <main>
+    <div class="grid">
+      <section class="zone dir" aria-label="Long, 4 of 5 agree">
+        <div class="h">DIRECTION</div>
+        <div class="candles" id="candles" aria-hidden="true">
+          <i style="height:38%"></i><i style="height:52%"></i><i style="height:44%"></i>
+          <i style="height:66%"></i><i style="height:80%"></i>
+        </div>
+        <div class="w">LONG</div>
+        <div class="s"><b>4/5</b> agree</div>
+      </section>
+      <section class="zone str" aria-label="Strength 82">
+        <div class="h">STRENGTH</div>
+        <div class="v">82<small>/100</small></div>
+        <div class="bar"><b></b></div>
+      </section>
+      <section class="zone px" aria-label="Price 4278.30">
+        <div class="h">LIVE PRICE</div>
+        <div class="v" id="pxNow">4,278.30</div>
+        <div class="c">+12.40 · +30 pips</div>
+      </section>
+      <section class="zone lv" aria-label="Levels">
+        <div class="h">EXECUTION</div>
+        <div class="rows">
+          <div class="r entry"><span class="k">ENTRY</span><span class="v">4,275-4,280</span></div>
+          <div class="r sl"><span class="k">STOP</span><span class="v">4,262</span></div>
+          <div class="r tp"><span class="k">TP1·TP2·TP3</span><span class="v">4,295 +</span></div>
+        </div>
+      </section>
+    </div>
+    <button class="cta" type="button">View full setup</button>
+    <div class="tertiary">
+      <button type="button" id="copyBtn">Copy signal</button>
+      <button type="button" id="shareBtn">Share</button>
+    </div>
+    <div class="micro">1H supportive, 5M ready · spread 0.35</div>
+  </main>
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 20c1-4 3.5-6 6-6s5 2 6 6M14.5 20c.8-2.6 2.4-4 4.5-4 1 0 1.9.3 2.7.8"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Config</a>
+  </nav>
+</div>
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var pxNow = document.getElementById('pxNow');
+  var candles = Array.prototype.slice.call(document.querySelectorAll('#candles i'));
+  var price = 4278.30;
+  function fmt(p){ return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  if (!reduce){
+    setInterval(function(){
+      price = Math.max(4274, Math.min(4284, price + (Math.random() - .48) * 1.4));
+      pxNow.textContent = fmt(price);
+      /* illuminate one candle block per tick */
+      candles.forEach(function(c){ c.classList.remove('lit'); });
+      candles[Math.floor(Math.random() * candles.length)].classList.add('lit');
+      setTimeout(function(){ candles.forEach(function(c){ c.classList.remove('lit'); }); }, 900);
+    }, 4000);
+  }
+  var TEXT = 'XAUUSD 15M - LONG\nEntry 4,275-4,280\nSL 4,262 (-1600 pips)\nTP1 4,295 (+1700), TP2 4,315 (+3700), TP3 4,340 (+6200)\nConsensus STRONG 82/100, 4/5 agree\n- via XAU Radar';
+  var copyBtn = document.getElementById('copyBtn');
+  var shareBtn = document.getElementById('shareBtn');
+  function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
+  function copyText(t, ok){
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); ok();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
+    else { fallback(); }
+  }
+  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  shareBtn.addEventListener('click', function(){
+    if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
+    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+  });
+})();
+</script>
+</body>
+</html>

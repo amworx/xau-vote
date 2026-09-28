@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="XAU Radar concept: bullion ledger with risk ruler.">
+<meta name="theme-color" content="#101112">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23C9973E'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23101112' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<title>XAU Radar - 12B Ledger</title>
+<style>
+  /* 12B LEDGER (from consultant direction 2): dark screen, warm paper
+     panel, serif ledger headline, risk-to-reward ruler. */
+  :root{
+    --screen:#101112;
+    --paper:#F2EFE8;
+    --paper-line:#D8D2C4;
+    --ink:#202326;
+    --ink-dim:#5B6058;
+    --ink-faint:#8C918F;
+    --brass:#C9973E;
+    --brass-deep:#8A6420;
+    --long:#1E7A4C;
+    --short:#B3372E;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{font-family:"DM Serif Display",Georgia,serif;background:#000;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--screen);position:relative;display:flex;flex-direction:column;overflow:hidden}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--ink-faint);font-family:var(--mono)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 12px}
+  .brand .name{font-family:var(--mono);font-size:.78rem;font-weight:700;letter-spacing:.22em;color:var(--paper)}
+  .brand .name span{color:var(--brass)}
+  .live{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;padding:0 16px}
+  /* the paper panel */
+  .sheet{background:var(--paper);border-radius:18px;padding:22px 20px 18px;position:relative}
+  .sheet .folio{font-family:var(--mono);font-size:.58rem;letter-spacing:.24em;color:var(--ink-faint)}
+  .sheet h1{font-size:3.1rem;font-weight:400;line-height:1.02;margin-top:8px;color:var(--ink)}
+  .sheet h1 em{font-style:normal;color:var(--long)}
+  .sheet .lede{font-family:var(--mono);font-size:.68rem;color:var(--ink-dim);margin-top:10px;letter-spacing:.02em}
+  .sheet .lede b{color:var(--ink)}
+  .price-callout{margin-top:14px;background:var(--ink);color:var(--paper);border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:baseline}
+  .price-callout .p{font-family:var(--mono);font-size:1.3rem;font-weight:700}
+  .price-callout .c{font-family:var(--mono);font-size:.7rem;color:var(--brass)}
+  /* risk ruler + statement rows */
+  .stmt{position:relative;margin-top:16px;padding-left:26px}
+  .ruler{position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:var(--paper-line)}
+  .ruler i{position:absolute;left:-4px;width:10px;height:10px;border-radius:50%;background:var(--paper);border:2px solid var(--ink-faint)}
+  .ruler i.hit-sl{border-color:var(--short);top:82%}
+  .ruler i.hit-en{border-color:var(--brass-deep);background:var(--brass);top:52%}
+  .ruler i.hit-tp{border-color:var(--long);top:8%}
+  #pricedot{position:absolute;left:-5px;width:12px;height:12px;border-radius:50%;background:var(--ink);transition:top .6s cubic-bezier(.2,.9,.25,1)}
+  .srow{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px dotted var(--paper-line);min-height:48px}
+  .srow .k{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--ink-faint)}
+  .srow .v{font-family:var(--mono);font-size:.98rem;font-weight:700}
+  .srow .v small{font-size:.62rem;color:var(--ink-faint);margin-left:8px;font-weight:400}
+  .srow.entry .v{color:var(--brass-deep)}
+  .srow.sl .v{color:var(--short)}
+  .srow.tp .v{color:var(--long)}
+  .cta{margin:16px 0 0;background:var(--ink);color:var(--paper);border:none;border-radius:14px;font-family:var(--mono);font-weight:700;font-size:.8rem;letter-spacing:.14em;padding:16px;min-height:56px;cursor:pointer;width:100%}
+  .cta:hover{filter:brightness(1.25)}
+  .cta:active{transform:translateY(1px)}
+  .cta:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+  .tertiary{display:flex;justify-content:center;gap:28px}
+  .tertiary button{background:none;border:none;color:var(--ink-faint);font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;cursor:pointer;padding:13px 8px;min-height:48px;text-decoration:underline;text-underline-offset:4px}
+  .tertiary button:hover{color:var(--paper)}
+  .tertiary button:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
+  .micro{margin-top:auto;padding:12px 0 calc(10px + env(safe-area-inset-bottom));text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;color:var(--ink-faint)}
+  nav{display:flex;background:#0A0B0C;border-top:1px solid #23262B;padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:#6E7470;text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:500;letter-spacing:.08em;min-height:48px;min-width:48px;border-radius:10px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav a.active{color:var(--brass)}
+  nav a.active svg{stroke:var(--brass)}
+  nav a:focus-visible{outline:2px solid var(--brass);outline-offset:-2px}
+  @media (prefers-reduced-motion:reduce){#pricedot{transition:none}}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+  <header>
+    <div class="brand"><div class="name">XAU <span>RADAR</span></div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+  </header>
+  <main>
+    <section class="sheet" aria-label="Long, 4 of 5 agree">
+      <div class="folio">LEDGER · 15M · AU-482</div>
+      <h1>Long <em>gold.</em></h1>
+      <div class="lede"><b>4 of 5</b> desks agree · STRONG 82/100 · 4,278.30</div>
+      <div class="price-callout"><span class="p" id="pxNow">4,278.30</span><span class="c">+12.40 · IN-PROFIT +30</span></div>
+      <div class="stmt" id="stmt">
+        <div class="ruler" aria-hidden="true">
+          <i class="hit-tp"></i><i class="hit-en"></i><i class="hit-sl"></i>
+          <span id="pricedot"></span>
+        </div>
+        <div class="srow tp"><span class="k">TP1 · TP2 · TP3</span><span class="v">4,295 +<small>+1700 to +6200</small></span></div>
+        <div class="srow entry"><span class="k">ENTRY</span><span class="v">4,275-4,280<small>500-pip zone</small></span></div>
+        <div class="srow sl"><span class="k">STOP</span><span class="v">4,262<small>-1600 pips</small></span></div>
+      </div>
+    </section>
+    <button class="cta" type="button">Weigh the full ledger</button>
+    <div class="tertiary">
+      <button type="button" id="copyBtn">Copy signal</button>
+      <button type="button" id="shareBtn">Share</button>
+    </div>
+    <div class="micro" style="color:#6E7470">1H supportive, 5M ready · spread 0.35</div>
+  </main>
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 12l5 0 3-7 4 14 3-7h1"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 20c1-4 3.5-6 6-6s5 2 6 6M14.5 20c.8-2.6 2.4-4 4.5-4 1 0 1.9.3 2.7.8"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Config</a>
+  </nav>
+</div>
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var dot = document.getElementById('pricedot');
+  var stmt = document.getElementById('stmt');
+  var pxNow = document.getElementById('pxNow');
+  var price = 4278.30;
+  function fmt(p){ return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function place(){
+    /* ruler spans SL 4262 (82%) to TP1 4295 (8%) of stmt height */
+    var h = stmt.clientHeight;
+    var t = Math.max(0, Math.min(1, (4295 - price) / (4295 - 4262)));
+    dot.style.top = (t * h) + 'px';
+  }
+  place();
+  window.addEventListener('resize', place);
+  if (!reduce){
+    setInterval(function(){
+      price = Math.max(4258, Math.min(4298, price + (Math.random() - .48) * 1.6));
+      pxNow.textContent = fmt(price);
+      place();
+    }, 4000);
+  }
+  var TEXT = 'XAUUSD 15M - LONG\nEntry 4,275-4,280\nSL 4,262 (-1600 pips)\nTP1 4,295 (+1700), TP2 4,315 (+3700), TP3 4,340 (+6200)\nConsensus STRONG 82/100, 4/5 agree\n- via XAU Radar';
+  var copyBtn = document.getElementById('copyBtn');
+  var shareBtn = document.getElementById('shareBtn');
+  function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
+  function copyText(t, ok){
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); ok();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
+    else { fallback(); }
+  }
+  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  shareBtn.addEventListener('click', function(){
+    if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
+    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+  });
+})();
+</script>
+</body>
+</html>

@@ -317,6 +317,21 @@
 
 ---
 
+## EVT-20260928-0023
+
+- **id:** EVT-20260928-0023
+- **timestamp:** 2026-09-28T23:20:00+03:00
+- **mode:** BUILD (online-expert consultation + implementation)
+- **action:** Consult external expert, build 3 advised directions
+- **summary:** Per user suggestion, consulted Duck.ai (GPT-5.6 Luna) for 3 fresh Radar-screen directions with a structured brief. Took: depth-bar consensus meter + live ladder marker (12A Depth), dark screen + paper ledger panel + R:R ruler (12B Ledger), 4-zone grid + candle strip + tick illumination (12C Grid). Adapted rather than copied: merged the expert's type picks with our proven stacks where identical, kept our B-default pips/copy-share/nav patterns, fixed the YOU-tag overlap the expert's sketch didn't resolve. Verified clean; previews reviewed.
+- **result:** success — awaiting user pick
+- **files:** docs/mockups/mockup-12A-depth.html, mockup-12B-ledger.html, mockup-12C-grid.html + previews
+- **errors:** none
+- **lessons:** external direction + internal product constraints compose well when the brief given to the expert already encodes the constraints
+- **tags:** ui, mockups, round-12, expert-consultation
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013
