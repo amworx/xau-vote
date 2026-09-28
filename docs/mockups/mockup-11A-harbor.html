@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="XAU Radar concept: harbor light trading desk.">
+<meta name="theme-color" content="#E9ECEF">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232347F5'/%3E%3Cpath d='M10 22L16 8l6 14' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>XAU Radar - 11A Harbor</title>
+<style>
+  /* 11A HARBOR: light cool-grey desk, cobalt accent, Sora + Space Mono,
+     original line-icon set, load choreography + live price pulse. */
+  :root{
+    --bg:#E9ECEF;
+    --card:#FFFFFF;
+    --ink:#0D1526;
+    --dim:#5A6B84;
+    --faint:#8FA0B8;
+    --line:#D5DCE6;
+    --accent:#2347F5;
+    --accent-ink:#FFFFFF;
+    --long:#0E9F6E;
+    --long-soft:#DFF5EA;
+    --short:#E05252;
+    --short-soft:#FBE3E3;
+    --warn:#B7791F;
+    --disp:"Sora",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{font-family:var(--disp);background:#C9D2DC;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim);font-family:var(--mono)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+  /* load choreography: sections rise once, staggered */
+  .rise{animation:rise .55s cubic-bezier(.2,.9,.25,1) both}
+  @keyframes rise{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+  header{display:flex;align-items:center;gap:11px;padding:10px 20px 4px}
+  .mark{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mark svg{width:20px;height:20px}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.1em}
+  .brand .sub{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:2px;letter-spacing:.08em}
+  .livepill{margin-left:auto;display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-height:44px;font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--long)}
+  .livepill i{width:7px;height:7px;border-radius:50%;background:var(--long);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  main{flex:1;display:flex;flex-direction:column;padding:10px 16px 12px}
+  /* price hero: asymmetric two-col */
+  .hero{display:grid;grid-template-columns:1.6fr 1fr;gap:10px;align-items:stretch}
+  .price-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 16px 14px}
+  .price-card .l{font-size:.6rem;font-weight:600;letter-spacing:.22em;color:var(--faint)}
+  .price-card .v{font-family:var(--mono);font-size:1.75rem;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums;transition:color .3s ease}
+  .price-card .v.tick{color:var(--long)}
+  .day-card{background:var(--ink);color:#fff;border-radius:18px;padding:16px 14px 14px;display:flex;flex-direction:column;justify-content:center}
+  .day-card .l{font-size:.6rem;font-weight:600;letter-spacing:.22em;color:#93A1B8}
+  .day-card .v{font-family:var(--mono);font-size:1.05rem;font-weight:700;color:var(--long);margin-top:6px}
+  .day-card .s{font-family:var(--mono);font-size:.6rem;color:#93A1B8;margin-top:4px}
+  /* verdict strip */
+  .verdict{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px 16px;display:flex;align-items:center;gap:13px}
+  .vbadge{width:48px;height:48px;border-radius:14px;background:var(--long-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .vbadge svg{width:24px;height:24px}
+  .verdict .w{font-size:1.45rem;font-weight:800;letter-spacing:.05em;color:var(--long)}
+  .verdict .meta{margin-left:auto;text-align:right;font-family:var(--mono)}
+  .verdict .meta .a{font-size:.68rem;color:var(--dim)}
+  .verdict .meta .a b{color:var(--ink)}
+  /* strength meter fills on load */
+  .meter{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+  .meter .top{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono)}
+  .meter .top .l{font-size:.6rem;letter-spacing:.2em;color:var(--faint)}
+  .meter .top .v{font-size:.78rem;font-weight:700}
+  .track{position:relative;height:8px;border-radius:4px;background:#DCE3EC;margin-top:10px;overflow:hidden}
+  .fill{position:absolute;top:0;left:0;bottom:0;width:0;border-radius:4px;background:linear-gradient(90deg,var(--accent),#5B7CFF);animation:fill 1.1s .35s cubic-bezier(.2,.9,.25,1) forwards}
+  @keyframes fill{to{width:82%}}
+  /* level grid with icons */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:13px 14px;min-height:48px}
+  .cell.wide{grid-column:span 2}
+  .cell .h{display:flex;align-items:center;gap:7px;font-size:.6rem;font-weight:600;letter-spacing:.2em;color:var(--faint)}
+  .cell .h svg{width:15px;height:15px}
+  .cell .v{font-family:var(--mono);font-size:1.02rem;font-weight:700;margin-top:7px}
+  .cell .s{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:3px}
+  .cell.entry .v{color:var(--accent)}
+  .cell.sl .v{color:var(--short)}
+  .cell.tp .v{color:var(--long)}
+  .cta{margin:12px 0 0;background:var(--accent);color:var(--accent-ink);border:none;border-radius:16px;font-weight:700;font-size:.85rem;letter-spacing:.1em;padding:16px;min-height:56px;cursor:pointer;width:100%;box-shadow:0 12px 24px -12px rgba(35,71,245,.55)}
+  .cta:hover{filter:brightness(1.07)}
+  .cta:active{transform:translateY(1px)}
+  .cta:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  .tertiary{display:flex;justify-content:center;gap:28px}
+  .tertiary button{background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;cursor:pointer;padding:13px 8px;min-height:48px;text-decoration:underline;text-underline-offset:4px}
+  .tertiary button:hover{color:var(--ink)}
+  .tertiary button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .micro{margin-top:auto;padding:12px 0 calc(10px + env(safe-area-inset-bottom));text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;color:var(--faint)}
+  nav{display:flex;background:var(--card);border-top:1px solid var(--line);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.08em;min-height:48px;min-width:48px;border-radius:12px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  nav a.active{color:var(--accent)}
+  nav a.active svg{stroke:var(--accent)}
+  nav a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  @media (prefers-reduced-motion:reduce){
+    .rise,.fill,.livepill i{animation:none}
+    .fill{width:82%}
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+  <header class="rise">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20L12 5l7 15"/><path d="M8.5 13.5h7"/></svg>
+    </div>
+    <div class="brand">
+      <div class="name">XAU RADAR</div>
+      <div class="sub" style="font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:2px;letter-spacing:.08em">GOLD · XAUUSD · 15M</div>
+    </div>
+    <div class="livepill" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</div>
+  </header>
+  <main>
+    <div class="hero rise" style="animation-delay:.08s">
+      <div class="price-card">
+        <div class="l">CURRENT PRICE</div>
+        <div class="v" id="priceNow">4,278.30</div>
+      </div>
+      <div class="day-card">
+        <div class="l">DAY MOVE</div>
+        <div class="v">+12.40</div>
+        <div class="s">spread 0.35</div>
+      </div>
+    </div>
+    <section class="verdict rise" style="animation-delay:.16s" aria-label="Long, 4 of 5 agree, strong 82">
+      <div class="vbadge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0E9F6E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V6"/><path d="M6 12l6-6 6 6"/><path d="M4 4l16 0" stroke-width="1.6"/></svg>
+      </div>
+      <div class="w">LONG</div>
+      <div class="meta">
+        <div class="a"><b>4/5</b> agree</div>
+        <div class="a" style="color:var(--long);font-weight:700;margin-top:3px">STRONG 82</div>
+      </div>
+    </section>
+    <div class="meter rise" style="animation-delay:.24s">
+      <div class="top"><span class="l">CONSENSUS STRENGTH</span><span class="v">82/100</span></div>
+      <div class="track" role="img" aria-label="Consensus strength 82 out of 100"><div class="fill"></div></div>
+    </div>
+    <div class="grid2 rise" style="animation-delay:.32s">
+      <div class="cell entry">
+        <div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>ENTRY</div>
+        <div class="v">4,275-4,280</div>
+        <div class="s">500-pip zone</div>
+      </div>
+      <div class="cell sl">
+        <div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9.5 12l2 2 3.5-4"/></svg>STOP</div>
+        <div class="v">4,262</div>
+        <div class="s">-1600 pips</div>
+      </div>
+      <div class="cell tp">
+        <div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/></svg>TP1</div>
+        <div class="v">4,295</div>
+        <div class="s">+1700 · 1:1.5</div>
+      </div>
+      <div class="cell tp">
+        <div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/></svg>TP2</div>
+        <div class="v">4,315</div>
+        <div class="s">+3700 · 1:3.0</div>
+      </div>
+      <div class="cell tp wide">
+        <div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/></svg>TP3 · FINAL TARGET</div>
+        <div class="v">4,340</div>
+        <div class="s">+6200 pips · 1:4.1</div>
+      </div>
+    </div>
+    <button class="cta rise" style="animation-delay:.4s" type="button">View full setup</button>
+    <div class="tertiary rise" style="animation-delay:.46s">
+      <button type="button" id="copyBtn">Copy signal</button>
+      <button type="button" id="shareBtn">Share</button>
+    </div>
+    <div class="micro">1H supportive, 5M ready · in-profit +30 pips</div>
+  </main>
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12l4-4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12h3M17 12h3M12 4v3M12 17v3"/></svg>Config</a>
+  </nav>
+</div>
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* live price pulse: tiny jitter + green flash every few seconds */
+  var priceEl = document.getElementById('priceNow');
+  var base = 4278.30;
+  function fmt(p){ return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  if (!reduce){
+    setInterval(function(){
+      base = Math.max(4276, Math.min(4281, base + (Math.random() - .48) * .35));
+      priceEl.textContent = fmt(base);
+      priceEl.classList.add('tick');
+      setTimeout(function(){ priceEl.classList.remove('tick'); }, 900);
+    }, 4000);
+  }
+  var TEXT = 'XAUUSD 15M - LONG\nEntry 4,275-4,280\nSL 4,262 (-1600 pips)\nTP1 4,295 (+1700), TP2 4,315 (+3700), TP3 4,340 (+6200)\nConsensus STRONG 82/100, 4/5 agree\n- via XAU Radar';
+  var copyBtn = document.getElementById('copyBtn');
+  var shareBtn = document.getElementById('shareBtn');
+  function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
+  function copyText(t, ok){
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); ok();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
+    else { fallback(); }
+  }
+  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  shareBtn.addEventListener('click', function(){
+    if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
+    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+  });
+})();
+</script>
+</body>
+</html>

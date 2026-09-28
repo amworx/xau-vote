@@ -302,6 +302,21 @@
 
 ---
 
+## EVT-20260928-0022
+
+- **id:** EVT-20260928-0022
+- **timestamp:** 2026-09-28T23:00:00+03:00
+- **mode:** BUILD (new mockup, same behavior new surface)
+- **action:** 11A Harbor — new UI skin on unchanged dashboard behavior
+- **summary:** User clarified: no behavior change, new layout/fonts/palette/icons/animations. Built 11A Harbor: light cool-mist theme (first light dashboard), cobalt accent, Sora display + Space Mono data, original 1.8-stroke icon set (peak-mark, crosshair, shield-check, flags, radar sweep, person, clock, sliders), asymmetric price/day-move hero, verdict strip, filling strength meter, 2-col level grid. Animations (all motivated, reduced-motion-safe): staggered section rise on load (hierarchy), meter fill (computation feedback), 4s price pulse with green flash (liveness). Verified clean; screenshot caught a live tick mid-flash.
+- **result:** success — awaiting verdict
+- **files:** docs/mockups/mockup-11A-harbor.html, preview-11A-harbor.png
+- **errors:** none
+- **lessons:** when the user says "same with minor changes," check the palette first — a hue-family move re-frames everything
+- **tags:** ui, mockups, round-11, reskin
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013
