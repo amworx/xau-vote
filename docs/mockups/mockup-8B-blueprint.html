@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="XAU Radar — 15-minute XAUUSD consensus assistant.">
+<meta name="description" content="XAU Radar - 15-minute XAUUSD consensus assistant.">
 <meta name="theme-color" content="#0C1A2E">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1A2E'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23E8C35A' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<title>XAU Radar — Mockup 8B: Blueprint</title>
+<title>XAU Radar - Mockup 8B: Blueprint</title>
 <style>
   /* ══════════ MOCKUP 8B: BLUEPRINT (r2) ══════════
      Clarity pass + working TimeFrame switcher (5M / 15M / 1H).
@@ -188,7 +188,7 @@
     </div>
   </header>
   <main>
-    <div class="dwg" id="figLabel">FIG.1 — CONSENSUS ASSEMBLY · SCALE 15M · Au</div>
+    <div class="dwg" id="figLabel">FIG.1 - CONSENSUS ASSEMBLY · SCALE 15M · Au</div>
 
     <div class="tfswitch" role="group" aria-label="Select timeframe">
       <button type="button" data-tf="5M" aria-pressed="false">5M<span class="sub">CONFIRM</span></button>
@@ -201,12 +201,12 @@
       <div class="cross"></div><div class="cross v"></div>
       <div class="dir long" id="verdict">LONG ↑</div>
       <div class="sub" id="verdictSub"><b>4/5</b> AGREE · TOL ±5 PTS</div>
-      <div class="ctxflag" id="ctxFlag" hidden>CONTEXT ONLY — NOT A TRADE SIGNAL</div>
+      <div class="ctxflag" id="ctxFlag" hidden>CONTEXT ONLY - NOT A TRADE SIGNAL</div>
     </div>
 
     <div id="blackoutBanner" role="alert">
       <div class="bh">HIGH-IMPACT EVENT</div>
-      <div class="bt">NFP — NON-FARM PAYROLLS</div>
+      <div class="bt">NFP - NON-FARM PAYROLLS</div>
       <div class="bc">00:12:41</div>
       <div class="bs">USD · HIGH · New signals paused until<br>15 min after release.</div>
       <a class="bv" href="screen-6-events.html">VIEW EVENTS →</a>
@@ -222,12 +222,12 @@
 
     <div class="pstrip"><span id="pstripLabel">POSITION STATUS</span><b id="pstripVal" class="g">● IN-PROFIT +30 PIPS</b></div>
 
-    <button class="cta" type="button" id="ctaBtn">APPROVED — OPEN SIGNAL ⧉</button>
+    <button class="cta" type="button" id="ctaBtn">APPROVED - OPEN SIGNAL ⧉</button>
     <div class="share-row">
       <button class="ghost" id="copyBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
       <button class="ghost" id="shareBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>Share</button>
     </div>
-    <div class="micro">DRAWN <span id="drawnAt">21:47:12</span> · <span class="ok">1H SUPP</span> · <span class="wait">5M READY</span><br><button class="linkbtn" id="boDemo" type="button" aria-pressed="false">SIMULATE BLACKOUT</button></div>
+    <div class="micro">DRAWN <span id="drawnAt">21:47:12</span> · <span class="ok">1H SUPP</span>, <span class="wait">5M READY</span><br><button class="linkbtn" id="boDemo" type="button" aria-pressed="false">SIMULATE BLACKOUT</button></div>
   </main>
   <nav aria-label="Primary">
     <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10M12 20V4M18 20v-8"/></svg>RADAR</a>
@@ -243,37 +243,37 @@
   /* Per-timeframe predictions. 1H is context-only (bias, no entry/SL). */
   var DATA = {
     '15M': {
-      dwg: 'DWG-15M-01', fig: 'FIG.1 — CONSENSUS ASSEMBLY · SCALE 15M · Au',
+      dwg: 'DWG-15M-01', fig: 'FIG.1 - CONSENSUS ASSEMBLY · SCALE 15M · Au',
       verdict: 'LONG ↑', vclass: 'long', sub: '<b>4/5</b> AGREE · TOL ±5 PTS',
       ctxOnly: false,
       rows: [
         { k: 'DATUM / PRICE', v: '4,278.30', pp: '', cls: '' },
-        { k: 'ENTRY ZONE', v: '4,275 – 4,280', pp: '500-PIP ZONE', cls: 'entry' },
+        { k: 'ENTRY ZONE', v: '4,275-4,280', pp: '500-PIP ZONE', cls: 'entry' },
         { k: 'LIMIT / STOP', v: '4,262', pp: '−1600 PIPS', cls: 'sl' },
-        { k: 'TARGETS ×3', v: '4,295 +', pp: '+1700 – +6200 PIPS', cls: 'tp' }
+        { k: 'TARGETS ×3', v: '4,295 +', pp: '+1700-+6200 PIPS', cls: 'tp' }
       ],
       strength: ['STRONG · 82', 'g'], context: '1H SUPP', confirm: '5M READY',
       pstrip: ['POSITION STATUS', '● IN-PROFIT +30 PIPS', 'g'],
-      cta: 'APPROVED — OPEN SIGNAL ⧉', ctaGoto: null,
-      copy: 'XAUUSD 15M — LONG\nEntry 4,275–4,280\nSL 4,262 (−1600 pips)\nTP1 4,295 (+1700) · TP2 4,315 (+3700) · TP3 4,340 (+6200)\nConsensus STRONG 82/100 · 4/5 agree\n— via XAU Radar'
+      cta: 'APPROVED - OPEN SIGNAL ⧉', ctaGoto: null,
+      copy: 'XAUUSD 15M - LONG\nEntry 4,275–4,280\nSL 4,262 (−1600 pips)\nTP1 4,295 (+1700), TP2 4,315 (+3700), TP3 4,340 (+6200)\nConsensus STRONG 82/100, 4/5 agree\n- via XAU Radar'
     },
     '5M': {
-      dwg: 'DWG-5M-02', fig: 'FIG.2 — CONFIRMATION DETAIL · SCALE 5M · Au',
+      dwg: 'DWG-5M-02', fig: 'FIG.2 - CONFIRMATION DETAIL · SCALE 5M · Au',
       verdict: 'SHORT ↓', vclass: 'short', sub: '<b>3/5</b> AGREE · TOL ±3 PTS',
       ctxOnly: false,
       rows: [
         { k: 'DATUM / PRICE', v: '4,278.30', pp: '', cls: '' },
-        { k: 'ENTRY ZONE', v: '4,279 – 4,282', pp: '300-PIP ZONE', cls: 'entry' },
+        { k: 'ENTRY ZONE', v: '4,279-4,282', pp: '300-PIP ZONE', cls: 'entry' },
         { k: 'LIMIT / STOP', v: '4,289', pp: '−800 PIPS', cls: 'sl' },
-        { k: 'TARGETS ×3', v: '4,268 +', pp: '+1300 – +2900 PIPS', cls: 'tp' }
+        { k: 'TARGETS ×3', v: '4,268 +', pp: '+1300-+2900 PIPS', cls: 'tp' }
       ],
       strength: ['MODERATE · 64', 'y'], context: '15M LONG', confirm: 'WATCHING',
       pstrip: ['POSITION STATUS', '● IN-PROFIT +270 PIPS', 'g'],
-      cta: 'APPROVED — OPEN SIGNAL ⧉', ctaGoto: null,
-      copy: 'XAUUSD 5M — SHORT\nEntry 4,279–4,282\nSL 4,289 (−800 pips)\nTP1 4,268 (+1300) · TP2 4,260 (+2100) · TP3 4,252 (+2900)\nConsensus MODERATE 64/100 · 3/5 agree\n— via XAU Radar'
+      cta: 'APPROVED - OPEN SIGNAL ⧉', ctaGoto: null,
+      copy: 'XAUUSD 5M - SHORT\nEntry 4,279–4,282\nSL 4,289 (−800 pips)\nTP1 4,268 (+1300), TP2 4,260 (+2100), TP3 4,252 (+2900)\nConsensus MODERATE 64/100, 3/5 agree\n- via XAU Radar'
     },
     '1H': {
-      dwg: 'DWG-1H-03', fig: 'FIG.3 — TREND CONTEXT · SCALE 1H · Au',
+      dwg: 'DWG-1H-03', fig: 'FIG.3 - TREND CONTEXT · SCALE 1H · Au',
       verdict: 'BULLISH', vclass: 'bias', sub: '<b>4/5</b> DESKS ALIGNED',
       ctxOnly: true,
       rows: [
@@ -282,10 +282,10 @@
         { k: 'RESISTANCE', v: '4,315', pp: '+3670 PIPS', cls: 'tp' },
         { k: 'TREND LINE', v: 'RISING', pp: 'HIGHER HIGHS', cls: 'entry' }
       ],
-      strength: ['STRONG · 76', 'y'], context: '—', confirm: '—',
+      strength: ['STRONG · 76', 'y'], context: '-', confirm: '-',
       pstrip: ['TREND STATUS', '● BULLISH · NO ENTRY SIGNAL', 'y'],
       cta: 'VIEW 15M SETUP →', ctaGoto: '15M',
-      copy: 'XAUUSD 1H — BULLISH bias (context only)\nSupport 4,255 (−2330 pips) · Resistance 4,315 (+3670 pips)\nTrend STRONG 76/100 · 4/5 desks aligned\n— via XAU Radar'
+      copy: 'XAUUSD 1H - BULLISH bias (context only)\nSupport 4,255 (−2330 pips), Resistance 4,315 (+3670 pips)\nTrend STRONG 76/100, 4/5 desks aligned\n- via XAU Radar'
     }
   };
   var current = '15M';

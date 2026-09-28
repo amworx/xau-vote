@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="XAU Radar — economic events board and news.">
+<meta name="description" content="XAU Radar - economic events board and news.">
 <meta name="theme-color" content="#0C1A2E">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1A2E'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23E8C35A' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<title>XAU Radar — Screen 6: Events (Blueprint)</title>
+<title>XAU Radar - Screen 6: Events (Blueprint)</title>
 <style>
   :root{
     --bg:#0C1A2E;
@@ -112,7 +112,7 @@
     <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
   </header>
   <main>
-    <div class="dwg">FIG.6 — EVENT BOARD · USD WEEK</div>
+    <div class="dwg">FIG.6 - EVENT BOARD · USD WEEK</div>
     <div class="tabs" role="tablist" aria-label="Events views">
       <button type="button" role="tab" aria-selected="true" data-pane="paneUp">UPCOMING</button>
       <button type="button" role="tab" aria-selected="false" data-pane="paneRes">RESULTS</button>
@@ -184,14 +184,14 @@
     </div>
 
     <div class="pane" id="paneNews" role="tabpanel" hidden>
-      <div class="backdrop">MACRO BACKDROP · 21:00 DIGEST<br><span class="hk">▲ HAWKISH</span> Fed repricing · <span class="dv">▼ DOVISH</span> ECB · <span class="nt">— NEUTRAL Asia demand</span></div>
+      <div class="backdrop">MACRO BACKDROP · 21:00 DIGEST<br><span class="hk">▲ HAWKISH</span> Fed repricing · <span class="dv">▼ DOVISH</span> ECB · <span class="nt">- NEUTRAL Asia demand</span></div>
       <div class="news"><div class="h">Fed officials push back on rate-cut bets as gold holds near highs</div><div class="m">REUTERS · 2H AGO · <b>HAWKISH</b> · OPEN ↗</div></div>
       <div class="news"><div class="h">ECB signals patience; euro softens, dollar firms</div><div class="m">BLOOMBERG · 4H AGO · <b>DOVISH-USD+</b> · OPEN ↗</div></div>
       <div class="news"><div class="h">Central-bank buying pace steady, WGC data show</div><div class="m">KITCO · 6H AGO · <b>NEUTRAL</b> · OPEN ↗</div></div>
       <div class="news"><div class="h">Treasury yields climb ahead of payrolls; metals mixed</div><div class="m">MARKETWATCH · 8H AGO · <b>HAWKISH</b> · OPEN ↗</div></div>
     </div>
 
-    <div class="micro">FMP CALENDAR · MANUAL SEED OK · HEADLINES LINK OUT</div>
+    <div class="micro">FMP CALENDAR, MANUAL SEED OK · HEADLINES LINK OUT</div>
   </main>
   <nav aria-label="Primary">
     <a href="#"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10M12 20V4M18 20v-8"/></svg>RADAR</a>
@@ -220,7 +220,7 @@
   var guardLine = document.getElementById('guardLine');
 
   function apply(){
-    var armed = 0, mutedCount = 0, nextBo = '—';
+    var armed = 0, mutedCount = 0, nextBo = '-';
     document.querySelectorAll('#paneUp .erow').forEach(function(r){
       var vis = !!ccys[r.dataset.ccy] && rank[r.dataset.impact] >= rank[minImp];
       var m = !!muted[r.dataset.id];
@@ -230,7 +230,7 @@
         if (m){ mutedCount++; }
         else {
           armed++;
-          if (r.dataset.impact === 'HIGH' && r.dataset.ccy === 'USD' && nextBo === '—' && r.dataset.bo){ nextBo = r.dataset.bo; }
+          if (r.dataset.impact === 'HIGH' && r.dataset.ccy === 'USD' && nextBo === '-' && r.dataset.bo){ nextBo = r.dataset.bo; }
         }
       }
     });

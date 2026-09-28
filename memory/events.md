@@ -257,6 +257,21 @@
 
 ---
 
+## EVT-20260928-0019
+
+- **id:** EVT-20260928-0019
+- **timestamp:** 2026-09-28T22:00:00+03:00
+- **mode:** REVIEW (design-taste audit)
+- **action:** Anti-slop sweep across current 7-file set
+- **summary:** Applied the transferable rules of the pasted frontend-taste skill as a redesign-preserve pass (product UI, so landing-only rules excluded; drawing-frame labels kept as brand by explicit decision). Mechanical changes: zero em-dashes and zero en-dash separators left in the set (55-line batch swap; ranges now hyphens, e.g. 4,275-4,280); middle dots rationed to max 1 per visible line (5 micro-lines restructured, incl. clipboard copy text); prior pass already covered fonts, dead links, press states, favicon/meta. Re-verified 8B post-sweep: TF switch, refresh spin, copy feedback all green, no console errors.
+- **result:** success
+- **files:** mockup-8B-blueprint.html, screen-2..6-*.html, splash-candle.html
+- **errors:** none
+- **lessons:** batch literal replacement + grep verification is the reliable way to enforce character-level style rules across a mockup set
+- **tags:** ui, taste-audit, typography
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013
