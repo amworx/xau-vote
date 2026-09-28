@@ -347,6 +347,21 @@
 
 ---
 
+## EVT-20260928-0025
+
+- **id:** EVT-20260928-0025
+- **timestamp:** 2026-09-28T23:55:00+03:00
+- **mode:** BUILD (icon system swap)
+- **action:** Replace all hand SVGs with Flaticon UIcons (Regular Rounded)
+- **summary:** Flaticon blocks bots (403) so verified via CDN instead: confirmed v2.6.0 serves the font, then checked all 23 candidate class names against the CSS (22 hit; crosshairs missing, used target instead). Harbor now loads UIcons 2.6.0 and maps 14 icons (logo candlestick, trend-up badge, target, shield-check, 3 flags, copy, share, radar, chart-line-up, layers, clock, settings-sliders). Verified each glyph renders with the uicons font (not tofu) + screenshot review. Attribution comment in file head (free license requires it). Every icon sits beside a text label, so offline viewing degrades gracefully.
+- **result:** success
+- **files:** mockup-11A-harbor.html, preview-11A-harbor.png
+- **errors:** none
+- **lessons:** when a site blocks scraping, its CDN often still answers — verify class names against the served CSS, never from memory
+- **tags:** ui, icons, flaticon
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013
