@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="XAU Radar — 15-minute XAUUSD consensus assistant.">
+<meta name="theme-color" content="#0C1A2E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1A2E'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23E8C35A' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <title>XAU Radar — Mockup 8B: Blueprint</title>
 <style>
   /* ══════════ MOCKUP 8B: BLUEPRINT (r2) ══════════
@@ -142,6 +148,28 @@
   nav a.active{color:var(--gold)}
   nav a.active svg{stroke:var(--gold)}
   nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+  /* ── redesign pass: type, grain, press states ── */
+  body{font-family:"Space Grotesk","Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  :root{--mono:"IBM Plex Mono","SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace}
+  .phone::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:60;opacity:.55;background-image:radial-gradient(rgba(255,255,255,.028) 1px,transparent 1.6px);background-size:3px 3px}
+  .cta,.ghost,.chip,.iconbtn,.tabs button,.seg button,.bell{transition:filter .18s ease,transform .12s ease,background .18s ease,color .18s ease}
+  .cta:hover{filter:brightness(1.08)}
+  .cta:active,.ghost:active,.chip:active,.iconbtn:active{transform:translateY(1px)}
+  nav a{transition:color .18s ease}
+  nav a:hover{color:var(--ink)}
+  /* ── blackout state (redesign: missing state) ── */
+  #blackoutBanner{display:none;border:1px solid var(--short);background:rgba(240,113,111,.06);padding:22px 18px;margin-top:12px;text-align:center}
+  body.blackout #blackoutBanner{display:block}
+  body.blackout .sheet,body.blackout .spec,body.blackout .tblock,
+  body.blackout .cta,body.blackout .share-row,body.blackout .pstrip{display:none}
+  #blackoutBanner .bh{font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.24em;color:var(--short)}
+  #blackoutBanner .bt{font-family:var(--mono);font-size:1.05rem;font-weight:700;margin-top:10px;letter-spacing:.04em}
+  #blackoutBanner .bc{font-family:var(--mono);font-size:2.1rem;font-weight:700;margin-top:8px;font-variant-numeric:tabular-nums}
+  #blackoutBanner .bs{font-size:.72rem;line-height:1.65;color:var(--dim);margin-top:10px}
+  #blackoutBanner .bv{margin-top:14px;display:inline-block;font-family:var(--mono);font-size:.66rem;font-weight:700;letter-spacing:.12em;color:var(--gold);border:1px solid var(--gold);border-radius:4px;padding:12px 20px;min-height:44px;text-decoration:none}
+  #blackoutBanner .bv:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .linkbtn{background:none;border:none;color:var(--faint);font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;cursor:pointer;text-decoration:underline;padding:12px;min-height:44px}
+  .linkbtn:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 </style>
 </head>
 <body>
@@ -176,6 +204,14 @@
       <div class="ctxflag" id="ctxFlag" hidden>CONTEXT ONLY — NOT A TRADE SIGNAL</div>
     </div>
 
+    <div id="blackoutBanner" role="alert">
+      <div class="bh">HIGH-IMPACT EVENT</div>
+      <div class="bt">NFP — NON-FARM PAYROLLS</div>
+      <div class="bc">00:12:41</div>
+      <div class="bs">USD · HIGH · New signals paused until<br>15 min after release.</div>
+      <a class="bv" href="screen-6-events.html">VIEW EVENTS →</a>
+    </div>
+
     <div class="spec" id="specRows"></div>
 
     <div class="tblock">
@@ -191,7 +227,7 @@
       <button class="ghost" id="copyBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
       <button class="ghost" id="shareBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>Share</button>
     </div>
-    <div class="micro">DRAWN <span id="drawnAt">21:47:12</span> · <span class="ok">1H SUPP</span> · <span class="wait">5M READY</span></div>
+    <div class="micro">DRAWN <span id="drawnAt">21:47:12</span> · <span class="ok">1H SUPP</span> · <span class="wait">5M READY</span><br><button class="linkbtn" id="boDemo" type="button" aria-pressed="false">SIMULATE BLACKOUT</button></div>
   </main>
   <nav aria-label="Primary">
     <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10M12 20V4M18 20v-8"/></svg>RADAR</a>
@@ -340,7 +376,25 @@
     }, 900);
   });
 
+  /* Blackout demo toggle (redesign: missing state) */
+  var boDemo = document.getElementById('boDemo');
+  boDemo.addEventListener('click', function(){
+    var on = document.body.classList.toggle('blackout');
+    boDemo.setAttribute('aria-pressed', on ? 'true' : 'false');
+    boDemo.textContent = on ? 'END SIMULATION' : 'SIMULATE BLACKOUT';
+  });
+
   render('15M');
+})();
+</script>
+<script>
+/* redesign: cross-link mockup screens (no dead nav links) */
+(function(){
+  var map = { RADAR: 'mockup-8B-blueprint.html', SIGNAL: 'screen-2-signal.html', SOURCES: 'screen-3-sources.html', HISTORY: 'screen-4-history.html', CONFIG: 'screen-5-settings.html', SETTINGS: 'screen-5-settings.html', EVENTS: 'screen-6-events.html' };
+  document.querySelectorAll('nav a').forEach(function(a){
+    var t = a.textContent.trim().toUpperCase();
+    if (map[t]) a.setAttribute('href', map[t]);
+  });
 })();
 </script>
 </body>

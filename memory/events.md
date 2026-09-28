@@ -242,6 +242,21 @@
 
 ---
 
+## EVT-20260928-0018
+
+- **id:** EVT-20260928-0018
+- **timestamp:** 2026-09-28T21:40:00+03:00
+- **mode:** BUILD (UI redesign)
+- **action:** Redesign audit applied across Blueprint set
+- **summary:** Ran the redesign skill's audit on all 6 Blueprint screens and fixed: (1) font swap — Space Grotesk UI + IBM Plex Mono with system fallbacks, verified active in computed styles; (2) subtle grain overlay on every screen; (3) hover + press (translateY) states on all buttons/nav; (4) meta description, theme-color, and branded SVG favicon everywhere; (5) all nav dead-links cross-wired to real mockup files (verified hrefs); (6) the missing blackout state on Radar — NFP banner with countdown replaces signal card via body class, demo toggle in footer, VIEW EVENTS links to Events screen, screenshot captured. Sentence-case touch on sources hint. Pre-existing interactions (TF switch, refresh, toggles, filters) re-verified intact.
+- **result:** success
+- **files:** mockup-8B-blueprint.html, screen-2..6-*.html, preview-8B-blackout.png
+- **errors:** none
+- **lessons:** cascade-order :root override lets one appended block swap fonts app-wide without touching existing rules
+- **tags:** ui, redesign, blueprint
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013
