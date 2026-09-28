@@ -46,6 +46,22 @@
   .card .dir{font-size:.72rem;font-weight:800;letter-spacing:.12em}
   .card.yes .dir{color:var(--long)}
   .card.no .dir{color:var(--short)}
+  .stgl{margin-left:10px;position:relative;width:48px;height:28px;flex-shrink:0;cursor:pointer}
+  .stgl input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0}
+  .stgl .tr{position:absolute;inset:0;border-radius:999px;background:#1B2A45;border:1px solid var(--line);transition:background .15s ease}
+  .stgl .th{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--dim);transition:left .15s ease,background .15s ease}
+  .stgl input:checked + .tr{background:rgba(74,222,158,.25);border-color:var(--long)}
+  .stgl input:checked ~ .th{left:23px;background:var(--long)}
+  .stgl input:focus-visible ~ .tr{outline:2px solid var(--gold);outline-offset:2px}
+  .hits{padding:10px 14px 12px;border-top:1px solid var(--line);font-family:var(--mono)}
+  .hits .hh{font-size:.58rem;letter-spacing:.18em;color:var(--faint);margin-bottom:9px}
+  .hits .hrow2{display:flex;align-items:center;gap:9px;padding:4px 0;min-height:28px}
+  .hits .hrow2 span{font-size:.62rem;font-weight:700;color:var(--dim);width:26px;flex-shrink:0}
+  .hits .bar{flex:1;height:6px;border-radius:3px;background:#1B2A45;overflow:hidden}
+  .hits .bar i{display:block;height:100%;background:var(--long);border-radius:3px}
+  .hits .hrow2 b{font-size:.64rem;color:var(--text);width:34px;text-align:right;flex-shrink:0}
+  .nocons{margin-top:12px;border:1px dashed var(--gold);border-radius:8px;padding:14px;text-align:center;font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.12em;color:var(--gold)}
+  .nocons[hidden]{display:none}
   .card .rows{font-family:var(--mono)}
   .card .r{display:flex;justify-content:space-between;padding:9px 14px;font-size:.74rem;min-height:40px}
   .card .r + .r{border-top:1px solid var(--line)}
@@ -79,14 +95,20 @@
   </header>
   <main>
     <div class="dwg">FIG.3 — SOURCE LEDGER · SIGNAL #A482</div>
-    <div class="sum"><span class="n"><b>4 / 5</b> agree</span><span class="s">INDEPENDENCE <b>0.80</b> · STRONG 82</span></div>
+    <div class="sum"><span class="n" id="sumN"><b>4 / 5</b> agree</span><span class="s" id="sumMeta">INDEPENDENCE <b>0.80</b> · STRONG 82</span></div>
+    <div class="nocons" id="nocons" hidden>NO CONSENSUS — ENABLE AT LEAST 2 AGREEING SOURCES</div>
 
     <section class="card yes" aria-label="Source A agrees long">
-      <div class="chead"><span class="tick">✓</span><span class="src">DESK A · GoldPulse</span><span class="age">6m AGO</span><span class="dir">LONG</span></div>
+      <div class="chead"><span class="tick">✓</span><span class="src">DESK A · GoldPulse</span><span class="age">6m AGO</span><span class="dir">LONG</span><label class="stgl" aria-label="Include Desk A in consensus"><input type="checkbox" checked data-id="A"><span class="tr"></span><span class="th"></span></label></div>
       <div class="rows">
         <div class="r"><span class="k">ENTRY</span><span class="v">4,275 – 4,280</span></div>
-        <div class="r"><span class="k">STOP</span><span class="v">4,262 · −160p</span></div>
+        <div class="r"><span class="k">STOP</span><span class="v">4,262 · −1600p</span></div>
         <div class="r tp"><span class="k">TARGETS</span><span class="v">4,295 / 4,315</span></div>
+      </div>
+      <div class="hits"><div class="hh">HIT RATE · LAST 40 SIGNALS</div>
+        <div class="hrow2"><span>TP1</span><div class="bar"><i style="width:78%"></i></div><b>78%</b></div>
+        <div class="hrow2"><span>TP2</span><div class="bar"><i style="width:54%"></i></div><b>54%</b></div>
+        <div class="hrow2"><span>TP3</span><div class="bar"><i style="width:31%"></i></div><b>31%</b></div>
       </div>
       <div class="why">"Bounce off the 4275 shelf; momentum turning up on the 15M."</div>
       <a class="orig" href="#" onclick="return false">VIEW ORIGINAL
@@ -94,11 +116,16 @@
     </section>
 
     <section class="card yes" aria-label="Source B agrees long">
-      <div class="chead"><span class="tick">✓</span><span class="src">DESK B · AurumNotes</span><span class="age">11m AGO</span><span class="dir">LONG</span></div>
+      <div class="chead"><span class="tick">✓</span><span class="src">DESK B · AurumNotes</span><span class="age">11m AGO</span><span class="dir">LONG</span><label class="stgl" aria-label="Include Desk B in consensus"><input type="checkbox" checked data-id="B"><span class="tr"></span><span class="th"></span></label></div>
       <div class="rows">
         <div class="r"><span class="k">ENTRY</span><span class="v">4,276 – 4,281</span></div>
-        <div class="r"><span class="k">STOP</span><span class="v">4,264 · −150p</span></div>
+        <div class="r"><span class="k">STOP</span><span class="v">4,264 · −1500p</span></div>
         <div class="r tp"><span class="k">TARGETS</span><span class="v">4,298 / 4,320</span></div>
+      </div>
+      <div class="hits"><div class="hh">HIT RATE · LAST 40 SIGNALS</div>
+        <div class="hrow2"><span>TP1</span><div class="bar"><i style="width:71%"></i></div><b>71%</b></div>
+        <div class="hrow2"><span>TP2</span><div class="bar"><i style="width:48%"></i></div><b>48%</b></div>
+        <div class="hrow2"><span>TP3</span><div class="bar"><i style="width:29%"></i></div><b>29%</b></div>
       </div>
       <div class="why">"Higher low printed; entry on retest of broken intraday high."</div>
       <a class="orig" href="#" onclick="return false">VIEW ORIGINAL
@@ -106,11 +133,16 @@
     </section>
 
     <section class="card yes" aria-label="Source C agrees long">
-      <div class="chead"><span class="tick">✓</span><span class="src">DESK C · BullionDesk</span><span class="age">14m AGO</span><span class="dir">LONG</span></div>
+      <div class="chead"><span class="tick">✓</span><span class="src">DESK C · BullionDesk</span><span class="age">14m AGO</span><span class="dir">LONG</span><label class="stgl" aria-label="Include Desk C in consensus"><input type="checkbox" checked data-id="C"><span class="tr"></span><span class="th"></span></label></div>
       <div class="rows">
         <div class="r"><span class="k">ENTRY</span><span class="v">4,274 – 4,279</span></div>
-        <div class="r"><span class="k">STOP</span><span class="v">4,263 · −160p</span></div>
+        <div class="r"><span class="k">STOP</span><span class="v">4,263 · −1600p</span></div>
         <div class="r tp"><span class="k">TARGETS</span><span class="v">4,296 / 4,318</span></div>
+      </div>
+      <div class="hits"><div class="hh">HIT RATE · LAST 40 SIGNALS</div>
+        <div class="hrow2"><span>TP1</span><div class="bar"><i style="width:82%"></i></div><b>82%</b></div>
+        <div class="hrow2"><span>TP2</span><div class="bar"><i style="width:57%"></i></div><b>57%</b></div>
+        <div class="hrow2"><span>TP3</span><div class="bar"><i style="width:33%"></i></div><b>33%</b></div>
       </div>
       <div class="why">"Cluster of bids 4274–80; invalidation clean below 4263."</div>
       <a class="orig" href="#" onclick="return false">VIEW ORIGINAL
@@ -118,11 +150,16 @@
     </section>
 
     <section class="card yes" aria-label="Source E agrees long">
-      <div class="chead"><span class="tick">✓</span><span class="src">DESK E · MetalWire</span><span class="age">19m AGO</span><span class="dir">LONG</span></div>
+      <div class="chead"><span class="tick">✓</span><span class="src">DESK E · MetalWire</span><span class="age">19m AGO</span><span class="dir">LONG</span><label class="stgl" aria-label="Include Desk E in consensus"><input type="checkbox" checked data-id="E"><span class="tr"></span><span class="th"></span></label></div>
       <div class="rows">
         <div class="r"><span class="k">ENTRY</span><span class="v">4,275 – 4,282</span></div>
-        <div class="r"><span class="k">STOP</span><span class="v">4,261 · −180p</span></div>
+        <div class="r"><span class="k">STOP</span><span class="v">4,261 · −1800p</span></div>
         <div class="r tp"><span class="k">TARGETS</span><span class="v">4,294 / 4,316</span></div>
+      </div>
+      <div class="hits"><div class="hh">HIT RATE · LAST 40 SIGNALS</div>
+        <div class="hrow2"><span>TP1</span><div class="bar"><i style="width:64%"></i></div><b>64%</b></div>
+        <div class="hrow2"><span>TP2</span><div class="bar"><i style="width:41%"></i></div><b>41%</b></div>
+        <div class="hrow2"><span>TP3</span><div class="bar"><i style="width:22%"></i></div><b>22%</b></div>
       </div>
       <div class="why">"Asia low holding; long dips toward the zone."</div>
       <a class="orig" href="#" onclick="return false">VIEW ORIGINAL
@@ -130,11 +167,16 @@
     </section>
 
     <section class="card no dis" aria-label="Source D disagrees short">
-      <div class="chead"><span class="tick">✗</span><span class="src">DESK D · BearBullion</span><span class="age">22m AGO</span><span class="dir">SHORT</span></div>
+      <div class="chead"><span class="tick">✗</span><span class="src">DESK D · BearBullion</span><span class="age">22m AGO</span><span class="dir">SHORT</span><label class="stgl" aria-label="Include Desk D in consensus"><input type="checkbox" checked data-id="D"><span class="tr"></span><span class="th"></span></label></div>
       <div class="rows">
         <div class="r"><span class="k">ENTRY</span><span class="v">4,285</span></div>
         <div class="r"><span class="k">STOP</span><span class="v">4,300</span></div>
         <div class="r"><span class="k">TARGET</span><span class="v">4,260</span></div>
+      </div>
+      <div class="hits"><div class="hh">HIT RATE · LAST 25 SIGNALS</div>
+        <div class="hrow2"><span>TP1</span><div class="bar"><i style="width:58%"></i></div><b>58%</b></div>
+        <div class="hrow2"><span>TP2</span><div class="bar"><i style="width:36%"></i></div><b>36%</b></div>
+        <div class="hrow2"><span>TP3</span><div class="bar"><i style="width:20%"></i></div><b>20%</b></div>
       </div>
       <div class="why">Excluded from cluster — entry 5+ pts outside the zone.</div>
       <a class="orig" href="#" onclick="return false">VIEW ORIGINAL
@@ -152,5 +194,38 @@
     <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>CONFIG</a>
   </nav>
 </div>
+<script>
+(function(){
+  var dirs = { A: 'long', B: 'long', C: 'long', E: 'long', D: 'short' };
+  var sumN = document.getElementById('sumN');
+  var sumMeta = document.getElementById('sumMeta');
+  var nocons = document.getElementById('nocons');
+  function band(s){ return s >= 75 ? 'STRONG' : s >= 60 ? 'MODERATE' : s >= 40 ? 'DEVELOPING' : 'WEAK'; }
+  function recompute(){
+    var enabled = Object.keys(dirs).filter(function(id){
+      var el = document.querySelector('.stgl input[data-id="' + id + '"]');
+      return el && el.checked;
+    });
+    var agr = enabled.filter(function(id){ return dirs[id] === 'long'; }).length;
+    var sho = enabled.length - agr;
+    if (agr >= 2 && agr > sho){
+      var indep = Math.min(0.95, 0.2 + 0.15 * agr);
+      var str = Math.min(97, Math.round(indep * 100) + 2);
+      sumN.innerHTML = '<b>' + agr + ' / ' + enabled.length + '</b> agree';
+      sumMeta.innerHTML = 'INDEPENDENCE <b>' + indep.toFixed(2) + '</b> · ' + band(str) + ' ' + str;
+      nocons.hidden = true;
+    } else {
+      var why = enabled.length === 0 ? 'NO SOURCES ENABLED'
+        : (agr < 2 ? 'NEED 2+ AGREEING' : 'TIED ' + agr + '–' + sho);
+      sumN.textContent = 'NO CONSENSUS';
+      sumMeta.innerHTML = why + ' · <b>' + agr + ' / ' + enabled.length + '</b>';
+      nocons.hidden = false;
+    }
+  }
+  document.querySelectorAll('.stgl input').forEach(function(el){
+    el.addEventListener('change', recompute);
+  });
+})();
+</script>
 </body>
 </html>

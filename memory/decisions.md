@@ -18,9 +18,9 @@
 
 ---
 
-## D-20260927-003 — Pip convention for XAUUSD displays
+## D-20260927-003 — Pip convention for XAUUSD displays (REVISED)
 
-- **date:** 2026-09-27
-- **decision:** 1 pip = 0.10 price units for all XAUUSD pip displays. Distances computed from the 4,278 entry reference (spec §11 example): SL 4,262 → −160 pips; TP1 4,295 → +170; TP2 4,315 → +370; TP3 4,340 → +620; entry zone 4,275–80 → 50-pip zone. Live P&L vs entry ref (e.g. 4,278.30 → IN-PROFIT +3 pips).
-- **rationale:** User directive ("pips are crucial for TP and SL"). 0.10 matches the most common retail (MT4/MT5) gold convention. If the user's broker counts pips differently, this decision gets revised and all displays recomputed from the single reference.
-- **status:** accepted — pending user confirmation of broker convention
+- **date:** 2026-09-27, revised 2026-09-28
+- **decision:** Pip size is a **user setting** with two options — **A: 1 pip = 0.10** or **B: 1 pip = 0.01** — **defaulting to B** per user (FXPro/Vantage trader). All mockup figures use B-default, computed from the 4,278 entry reference (spec §11 example): SL 4,262 → −1600 pips; TP1 4,295 → +1700; TP2 4,315 → +3700; TP3 4,340 → +6200; entry zone 4,275–80 → 500-pip zone; live P&L at 4,278.30 → IN-PROFIT +30 pips. Switching the setting multiplies all pip displays ×10 or ÷10 from the single point-based source of truth (points never change).
+- **rationale:** User directive; brokers differ and traders think in their own broker's pips. Points (spec §11) remain the canonical internal unit; pips are display-only.
+- **status:** accepted

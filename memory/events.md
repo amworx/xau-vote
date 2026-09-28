@@ -212,6 +212,21 @@
 
 ---
 
+## EVT-20260928-0016
+
+- **id:** EVT-20260928-0016
+- **timestamp:** 2026-09-28T10:00:00+03:00
+- **mode:** BUILD (UI design)
+- **action:** TASK-08 done + pip convention set to user-settable default B
+- **summary:** (1) Pip decision resolved: user-settable A (0.10) / B (0.01), default B for FXPro/Vantage. Flipped all 9 mockup files to B figures via ordered batch replace (54-line diff, verified zero stragglers); D-003 revised (points stay canonical, pips display-only); Settings gained a DISPLAY · PIP SIZE radio group (B default-checked). (2) TASK-08: Sources screen now has per-card toggle switches + TP1/TP2/TP3 hit-rate bars (per-desk data) + live consensus recompute (independence/strength/band from enabled set; NO CONSENSUS + banner below 2 agreers or on tie/empty) — functionally tested (4/5→2/3→NO→4/5). Preview re-captured and reviewed.
+- **result:** success — TASK-08 complete; TASK-09 (events filters) still queued
+- **files:** docs/mockups/*.html (pip flip), screen-5-settings.html, screen-3-sources.html, preview-screen-3-sources.png, memory/decisions.md
+- **errors:** none
+- **lessons:** ordered literal batch replacement across mockups beats per-file edits when a global convention changes — inventory via grep first, verify after
+- **tags:** ui, mockups, task-08, pips
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013
