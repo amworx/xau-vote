@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="XAU Radar concept: the desk as a conversation.">
+<meta name="theme-color" content="#060606">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%23E8C35A'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23060606' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>XAU Radar - 10B Desk Chat</title>
+<style>
+  /* 10B DESK CHAT: the app is a conversation. No dashboard, no rows, no nav bar. */
+  :root{
+    --bg:#060606;
+    --bubble:#151515;
+    --ink:#F0EDE6;
+    --dim:#A3A099;
+    --faint:#6B6862;
+    --gold:#E8C35A;
+    --gold-ink:#211A06;
+    --long:#4ADE9E;
+    --short:#F0716F;
+    --info:#8FB8FF;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{font-family:"Space Grotesk","Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#000;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim);font-family:var(--mono)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+  /* chat header, not an app header */
+  .chead{display:flex;align-items:center;gap:11px;padding:8px 14px 12px;border-bottom:1px solid #1E1E1E}
+  .back{background:none;border:none;color:var(--dim);font-size:1.2rem;cursor:pointer;padding:12px 8px;min-height:48px;min-width:44px}
+  .back:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+  .avatar{width:40px;height:40px;border-radius:50%;background:var(--gold);color:var(--gold-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0}
+  .who .n{font-weight:600;font-size:.92rem}
+  .who .s{font-family:var(--mono);font-size:.62rem;color:var(--long);margin-top:3px;letter-spacing:.06em}
+  .thread{flex:1;display:flex;flex-direction:column;gap:12px;padding:16px 14px;overflow-y:auto}
+  .day{align-self:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;color:var(--faint);background:#101010;border-radius:999px;padding:6px 14px}
+  .msg{max-width:86%;padding:13px 15px;font-size:.87rem;line-height:1.55}
+  .msg.in{background:var(--bubble);border-radius:4px 18px 18px 18px;align-self:flex-start}
+  .msg.out{background:var(--gold);color:var(--gold-ink);border-radius:18px 18px 4px 18px;align-self:flex-end;font-weight:500}
+  .msg .who-line{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;color:var(--gold);display:block;margin-bottom:7px}
+  .msg b{font-weight:700}
+  .msg .long{color:var(--long);font-weight:700}
+  .levels{margin-top:10px;background:#0C0C0C;border-radius:10px;padding:4px 12px;font-family:var(--mono);font-size:.78rem}
+  .levels div{display:flex;justify-content:space-between;padding:9px 0;min-height:40px}
+  .levels div + div{border-top:1px solid #222}
+  .levels .k{color:var(--faint);font-size:.62rem;letter-spacing:.12em}
+  .levels .e{color:var(--info)}
+  .levels .s{color:var(--short)}
+  .levels .t{color:var(--long)}
+  .msg .time{display:block;text-align:right;font-family:var(--mono);font-size:.58rem;color:var(--faint);margin-top:8px}
+  .copylink{background:none;border:none;color:var(--faint);font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;cursor:pointer;padding:10px 4px;min-height:44px;text-decoration:underline;text-underline-offset:4px;align-self:flex-start}
+  .copylink:hover{color:var(--gold)}
+  .copylink:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+  /* suggestion chips */
+  .chips{display:flex;gap:8px;padding:2px 14px 10px;overflow-x:auto;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chips button{flex-shrink:0;background:transparent;border:1px solid #2E2E2E;color:var(--gold);border-radius:999px;font-size:.74rem;font-weight:500;padding:11px 18px;min-height:46px;cursor:pointer}
+  .chips button:hover{border-color:var(--gold)}
+  .chips button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+  /* composer */
+  .composer{display:flex;align-items:center;gap:9px;padding:8px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid #1E1E1E}
+  .field{flex:1;background:#141414;border-radius:999px;padding:14px 18px;font-size:.85rem;color:var(--faint);min-height:50px;display:flex;align-items:center}
+  .send{width:50px;height:50px;border-radius:50%;border:none;background:var(--gold);color:var(--gold-ink);font-size:1.1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .send:hover{filter:brightness(1.08)}
+  .send:active{transform:translateY(1px)}
+  .send:focus-visible{outline:2px solid #fff;outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+  <div class="chead">
+    <button class="back" aria-label="Back">‹</button>
+    <div class="avatar">X</div>
+    <div class="who">
+      <div class="n">XAU Desk</div>
+      <div class="s">ONLINE · 15M</div>
+    </div>
+  </div>
+  <div class="thread">
+    <div class="day">TODAY 21:47</div>
+    <div class="msg in">
+      <span class="who-line">XAU DESK · 15M CONSENSUS</span>
+      <b><span class="long">LONG gold.</span></b> Four of five desks agree, strong at 82 out of 100. Price is pressing the entry zone.
+      <div class="levels">
+        <div><span class="k">ENTRY</span><span class="e">4,275-4,280</span></div>
+        <div><span class="k">STOP</span><span class="s">4,262 · -1600</span></div>
+        <div><span class="k">TP1 · TP2 · TP3</span><span class="t">4,295 +</span></div>
+      </div>
+      <span class="time">21:47 ✓✓</span>
+    </div>
+    <button class="copylink" id="copyBtn" type="button">Copy signal text</button>
+    <div class="msg out">And the stop? How far is it?</div>
+    <div class="msg in">
+      <span class="who-line">XAU DESK</span>
+      Stop sits at <b>4,262</b>, about <b>1600 pips</b> under the zone. A close beyond it kills the idea, no second chances.
+      <span class="time">21:48 ✓✓</span>
+    </div>
+  </div>
+  <div class="chips">
+    <button type="button">Why long?</button>
+    <button type="button">Show sources</button>
+    <button type="button">Track my P&amp;L</button>
+  </div>
+  <div class="composer">
+    <div class="field">Ask the desk…</div>
+    <button class="send" aria-label="Send">↑</button>
+  </div>
+</div>
+<script>
+(function(){
+  var TEXT = 'XAUUSD 15M - LONG\nEntry 4,275-4,280\nSL 4,262 (-1600 pips)\nTP1 4,295 (+1700), TP2 4,315 (+3700), TP3 4,340 (+6200)\nConsensus STRONG 82/100, 4/5 agree\n- via XAU Radar';
+  var copyBtn = document.getElementById('copyBtn');
+  function copyText(t, ok){
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); ok();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
+    else { fallback(); }
+  }
+  copyBtn.addEventListener('click', function(){
+    var old = copyBtn.innerHTML;
+    copyText(TEXT, function(){
+      copyBtn.innerHTML = 'Copied ✓';
+      setTimeout(function(){ copyBtn.innerHTML = old; }, 1600);
+    });
+  });
+})();
+</script>
+</body>
+</html>

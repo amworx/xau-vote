@@ -287,6 +287,21 @@
 
 ---
 
+## EVT-20260928-0021
+
+- **id:** EVT-20260928-0021
+- **timestamp:** 2026-09-28T22:40:00+03:00
+- **mode:** BUILD (new mockup, studio direction)
+- **action:** 100% different direction — conversational app paradigm
+- **summary:** User rejected the re-skinned 10A (rightly: same skeleton). Deleted it and built 10B Desk Chat instead: no dashboard, no level rows, no bottom nav. The app is a thread with the analyst desk — verdict message with embedded level card, user follow-up, desk answer, suggestion chips, composer. Same fixture data, same green/red semantics, copy flow working. Verified clean, preview reviewed.
+- **result:** success — awaiting verdict
+- **files:** docs/mockups/mockup-10B-chat.html, preview-10B-chat.png (10A removed)
+- **errors:** none
+- **lessons:** when the user says "same with minor changes," the fix is a new interaction model, not a new skin
+- **tags:** ui, mockups, round-10, chat-paradigm
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013
