@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="XAU Radar concept: asymmetric offset verdict.">
+<meta name="theme-color" content="#0C1A2E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1A2E'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23E8C35A' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>XAU Radar - 9B Offset</title>
+<style>
+  /* 9B OFFSET: variance-8 asymmetric grid, staggered rows, sharp. */
+  :root{
+    --bg:#0C1A2E;
+    --ink:#DCE8F7;
+    --dim:#8AA2C0;
+    --faint:#5A7396;
+    --line:#2B4A73;
+    --gold:#E8C35A;
+    --gold-ink:#2A2008;
+    --long:#4ADE9E;
+    --short:#F0716F;
+    --info:#7DB4FF;
+    --mono:"IBM Plex Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{font-family:"Space Grotesk","Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#050B16;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim);font-family:var(--mono)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+  header{display:flex;justify-content:space-between;align-items:flex-end;padding:10px 22px 0}
+  .brand .name{font-size:.85rem;font-weight:700;letter-spacing:.14em}
+  .brand .name span{color:var(--gold)}
+  .hdr{text-align:right}
+  .hdr .p{font-family:var(--mono);font-size:1.05rem;font-weight:600}
+  .hdr .c{font-family:var(--mono);font-size:.66rem;color:var(--long);display:block;margin-top:2px}
+  .live{display:flex;align-items:center;justify-content:flex-end;gap:6px;font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;padding:2px 0 0}
+  /* asymmetric hero grid: 2fr verdict, 1fr meta rail */
+  .hero{display:grid;grid-template-columns:2fr 1fr;gap:8px;padding:14px 22px 6px;align-items:end}
+  .hero .w{font-size:4.2rem;font-weight:700;letter-spacing:-.02em;line-height:.95;color:var(--long)}
+  .hero .rail{text-align:right;font-family:var(--mono);padding-bottom:6px}
+  .hero .rail .a{font-size:.72rem;color:var(--dim)}
+  .hero .rail .a b{color:var(--ink)}
+  .hero .rail .s{font-size:.74rem;font-weight:700;color:var(--long);margin-top:6px;letter-spacing:.06em}
+  .hero .rail .p{font-size:.64rem;color:var(--dim);margin-top:6px}
+  /* staggered rows */
+  .rows{margin-top:10px}
+  .row{display:flex;justify-content:space-between;align-items:baseline;padding:14px 22px;border-top:1px solid var(--line);min-height:52px}
+  .row:last-child{border-bottom:1px solid var(--line)}
+  .row .k{font-size:.64rem;font-weight:600;letter-spacing:.18em;color:var(--faint)}
+  .row .v{font-family:var(--mono);font-size:1rem;font-weight:600}
+  .row .v small{font-size:.62rem;color:var(--faint);margin-left:8px;font-weight:400}
+  .row.entry .v{color:var(--info)}
+  .row.sl .v{color:var(--short)}
+  .row.tp .v{color:var(--long)}
+  .row.o1{margin-left:0}
+  .row.o2{margin-left:18px;border-left:2px solid var(--gold);padding-left:14px}
+  .row.o3{margin-left:36px}
+  .cta{margin:20px 22px 0;background:var(--gold);color:var(--gold-ink);border:none;font-weight:700;font-size:.85rem;letter-spacing:.12em;padding:16px;min-height:54px;cursor:pointer;text-transform:uppercase}
+  .cta:hover{filter:brightness(1.08)}
+  .cta:active{transform:translateY(1px)}
+  .cta:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .tertiary{display:flex;gap:26px;padding:0 22px}
+  .tertiary button{background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;cursor:pointer;padding:14px 4px;min-height:48px;text-decoration:underline;text-underline-offset:4px}
+  .tertiary button:hover{color:var(--ink)}
+  .tertiary button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+  .micro{margin-top:auto;padding:12px 22px calc(12px + env(safe-area-inset-bottom));font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;color:var(--faint)}
+  nav{display:flex;border-top:1px solid var(--line);background:rgba(10,22,38,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.1em;min-height:48px;min-width:48px}
+  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6}
+  nav a.active{color:var(--gold)}
+  nav a.active svg{stroke:var(--gold)}
+  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+  <header>
+    <div class="brand"><div class="name">XAU<span>RADAR</span></div></div>
+    <div class="hdr"><span class="p">4,278.30</span><span class="c">+12.40</span>
+      <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+    </div>
+  </header>
+  <main>
+    <div class="hero">
+      <div class="w">LONG</div>
+      <div class="rail">
+        <div class="a"><b>4/5</b> agree</div>
+        <div class="s">STRONG 82</div>
+        <div class="p">+30 pips live</div>
+      </div>
+    </div>
+    <div class="rows">
+      <div class="row entry o1"><span class="k">ENTRY</span><span class="v">4,275-4,280<small>500-pip zone</small></span></div>
+      <div class="row sl o2"><span class="k">STOP</span><span class="v">4,262<small>-1600 pips</small></span></div>
+      <div class="row tp o3"><span class="k">TP1</span><span class="v">4,295<small>+1700 · 1:1.5</small></span></div>
+      <div class="row tp o2"><span class="k">TP2</span><span class="v">4,315<small>+3700 · 1:3.0</small></span></div>
+      <div class="row tp o1"><span class="k">TP3</span><span class="v">4,340<small>+6200 · 1:4.1</small></span></div>
+    </div>
+    <button class="cta" type="button">View full setup</button>
+    <div class="tertiary">
+      <button type="button" id="copyBtn">Copy signal</button>
+      <button type="button" id="shareBtn">Share</button>
+    </div>
+    <div class="micro">15M consensus · 1H supportive, 5M ready</div>
+  </main>
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10M12 20V4M18 20v-8"/></svg>RADAR</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>SIGNAL</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/></svg>SOURCES</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>HISTORY</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>CONFIG</a>
+  </nav>
+</div>
+<script>
+(function(){
+  var TEXT = 'XAUUSD 15M - LONG\nEntry 4,275-4,280\nSL 4,262 (-1600 pips)\nTP1 4,295 (+1700), TP2 4,315 (+3700), TP3 4,340 (+6200)\nConsensus STRONG 82/100, 4/5 agree\n- via XAU Radar';
+  var copyBtn = document.getElementById('copyBtn');
+  var shareBtn = document.getElementById('shareBtn');
+  function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
+  function copyText(t, ok){
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); ok();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
+    else { fallback(); }
+  }
+  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  shareBtn.addEventListener('click', function(){
+    if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
+    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+  });
+  var map = { RADAR: 'mockup-9B-offset.html', SIGNAL: 'screen-2-signal.html', SOURCES: 'screen-3-sources.html', HISTORY: 'screen-4-history.html', CONFIG: 'screen-5-settings.html' };
+  document.querySelectorAll('nav a').forEach(function(a){
+    var t = a.textContent.trim().toUpperCase();
+    if (map[t]) a.setAttribute('href', map[t]);
+  });
+})();
+</script>
+</body>
+</html>

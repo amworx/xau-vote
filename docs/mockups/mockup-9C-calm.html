@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="XAU Radar concept: calm centered verdict.">
+<meta name="theme-color" content="#0C1A2E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1A2E'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23E8C35A' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>XAU Radar - 9C Calm</title>
+<style>
+  /* 9C CALM: density-2 gallery calm, centered, pill CTA, hairlines. */
+  :root{
+    --bg:#0C1A2E;
+    --ink:#DCE8F7;
+    --dim:#8AA2C0;
+    --faint:#5A7396;
+    --line:#2B4A73;
+    --gold:#E8C35A;
+    --gold-ink:#2A2008;
+    --long:#4ADE9E;
+    --short:#F0716F;
+    --info:#7DB4FF;
+    --mono:"IBM Plex Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{font-family:"Space Grotesk","Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#050B16;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:16px 24px 4px;font-size:.74rem;color:var(--dim);font-family:var(--mono)}
+  .statusbar .right{display:flex;gap:6px;align-items:center}
+  header{display:flex;justify-content:space-between;align-items:center;padding:14px 24px}
+  .brand .name{font-size:.82rem;font-weight:500;letter-spacing:.3em}
+  .brand .name span{color:var(--gold)}
+  .live{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--long);min-height:44px;display:flex;align-items:center;gap:7px}
+  .live i{width:6px;height:6px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:44px 34px 12px}
+  .kick{font-family:var(--mono);font-size:.6rem;letter-spacing:.4em;color:var(--faint)}
+  .word{font-weight:300;font-size:4.6rem;letter-spacing:.04em;color:var(--long);margin-top:18px;line-height:1}
+  .agree{font-size:.82rem;color:var(--dim);margin-top:14px}
+  .agree b{color:var(--ink);font-family:var(--mono);font-weight:600}
+  .score{font-family:var(--mono);margin-top:26px}
+  .score .n{font-size:2.2rem;font-weight:600;color:var(--gold)}
+  .score .l{font-size:.6rem;letter-spacing:.34em;color:var(--faint);margin-top:6px}
+  .hair{width:100%;height:1px;background:var(--line);margin:30px 0 6px}
+  .levels{width:100%;display:flex;flex-direction:column}
+  .lvl{padding:13px 0;min-height:48px}
+  .lvl + .lvl{border-top:1px solid var(--line)}
+  .lvl .k{font-size:.58rem;letter-spacing:.32em;color:var(--faint)}
+  .lvl .v{font-family:var(--mono);font-size:1.1rem;margin-top:6px}
+  .lvl.entry .v{color:var(--info)}
+  .lvl.sl .v{color:var(--short)}
+  .lvl.tp .v{color:var(--long)}
+  .lvl .s{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:4px}
+  .cta{margin-top:30px;background:var(--gold);color:var(--gold-ink);border:none;border-radius:999px;font-weight:600;font-size:.82rem;letter-spacing:.14em;padding:16px 44px;min-height:54px;cursor:pointer;text-transform:uppercase;white-space:nowrap}
+  .cta:hover{filter:brightness(1.08)}
+  .cta:active{transform:translateY(1px)}
+  .cta:focus-visible{outline:2px solid #fff;outline-offset:3px}
+  .tertiary{display:flex;gap:24px;margin-top:4px}
+  .tertiary button{background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;cursor:pointer;padding:14px 6px;min-height:48px;text-decoration:underline;text-underline-offset:4px}
+  .tertiary button:hover{color:var(--ink)}
+  .tertiary button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+  .micro{margin-top:auto;padding-top:16px;font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;color:var(--faint)}
+  nav{display:flex;justify-content:space-around;border-top:1px solid var(--line);background:rgba(10,22,38,.96);padding:8px 6px calc(12px + env(safe-area-inset-bottom))}
+  nav a{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.56rem;letter-spacing:.2em;padding:6px 10px;min-height:48px;min-width:56px}
+  nav a svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.5}
+  nav a.active{color:var(--gold)}
+  nav a:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:47</span><span class="right">
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="5" width="3" height="7" rx="1"/><rect x="9" y="2.5" width="3" height="9.5" rx="1"/><rect x="13" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+    <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
+  </span></div>
+  <header>
+    <div class="brand"><div class="name">XAU <span>RADAR</span></div></div>
+    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE · 4,278.30</span>
+  </header>
+  <main>
+    <div class="kick">15M CONSENSUS</div>
+    <div class="word">Long</div>
+    <div class="agree"><b>4 / 5</b> desks agree</div>
+    <div class="score">
+      <div class="n">82</div>
+      <div class="l">STRONG OUT OF 100</div>
+    </div>
+    <div class="hair"></div>
+    <div class="levels">
+      <div class="lvl entry"><div class="k">ENTRY</div><div class="v">4,275-4,280</div><div class="s">500-pip zone</div></div>
+      <div class="lvl sl"><div class="k">STOP</div><div class="v">4,262</div><div class="s">-1600 pips</div></div>
+      <div class="lvl tp"><div class="k">TARGETS</div><div class="v">4,295 and up</div><div class="s">+1700 to +6200 pips</div></div>
+    </div>
+    <button class="cta" type="button">View setup</button>
+    <div class="tertiary">
+      <button type="button" id="copyBtn">Copy signal</button>
+      <button type="button" id="shareBtn">Share</button>
+    </div>
+    <div class="micro">1H supportive, 5M ready</div>
+  </main>
+  <nav aria-label="Primary">
+    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>Radar</a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/></svg>Signal</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/></svg>Sources</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</a>
+    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 12h3M17 12h3M12 4v3M12 17v3"/></svg>More</a>
+  </nav>
+</div>
+<script>
+(function(){
+  var TEXT = 'XAUUSD 15M - LONG\nEntry 4,275-4,280\nSL 4,262 (-1600 pips)\nTP1 4,295 (+1700), TP2 4,315 (+3700), TP3 4,340 (+6200)\nConsensus STRONG 82/100, 4/5 agree\n- via XAU Radar';
+  var copyBtn = document.getElementById('copyBtn');
+  var shareBtn = document.getElementById('shareBtn');
+  function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
+  function copyText(t, ok){
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); ok();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
+    else { fallback(); }
+  }
+  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  shareBtn.addEventListener('click', function(){
+    if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
+    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+  });
+  var map = { RADAR: 'mockup-9C-calm.html', SIGNAL: 'screen-2-signal.html', SOURCES: 'screen-3-sources.html', HISTORY: 'screen-4-history.html', MORE: 'screen-5-settings.html' };
+  document.querySelectorAll('nav a').forEach(function(a){
+    var t = a.textContent.trim().toUpperCase();
+    if (map[t]) a.setAttribute('href', map[t]);
+  });
+})();
+</script>
+</body>
+</html>

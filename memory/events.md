@@ -272,6 +272,21 @@
 
 ---
 
+## EVT-20260928-0020
+
+- **id:** EVT-20260928-0020
+- **timestamp:** 2026-09-28T22:20:00+03:00
+- **mode:** BUILD (new mockups to taste spec)
+- **action:** Generate 3 new Radar directions built natively to the taste skill
+- **summary:** Built 9A Stripe (full-bleed verdict band, sharp radius lock, hairline rows), 9B Offset (variance-8 asymmetric grid, staggered rows, right meta rail), 9C Calm (density-2 centered gallery, pill CTA). Pre-flight honored: zero em-dashes (grep-verified), dots max 1/line, one eyebrow max, single-line CTAs (measured), one accent + semantic direction colors, 48px targets, focus rings, tabular numerals, reduced-motion-safe (static), sentence-case footers, tertiary copy/share links instead of duplicate CTAs. Known deviation logged: hand-rolled stroke icons (consistent 1.6 set) instead of Phosphor — acceptable in offline mockups, real build must use a library. Copy/share + nav cross-links working; previews reviewed.
+- **result:** success — awaiting user pick
+- **files:** docs/mockups/mockup-9A-stripe.html, mockup-9B-offset.html, mockup-9C-calm.html + previews
+- **errors:** stale devtools page IDs served a wrong screenshot once — now verifying page identity via DOM before every capture
+- **lessons:** never trust a page ID across turns without re-listing; stale pages squat on IDs
+- **tags:** ui, mockups, round-9
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013
