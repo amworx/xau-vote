@@ -1,6 +1,6 @@
 # TASK-08 — Source toggles + target-hit stats
 
-- **status:** pending (queued 2026-09-27, user request)
+- **status:** complete (2026-09-28, mockup) — compact cards + tap-to-expand + toggles + hit stats + live recompute, tested
 - **screen:** `docs/mockups/screen-3-sources.html`
 
 ## Requirements (user)

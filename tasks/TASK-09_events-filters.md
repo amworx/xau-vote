@@ -1,6 +1,6 @@
 # TASK-09 — Events filters (user control over signal impact)
 
-- **status:** pending (queued 2026-09-27, user request)
+- **status:** complete (2026-09-28, mockup) — currency chips + impact segmented + per-event mute + live guard line + Settings mirror, tested
 - **screen:** `docs/mockups/screen-6-events.html`
 - **spec:** `docs/economic-calendar-news.md` §5 (extends it)
 

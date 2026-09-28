@@ -227,6 +227,21 @@
 
 ---
 
+## EVT-20260928-0017
+
+- **id:** EVT-20260928-0017
+- **timestamp:** 2026-09-28T21:10:00+03:00
+- **mode:** BUILD (UI design)
+- **action:** Compact desk cards + TASK-09 events filters
+- **summary:** (1) Sources reworked per feedback: compact cards (desk, TP1% snippet, age, direction, toggle, chevron) with tap/keyboard expand to full details (levels, full hit rates, reasoning, View Original); toggle exempt from expand clicks; recompute + NO CONSENSUS preserved and re-tested. (2) TASK-09: Events gained CCY chips (USD/EUR/GBP), impact segmented (HIGH/HIGH+/ALL), per-event bell mute, and a live guard summary line — functionally tested end-to-end (6 armed → GBP off → HIGH-only → NFP muted ⇒ 3 armed, next blackout correctly moved FRI→WED); added ECB HIGH/EUR, UK CPI MED/GBP, Crude LOW/USD fixtures; Settings gained EVENT FILTERS mirror group. Previews re-captured and reviewed.
+- **result:** success — TASK-08 and TASK-09 complete at mockup level
+- **files:** screen-3-sources.html, screen-6-events.html, screen-5-settings.html (+previews), tasks/TASK-08/09 (status)
+- **errors:** none
+- **lessons:** expanding-card pattern keeps the ledger scannable while preserving full detail one tap away — best of both feedback rounds
+- **tags:** ui, mockups, task-08, task-09
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013

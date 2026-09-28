@@ -37,11 +37,30 @@
   .tabs button:focus-visible{outline:2px solid #fff;outline-offset:-2px}
   .pane{margin-top:12px}
   .pane[hidden]{display:none}
+  /* filters */
+  .filters{margin-top:10px;border:1px solid var(--line);background:rgba(10,22,38,.55)}
+  .filters .frow{display:flex;align-items:center;gap:8px;padding:10px 12px}
+  .filters .frow + .frow{border-top:1px solid var(--line)}
+  .filters .fl{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;color:var(--faint);width:64px;flex-shrink:0}
+  .chip{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:999px;font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.08em;padding:8px 0;min-width:52px;min-height:40px;cursor:pointer}
+  .chip.on{background:var(--gold);border-color:var(--gold);color:#2A2008}
+  .chip:focus-visible{outline:2px solid #fff;outline-offset:1px}
+  .seg{display:flex;flex:1;gap:6px}
+  .seg button{flex:1;background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.08em;padding:9px 0;min-height:40px;cursor:pointer}
+  .seg button.on{background:rgba(232,195,90,.14);border-color:var(--gold);color:var(--gold)}
+  .seg button:focus-visible{outline:2px solid #fff;outline-offset:1px}
+  .guard{margin-top:10px;border:1px dashed var(--gold);border-radius:8px;padding:11px 14px;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;color:var(--gold);line-height:1.7}
+  .bell{background:transparent;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--gold);cursor:pointer;flex-shrink:0;margin-left:10px}
+  .bell svg{width:17px;height:17px}
+  .bell.off{opacity:.35}
+  .bell:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+  .erow.muted{opacity:.45}
   .erow{border:1px solid var(--line);background:rgba(10,22,38,.55);margin-bottom:10px}
   .erow .top{display:flex;align-items:center;gap:10px;padding:11px 14px;font-family:var(--mono)}
   .erow .imp{font-size:.58rem;font-weight:700;letter-spacing:.14em;border-radius:4px;padding:4px 8px;flex-shrink:0}
   .erow .imp.HIGH{color:var(--short);border:1px solid rgba(240,113,111,.5)}
   .erow .imp.MED{color:var(--gold);border:1px solid rgba(232,195,90,.5)}
+  .erow .imp.LOW{color:var(--faint);border:1px solid var(--line)}
   .erow .t{font-size:.74rem;font-weight:700}
   .erow .when{margin-left:auto;font-size:.62rem;color:var(--dim);white-space:nowrap}
   .erow .when.hot{color:var(--short);font-weight:700}
@@ -85,27 +104,51 @@
       <button type="button" role="tab" aria-selected="false" data-pane="paneNews">NEWS</button>
     </div>
 
+    <div class="filters" aria-label="Event filters">
+      <div class="frow"><span class="fl">CCY</span>
+        <button class="chip on" data-ccy="USD" aria-pressed="true">USD</button>
+        <button class="chip on" data-ccy="EUR" aria-pressed="true">EUR</button>
+        <button class="chip on" data-ccy="GBP" aria-pressed="true">GBP</button>
+      </div>
+      <div class="frow"><span class="fl">IMPACT</span>
+        <div class="seg" role="group" aria-label="Minimum impact">
+          <button data-imp="HIGH" aria-pressed="false">HIGH</button>
+          <button data-imp="MED" aria-pressed="true" class="on">HIGH+</button>
+          <button data-imp="LOW" aria-pressed="false">ALL</button>
+        </div>
+      </div>
+    </div>
+    <div class="guard" id="guardLine">GUARD · COMPUTING…</div>
+
     <div class="pane" id="paneUp" role="tabpanel">
-      <div class="erow">
-        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">NFP · Non-Farm Payrolls</span><span class="when hot">FRI 15:30</span></div>
+      <div class="erow" data-id="nfp" data-ccy="USD" data-impact="HIGH" data-bo="FRI 15:00">
+        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">NFP · Non-Farm Payrolls</span><span class="when hot">FRI 15:30</span><button class="bell" aria-pressed="true" aria-label="Mute NFP alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
         <div class="vals"><span>FCAST <b>185K</b></span><span>PREV <b>178K</b></span><span>BLACKOUT <b>T−30/+15</b></span></div>
         <div class="note">New signals auto-pause 30 min before. Open setups get a caution badge.</div>
       </div>
-      <div class="erow">
-        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">CPI m/m</span><span class="when">WED 15:30</span></div>
+      <div class="erow" data-id="cpi" data-ccy="USD" data-impact="HIGH" data-bo="WED 15:00">
+        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">CPI m/m</span><span class="when">WED 15:30</span><button class="bell" aria-pressed="true" aria-label="Mute CPI alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
         <div class="vals"><span>FCAST <b>0.3%</b></span><span>PREV <b>0.2%</b></span><span>SURPRISE&gt; <b>±0.2pp</b></span></div>
       </div>
-      <div class="erow">
-        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">FOMC Statement</span><span class="when">THU 21:00</span></div>
+      <div class="erow" data-id="fomc" data-ccy="USD" data-impact="HIGH" data-bo="THU 20:30">
+        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">FOMC Statement</span><span class="when">THU 21:00</span><button class="bell" aria-pressed="true" aria-label="Mute FOMC alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
         <div class="vals"><span>FCAST <b>HOLD</b></span><span>PREV <b>HOLD</b></span></div>
       </div>
-      <div class="erow">
-        <div class="top"><span class="imp MED">MED</span><span class="t">ECB Press Conference</span><span class="when">THU 15:45</span></div>
-        <div class="vals"><span>CAUTION BADGE ONLY</span></div>
+      <div class="erow" data-id="ecb" data-ccy="EUR" data-impact="HIGH">
+        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">ECB Press Conference</span><span class="when">THU 15:45</span><button class="bell" aria-pressed="true" aria-label="Mute ECB alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
+        <div class="vals"><span>NON-USD HIGH</span><span>CAUTION BADGE ONLY</span></div>
       </div>
-      <div class="erow">
-        <div class="top"><span class="imp MED">MED</span><span class="t">Retail Sales m/m</span><span class="when">TUE 15:30</span></div>
+      <div class="erow" data-id="retail" data-ccy="USD" data-impact="MED">
+        <div class="top"><span class="imp MED">MED</span><span class="t">Retail Sales m/m</span><span class="when">TUE 15:30</span><button class="bell" aria-pressed="true" aria-label="Mute Retail Sales alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
         <div class="vals"><span>FCAST <b>0.4%</b></span><span>PREV <b>0.6%</b></span></div>
+      </div>
+      <div class="erow" data-id="ukcpi" data-ccy="GBP" data-impact="MED">
+        <div class="top"><span class="imp MED">MED</span><span class="t">UK CPI y/y</span><span class="when">WED 09:00</span><button class="bell" aria-pressed="true" aria-label="Mute UK CPI alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
+        <div class="vals"><span>FCAST <b>3.2%</b></span><span>PREV <b>3.4%</b></span></div>
+      </div>
+      <div class="erow" data-id="crude" data-ccy="USD" data-impact="LOW">
+        <div class="top"><span class="imp LOW">LOW</span><span class="t">Crude Inventories</span><span class="when">WED 17:30</span><button class="bell" aria-pressed="true" aria-label="Mute Crude alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
+        <div class="vals"><span>STORED ONLY</span><span>NO GUARD · NO ALERTS</span></div>
       </div>
     </div>
 
@@ -152,6 +195,67 @@
       t.setAttribute('aria-selected','true'); document.getElementById(t.dataset.pane).hidden = false;
     });
   });
+
+  /* ── Filters: currency + impact + per-event mute drive the guard ── */
+  var rank = { HIGH: 3, MED: 2, LOW: 1 };
+  var impLabel = { HIGH: 'HIGH ONLY', MED: 'HIGH+MED', LOW: 'ALL' };
+  var ccys = { USD: true, EUR: true, GBP: true };
+  var minImp = 'MED';
+  var muted = {};
+  var guardLine = document.getElementById('guardLine');
+
+  function apply(){
+    var armed = 0, mutedCount = 0, nextBo = '—';
+    document.querySelectorAll('#paneUp .erow').forEach(function(r){
+      var vis = !!ccys[r.dataset.ccy] && rank[r.dataset.impact] >= rank[minImp];
+      var m = !!muted[r.dataset.id];
+      r.style.display = vis ? '' : 'none';
+      r.classList.toggle('muted', m && vis);
+      if (vis){
+        if (m){ mutedCount++; }
+        else {
+          armed++;
+          if (r.dataset.impact === 'HIGH' && r.dataset.ccy === 'USD' && nextBo === '—' && r.dataset.bo){ nextBo = r.dataset.bo; }
+        }
+      }
+    });
+    var on = Object.keys(ccys).filter(function(c){ return ccys[c]; }).join('·') || 'NONE';
+    guardLine.textContent = 'GUARD: ' + on + ' · ' + impLabel[minImp] +
+      ' · ' + armed + ' ARMED' + (mutedCount ? ' · ' + mutedCount + ' MUTED' : '') +
+      ' · NEXT BLACKOUT ' + nextBo;
+  }
+  document.querySelectorAll('.chip').forEach(function(c){
+    c.addEventListener('click', function(){
+      var k = c.dataset.ccy;
+      ccys[k] = !ccys[k];
+      c.classList.toggle('on', ccys[k]);
+      c.setAttribute('aria-pressed', ccys[k] ? 'true' : 'false');
+      apply();
+    });
+  });
+  document.querySelectorAll('.seg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      minImp = b.dataset.imp;
+      document.querySelectorAll('.seg button').forEach(function(x){
+        var on = x === b;
+        x.classList.toggle('on', on);
+        x.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      apply();
+    });
+  });
+  document.querySelectorAll('.bell').forEach(function(bel){
+    bel.addEventListener('click', function(){
+      var row = bel.closest('.erow');
+      var id = row.dataset.id;
+      muted[id] = !muted[id];
+      bel.classList.toggle('off', muted[id]);
+      bel.setAttribute('aria-pressed', muted[id] ? 'false' : 'true');
+      bel.setAttribute('aria-label', (muted[id] ? 'Unmute ' : 'Mute ') + row.querySelector('.t').textContent + ' alerts');
+      apply();
+    });
+  });
+  apply();
 })();
 </script>
 </body>
