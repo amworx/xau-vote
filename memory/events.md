@@ -332,6 +332,21 @@
 
 ---
 
+## EVT-20260928-0024
+
+- **id:** EVT-20260928-0024
+- **timestamp:** 2026-09-28T23:40:00+03:00
+- **mode:** BUILD (interactive mockup behaviors)
+- **action:** Harbor in action — event state, TP selection, redesigned share
+- **summary:** User picked Harbor and asked to see it behave. Added: (1) high-impact event blackout — dark banner with live-ticking countdown replaces verdict/meter/grid/CTA/TP/share while active, NOTIFY ME arms alerts, SIMULATE EVENT demo toggle; caught and fixed two visual bugs via screenshot review (setup controls leaking into blackout, banner text inheriting dark ink on dark bg). (2) Working TP selector (TP1 / TP1+2 / TP1+2+3) that hides cells, widens TP1 solo, and updates the R:R line — tested all modes. (3) Share redesigned from tertiary links to a proper action row: tonal Copy with icon + outlined Share with icon, toast confirmations, Web Share API with copy fallback. All click-tested, zero overflow, committed with both state previews.
+- **result:** success
+- **files:** mockup-11A-harbor.html, preview-11A-harbor.png, preview-11A-blackout.png
+- **errors:** two review-caught defects, both fixed same session
+- **lessons:** every new state needs its own screenshot — the banner bug was invisible to DOM checks
+- **tags:** ui, mockups, harbor, interactive-states
+
+---
+
 ## EVT-20260927-0013
 
 - **id:** EVT-20260927-0013

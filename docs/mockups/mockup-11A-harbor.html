@@ -94,6 +94,41 @@
   .tertiary button:hover{color:var(--ink)}
   .tertiary button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
   .micro{margin-top:auto;padding:12px 0 calc(10px + env(safe-area-inset-bottom));text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;color:var(--faint)}
+  .linkbtn{background:none;border:none;color:var(--faint);font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:12px;min-height:44px}
+  .linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  /* ── event blackout state ── */
+  #eventBanner{display:none;background:#101828;border:1px solid var(--short);border-radius:18px;padding:20px 18px;margin-top:10px;text-align:center;color:#fff}
+  body.blackout #eventBanner{display:block}
+  body.blackout .verdict,body.blackout .meter,body.blackout .grid2,
+  body.blackout .cta,body.blackout #rrLine,
+  body.blackout .tpseg,body.blackout .share-row{display:none}
+  #eventBanner .bh{font-size:.64rem;font-weight:700;letter-spacing:.24em;color:var(--short)}
+  #eventBanner .bt{font-size:1.05rem;font-weight:800;margin-top:10px;letter-spacing:.02em}
+  #eventBanner .bc{font-family:var(--mono);font-size:2.1rem;font-weight:700;margin-top:8px;font-variant-numeric:tabular-nums}
+  #eventBanner .bs{font-size:.74rem;line-height:1.6;color:#93A1B8;margin-top:10px}
+  #eventBanner .bv{margin-top:14px;display:inline-flex;align-items:center;gap:8px;background:transparent;color:#fff;border:1px solid #fff;border-radius:12px;font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.1em;padding:13px 20px;min-height:48px;cursor:pointer}
+  #eventBanner .bv:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  #eventBanner .bv.on{background:var(--long);border-color:var(--long);color:#04120A}
+  /* ── TP selector ── */
+  .tpseg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;margin-top:10px}
+  .tpseg button{flex:1;background:transparent;border:none;border-radius:10px;font-family:var(--mono);font-size:.64rem;font-weight:700;letter-spacing:.06em;color:var(--dim);padding:11px 0;min-height:44px;cursor:pointer}
+  .tpseg button.on{background:var(--ink);color:#fff}
+  .tpseg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .rrline{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;color:var(--dim)}
+  .rrline b{color:var(--ink)}
+  /* ── share actions (redesigned) ── */
+  .share-row{display:flex;gap:10px;margin-top:12px}
+  .btn-share{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;border-radius:14px;font-size:.78rem;font-weight:700;letter-spacing:.08em;padding:14px;min-height:52px;cursor:pointer}
+  .btn-share svg{width:17px;height:17px;flex-shrink:0}
+  .btn-share.copy{background:#E3EBFF;color:var(--accent);border:none}
+  .btn-share.copy:hover{filter:brightness(.97)}
+  .btn-share.send{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+  .btn-share.send:hover{border-color:var(--ink)}
+  .btn-share:active{transform:translateY(1px)}
+  .btn-share:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  /* ── toast ── */
+  .toast{position:absolute;left:50%;bottom:110px;transform:translateX(-50%) translateY(12px);background:var(--ink);color:#fff;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;padding:12px 20px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;white-space:nowrap;z-index:20}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   nav{display:flex;background:var(--card);border-top:1px solid var(--line);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
   nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.08em;min-height:48px;min-width:48px;border-radius:12px}
   nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -134,6 +169,13 @@
         <div class="s">spread 0.35</div>
       </div>
     </div>
+    <div id="eventBanner" role="alert">
+      <div class="bh">HIGH-IMPACT EVENT</div>
+      <div class="bt">NFP · Non-Farm Payrolls</div>
+      <div class="bc" id="boCount">00:12:41</div>
+      <div class="bs">USD · HIGH · New signals paused until<br>15 min after release.</div>
+      <button class="bv" id="ntfBtn" type="button" aria-pressed="false">NOTIFY ME</button>
+    </div>
     <section class="verdict rise" style="animation-delay:.16s" aria-label="Long, 4 of 5 agree, strong 82">
       <div class="vbadge" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="#0E9F6E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V6"/><path d="M6 12l6-6 6 6"/><path d="M4 4l16 0" stroke-width="1.6"/></svg>
@@ -147,6 +189,11 @@
     <div class="meter rise" style="animation-delay:.24s">
       <div class="top"><span class="l">CONSENSUS STRENGTH</span><span class="v">82/100</span></div>
       <div class="track" role="img" aria-label="Consensus strength 82 out of 100"><div class="fill"></div></div>
+    </div>
+    <div class="tpseg rise" style="animation-delay:.3s" role="group" aria-label="Target selection">
+      <button type="button" data-mode="tp1" aria-pressed="false">TP1</button>
+      <button type="button" data-mode="tp12" aria-pressed="false">TP1 + 2</button>
+      <button type="button" data-mode="tp123" aria-pressed="true" class="on">TP1 + 2 + 3</button>
     </div>
     <div class="grid2 rise" style="animation-delay:.32s">
       <div class="cell entry">
@@ -176,11 +223,19 @@
       </div>
     </div>
     <button class="cta rise" style="animation-delay:.4s" type="button">View full setup</button>
-    <div class="tertiary rise" style="animation-delay:.46s">
-      <button type="button" id="copyBtn">Copy signal</button>
-      <button type="button" id="shareBtn">Share</button>
+    <div class="rrline rise" id="rrLine" style="animation-delay:.43s">TP1 + TP2 + TP3 · BEST <b>R:R 1 : 4.1</b></div>
+    <div class="share-row rise" style="animation-delay:.46s">
+      <button class="btn-share copy" id="copyBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+        <span>Copy signal</span>
+      </button>
+      <button class="btn-share send" id="shareBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>
+        <span>Share</span>
+      </button>
     </div>
-    <div class="micro">1H supportive, 5M ready · in-profit +30 pips</div>
+    <div class="micro">1H supportive, 5M ready · in-profit +30 pips<br><button class="linkbtn" id="boDemo" type="button" aria-pressed="false">SIMULATE EVENT</button></div>
+    <div class="toast" id="toast" role="status"></div>
   </main>
   <nav aria-label="Primary">
     <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12l4-4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Radar</a>
@@ -208,7 +263,8 @@
   var TEXT = 'XAUUSD 15M - LONG\nEntry 4,275-4,280\nSL 4,262 (-1600 pips)\nTP1 4,295 (+1700), TP2 4,315 (+3700), TP3 4,340 (+6200)\nConsensus STRONG 82/100, 4/5 agree\n- via XAU Radar';
   var copyBtn = document.getElementById('copyBtn');
   var shareBtn = document.getElementById('shareBtn');
-  function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
+  function flash(btn, msg){ var label = btn.querySelector('span'); var old = label.textContent; label.textContent = msg; setTimeout(function(){ label.textContent = old; }, 1600); }
+  function toast(msg){ var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(function(){ t.classList.remove('show'); }, 1800); }
   function copyText(t, ok){
     function fallback(){
       var ta = document.createElement('textarea');
@@ -220,10 +276,68 @@
     if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
     else { fallback(); }
   }
-  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied'); toast('Signal copied to clipboard'); }); });
   shareBtn.addEventListener('click', function(){
     if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
-    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+    else { copyText(TEXT, function(){ flash(shareBtn, 'Shared'); toast('Share sheet unavailable - signal copied'); }); }
+  });
+  /* ── TP selection drives the grid ── */
+  var tpCells = Array.prototype.slice.call(document.querySelectorAll('.grid2 .cell.tp'));
+  var rrLine = document.getElementById('rrLine');
+  var rrText = {
+    tp1: 'TP1 ONLY · <b>R:R 1 : 1.5</b>',
+    tp12: 'TP1 + TP2 · BEST <b>R:R 1 : 3.0</b>',
+    tp123: 'TP1 + TP2 + TP3 · BEST <b>R:R 1 : 4.1</b>'
+  };
+  document.querySelectorAll('.tpseg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      var mode = b.dataset.mode;
+      document.querySelectorAll('.tpseg button').forEach(function(x){
+        var on = x === b;
+        x.classList.toggle('on', on);
+        x.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      var show = mode === 'tp1' ? 1 : mode === 'tp12' ? 2 : 3;
+      tpCells.forEach(function(c, i){
+        c.style.display = i < show ? '' : 'none';
+        c.classList.toggle('wide', show === 1);
+      });
+      rrLine.innerHTML = rrText[mode];
+    });
+  });
+
+  /* ── event blackout demo + countdown + notify ── */
+  var boDemo = document.getElementById('boDemo');
+  var boCount = document.getElementById('boCount');
+  var ntfBtn = document.getElementById('ntfBtn');
+  var secs = 12 * 60 + 41;
+  function fmtClock(s){
+    function z(n){ return (n < 10 ? '0' : '') + n; }
+    return z(Math.floor(s / 3600)) + ':' + z(Math.floor(s % 3600 / 60)) + ':' + z(s % 60);
+  }
+  boCount.textContent = fmtClock(secs);
+  if (!reduce){
+    setInterval(function(){
+      if (secs > 0){ secs--; boCount.textContent = fmtClock(secs); }
+    }, 1000);
+  }
+  boDemo.addEventListener('click', function(){
+    var on = document.body.classList.toggle('blackout');
+    boDemo.setAttribute('aria-pressed', on ? 'true' : 'false');
+    boDemo.textContent = on ? 'END SIMULATION' : 'SIMULATE EVENT';
+  });
+  ntfBtn.addEventListener('click', function(){
+    var on = ntfBtn.classList.toggle('on');
+    ntfBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    ntfBtn.textContent = on ? 'ALERTS ON ✓' : 'NOTIFY ME';
+    if (on) toast('NFP alerts armed');
+  });
+
+  /* ── cross-link screens ── */
+  var map = { RADAR: 'mockup-11A-harbor.html', SIGNAL: 'screen-2-signal.html', SOURCES: 'screen-3-sources.html', HISTORY: 'screen-4-history.html', CONFIG: 'screen-5-settings.html' };
+  document.querySelectorAll('nav a').forEach(function(a){
+    var t = a.textContent.trim().toUpperCase();
+    if (map[t]) a.setAttribute('href', map[t]);
   });
 })();
 </script>
