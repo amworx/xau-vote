@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/mock_fixtures.dart';
+import '../icons.dart';
 import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
@@ -46,7 +47,7 @@ class RadarScreen extends StatelessWidget {
               child: Text(
                 'Caution: Retail Sales in 42m',
                 style: TextStyle(
-                  fontFamily: 'monospace',
+                  fontFamily: 'Space Mono',
                   fontSize: 11,
                   color: harborDim,
                 ),
@@ -76,12 +77,12 @@ class RadarScreen extends StatelessWidget {
       style: const ButtonStyle(
         textStyle: WidgetStatePropertyAll(
           TextStyle(
-            fontFamily: 'monospace',
-            fontSize: 11,
+            fontFamily: 'Space Mono',
+            fontSize: 10,
             fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
           ),
         ),
-        visualDensity: VisualDensity.compact,
       ),
     );
   }
@@ -108,9 +109,10 @@ class RadarScreen extends StatelessWidget {
                   const Text(
                     'CURRENT PRICE',
                     style: TextStyle(
+                      fontFamily: 'Sora',
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: 2.6,
+                      letterSpacing: 2.2,
                       color: harborFaint,
                     ),
                   ),
@@ -118,7 +120,7 @@ class RadarScreen extends StatelessWidget {
                   Text(
                     formatPrice(signal.price),
                     style: const TextStyle(
-                      fontFamily: 'monospace',
+                      fontFamily: 'Space Mono',
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
                     ),
@@ -144,9 +146,10 @@ class RadarScreen extends StatelessWidget {
                 const Text(
                   'DAY MOVE',
                   style: TextStyle(
+                    fontFamily: 'Sora',
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 2.6,
+                    letterSpacing: 2.2,
                     color: Color(0xFF93A1B8),
                   ),
                 ),
@@ -154,7 +157,7 @@ class RadarScreen extends StatelessWidget {
                 Text(
                   '+${signal.dayMove.toStringAsFixed(2)}',
                   style: const TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'Space Mono',
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: harborLong,
@@ -163,7 +166,7 @@ class RadarScreen extends StatelessWidget {
                 Text(
                   'spread ${signal.spread.toStringAsFixed(2)}',
                   style: const TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'Space Mono',
                     fontSize: 10,
                     color: Color(0xFF93A1B8),
                   ),
@@ -193,16 +196,28 @@ class RadarScreen extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: harborLongSoft,
+                    color: signal.direction == Direction.long
+                        ? harborLongSoft
+                        : harborShortSoft,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(
-                    signal.direction == Direction.long
-                        ? Icons.trending_up
-                        : Icons.trending_down,
-                    color: harborLong,
-                    size: 24,
-                  ),
+                  // The bundled UIcons set ships only the up-trend glyph;
+                  // rotate it 180° for SHORT so the badge keeps its
+                  // direction semantics (mockup shows the LONG case).
+                  child: signal.direction == Direction.long
+                      ? const Icon(
+                          HarborIcons.arrowTrendUp,
+                          color: harborLong,
+                          size: 24,
+                        )
+                      : Transform.rotate(
+                          angle: 3.141592653589793,
+                          child: Icon(
+                            HarborIcons.arrowTrendUp,
+                            color: harborShort,
+                            size: 24,
+                          ),
+                        ),
                 ),
                 const SizedBox(width: 13),
                 DirectionMark(direction: signal.direction, size: 23),
@@ -213,7 +228,7 @@ class RadarScreen extends StatelessWidget {
                     Text(
                       '${signal.agreeCount}/${signal.totalCount} agree',
                       style: const TextStyle(
-                        fontFamily: 'monospace',
+                        fontFamily: 'Space Mono',
                         fontSize: 11,
                         color: harborDim,
                       ),
@@ -222,7 +237,7 @@ class RadarScreen extends StatelessWidget {
                     Text(
                       '${bandLabel(signal.band)} ${signal.strength}',
                       style: const TextStyle(
-                        fontFamily: 'monospace',
+                        fontFamily: 'Space Mono',
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: harborLong,
@@ -251,8 +266,10 @@ class RadarScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             textStyle: const TextStyle(
+              fontFamily: 'Sora',
+              fontSize: 14,
               fontWeight: FontWeight.w700,
-              letterSpacing: 1.6,
+              letterSpacing: 1.4,
             ),
           ),
           child: const Text('VIEW ANALYSIS'),
@@ -262,9 +279,9 @@ class RadarScreen extends StatelessWidget {
           child: Text(
             bestRrLine(signal, state.targets),
             style: const TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'Space Mono',
               fontSize: 11,
-              letterSpacing: 1,
+              letterSpacing: 0.8,
               color: harborDim,
             ),
           ),
@@ -274,8 +291,9 @@ class RadarScreen extends StatelessWidget {
           child: Text(
             '1H supportive · 5M ready · in-profit +30 pips',
             style: TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'Space Mono',
               fontSize: 10,
+              letterSpacing: 0.6,
               color: harborFaint,
             ),
           ),
@@ -294,7 +312,7 @@ class RadarScreen extends StatelessWidget {
         '${formatLevel(signal.entryLow)}-${formatLevel(signal.entryHigh)}';
     final cells = <Widget>[
       LevelCell(
-        icon: Icons.my_location,
+        icon: HarborIcons.target,
         title: 'ENTRY',
         value: entryText,
         subtitle:
@@ -302,7 +320,7 @@ class RadarScreen extends StatelessWidget {
         valueColor: harborCobalt,
       ),
       LevelCell(
-        icon: Icons.shield_outlined,
+        icon: HarborIcons.shieldCheck,
         title: 'STOP',
         value: formatLevel(signal.stopLoss),
         subtitle:
@@ -322,7 +340,7 @@ class RadarScreen extends StatelessWidget {
       );
       cells.add(
         LevelCell(
-          icon: Icons.flag_outlined,
+          icon: HarborIcons.flag,
           title: n == 3 && show.length == 3 ? 'TP3 · FINAL' : 'TP$n',
           value: formatLevel(tp),
           subtitle: '+$reward · 1:${rr.toStringAsFixed(1)}',
@@ -340,26 +358,35 @@ class RadarScreen extends StatelessWidget {
     final event = MockFixtures.upcomingEvents.first;
     return Card(
       margin: EdgeInsets.zero,
+      // Mockup #eventBanner is a dark inverted surface: ink fill with a
+      // short-red hairline (not the default white card + harborLine).
+      color: harborInk,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: harborShort),
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
         child: Column(
           children: [
             const Text(
               '⚠ HIGH-IMPACT EVENT',
               style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 12,
+                fontFamily: 'Space Mono',
+                fontSize: 10,
                 fontWeight: FontWeight.w700,
-                letterSpacing: 2,
+                letterSpacing: 2.4,
                 color: harborShort,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               event.title,
               style: const TextStyle(
+                fontFamily: 'Sora',
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
+                color: Colors.white,
               ),
               textAlign: TextAlign.center,
             ),
@@ -367,30 +394,37 @@ class RadarScreen extends StatelessWidget {
             Text(
               '${event.currency} · HIGH · in ${formatCountdown(event.startsIn)}',
               style: const TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'Space Mono',
                 fontSize: 12,
-                color: harborDim,
+                color: Color(0xFF93A1B8),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             const Text(
               'New signals paused until 15 min after release.',
-              style: TextStyle(fontSize: 13, color: harborDim),
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 12,
+                height: 1.6,
+                color: Color(0xFF93A1B8),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 14),
-            FilledButton(
+            OutlinedButton(
               onPressed: () => context.read<AppState>().setTab(5),
-              style: FilledButton.styleFrom(
-                backgroundColor: harborInk,
+              style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(52),
+                side: const BorderSide(color: Colors.white),
+                minimumSize: const Size.fromHeight(48),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 textStyle: const TextStyle(
+                  fontFamily: 'Space Mono',
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1.6,
+                  letterSpacing: 1,
                 ),
               ),
               child: const Text('VIEW EVENTS'),
@@ -413,6 +447,7 @@ class RadarScreen extends StatelessWidget {
             const Text(
               'NO CONSENSUS',
               style: TextStyle(
+                fontFamily: 'Sora',
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1,
@@ -421,7 +456,11 @@ class RadarScreen extends StatelessWidget {
             const SizedBox(height: 8),
             const Text(
               'Sources are currently divided.',
-              style: TextStyle(fontSize: 13, color: harborDim),
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 13,
+                color: harborDim,
+              ),
             ),
             const SizedBox(height: 16),
             _voteRow('LONG', votes[Direction.long]!),
@@ -430,7 +469,11 @@ class RadarScreen extends StatelessWidget {
             const SizedBox(height: 16),
             const Text(
               'Waiting for stronger agreement.',
-              style: TextStyle(fontSize: 13, color: harborDim),
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 13,
+                color: harborDim,
+              ),
             ),
           ],
         ),
@@ -449,7 +492,7 @@ class RadarScreen extends StatelessWidget {
             child: Text(
               label,
               style: const TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'Space Mono',
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.2,
@@ -459,7 +502,7 @@ class RadarScreen extends StatelessWidget {
           Text(
             '$count',
             style: const TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'Space Mono',
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),

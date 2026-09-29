@@ -44,12 +44,12 @@ class _EventsScreenState extends State<EventsScreen> {
           style: const ButtonStyle(
             textStyle: WidgetStatePropertyAll(
               TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 11,
+                fontFamily: 'Space Mono',
+                fontSize: 10,
                 fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
               ),
             ),
-            visualDensity: VisualDensity.compact,
           ),
         ),
         const SizedBox(height: 12),
@@ -84,9 +84,9 @@ class _UpcomingTab extends StatelessWidget {
                 const Text(
                   'NEXT HIGH-IMPACT',
                   style: TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'Space Mono',
                     fontSize: 10,
-                    letterSpacing: 2.4,
+                    letterSpacing: 2.2,
                     color: harborFaint,
                   ),
                 ),
@@ -94,6 +94,7 @@ class _UpcomingTab extends StatelessWidget {
                 Text(
                   next.title,
                   style: const TextStyle(
+                    fontFamily: 'Sora',
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                   ),
@@ -103,7 +104,11 @@ class _UpcomingTab extends StatelessWidget {
                 const SizedBox(height: 8),
                 const Text(
                   'New signals paused from 30 min before until 15 min after release.',
-                  style: TextStyle(fontSize: 12, color: harborDim),
+                  style: TextStyle(
+                    fontFamily: 'Sora',
+                    fontSize: 12,
+                    color: harborDim,
+                  ),
                 ),
               ],
             ),
@@ -124,6 +129,11 @@ class _EventRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      // Mockup `.erow` radius is 16px (not the theme default 18px).
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: harborLine),
+      ),
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -136,7 +146,8 @@ class _EventRow extends StatelessWidget {
                   Text(
                     event.title,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontFamily: 'Sora',
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -144,7 +155,7 @@ class _EventRow extends StatelessWidget {
                   Text(
                     '${event.currency} · F ${event.forecast ?? '—'} · P ${event.previous ?? '—'}',
                     style: const TextStyle(
-                      fontFamily: 'monospace',
+                      fontFamily: 'Space Mono',
                       fontSize: 10,
                       color: harborDim,
                     ),
@@ -153,8 +164,8 @@ class _EventRow extends StatelessWidget {
                   Text(
                     'in ${formatCountdown(event.startsIn)}',
                     style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 11,
+                      fontFamily: 'Space Mono',
+                      fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: harborDim,
                     ),
@@ -180,6 +191,11 @@ class _ResultsTab extends StatelessWidget {
       children: [
         for (final e in MockFixtures.resultEvents)
           Card(
+            // Mockup `.erow` radius is 16px (not the theme default 18px).
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: harborLine),
+            ),
             margin: const EdgeInsets.only(bottom: 10),
             child: Padding(
               padding: const EdgeInsets.all(14),
@@ -192,7 +208,8 @@ class _ResultsTab extends StatelessWidget {
                         Text(
                           e.title,
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontFamily: 'Sora',
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -200,8 +217,8 @@ class _ResultsTab extends StatelessWidget {
                         Text(
                           'A ${e.actual ?? '—'} · F ${e.forecast ?? '—'} · P ${e.previous ?? '—'}',
                           style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 11,
+                            fontFamily: 'Space Mono',
+                            fontSize: 10,
                             color: harborDim,
                           ),
                         ),
@@ -212,7 +229,7 @@ class _ResultsTab extends StatelessWidget {
                                 ? '▲ SURPRISE — hotter than forecast, expect volatility'
                                 : '▼ SURPRISE — cooler than forecast, expect volatility',
                             style: const TextStyle(
-                              fontFamily: 'monospace',
+                              fontFamily: 'Space Mono',
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: harborShort,
@@ -223,7 +240,7 @@ class _ResultsTab extends StatelessWidget {
                           const Text(
                             '○ IN LINE — near forecast',
                             style: TextStyle(
-                              fontFamily: 'monospace',
+                              fontFamily: 'Space Mono',
                               fontSize: 10,
                               color: harborDim,
                             ),
@@ -255,6 +272,11 @@ class _NewsTab extends StatelessWidget {
         const SizedBox(height: 8),
         for (final t in MockFixtures.digestThemes)
           Card(
+            // Mockup `.news` radius is 16px (not the theme default 18px).
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: harborLine),
+            ),
             margin: const EdgeInsets.only(bottom: 8),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -264,6 +286,7 @@ class _NewsTab extends StatelessWidget {
                     child: Text(
                       t.theme,
                       style: const TextStyle(
+                        fontFamily: 'Sora',
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -279,22 +302,31 @@ class _NewsTab extends StatelessWidget {
         const SizedBox(height: 8),
         for (final n in MockFixtures.headlines)
           Card(
+            // Mockup `.news` radius is 16px (not the theme default 18px).
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: harborLine),
+            ),
             margin: const EdgeInsets.only(bottom: 8),
             child: InkWell(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(16),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Opens ${n.url}')),
                 );
               },
               child: Padding(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       n.title,
                       style: const TextStyle(
+                        fontFamily: 'Sora',
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -303,8 +335,9 @@ class _NewsTab extends StatelessWidget {
                     Text(
                       '${n.source.toUpperCase()} · ${n.ageText} · OPEN ORIGINAL ↗',
                       style: const TextStyle(
-                        fontFamily: 'monospace',
+                        fontFamily: 'Space Mono',
                         fontSize: 10,
+                        letterSpacing: 0.4,
                         color: harborFaint,
                       ),
                     ),

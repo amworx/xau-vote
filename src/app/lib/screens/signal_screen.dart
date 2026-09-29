@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/mock_fixtures.dart';
+import '../icons.dart';
 import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
@@ -46,7 +47,7 @@ class SignalScreen extends StatelessWidget {
             Text(
               '${formatPrice(signal.price)} · ${bandLabel(signal.band)} ${signal.strength}',
               style: const TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'Space Mono',
                 fontSize: 11,
                 color: harborDim,
               ),
@@ -97,16 +98,16 @@ class SignalScreen extends StatelessWidget {
               Text(
                 'POSITION STATUS',
                 style: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 11,
-                  letterSpacing: 1.2,
+                  fontFamily: 'Space Mono',
+                  fontSize: 10,
+                  letterSpacing: 1,
                   color: harborLong,
                 ),
               ),
               Text(
                 '● IN-PROFIT +30 PIPS',
                 style: TextStyle(
-                  fontFamily: 'monospace',
+                  fontFamily: 'Space Mono',
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: harborLong,
@@ -129,6 +130,12 @@ class SignalScreen extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
+            textStyle: const TextStyle(
+              fontFamily: 'Sora',
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
+            ),
           ),
           child: const Text('COPY SIGNAL TEXT'),
         ),
@@ -137,8 +144,9 @@ class SignalScreen extends StatelessWidget {
           child: Text(
             'Opened 21:44:03 · expires 22:44',
             style: TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'Space Mono',
               fontSize: 10,
+              letterSpacing: 0.6,
               color: harborFaint,
             ),
           ),
@@ -189,7 +197,7 @@ class SignalScreen extends StatelessWidget {
                   Text(
                     steps[i].$1,
                     style: TextStyle(
-                      fontFamily: 'monospace',
+                      fontFamily: 'Space Mono',
                       fontSize: 11,
                       letterSpacing: 0.8,
                       fontWeight: i == steps.length - 1
@@ -202,7 +210,7 @@ class SignalScreen extends StatelessWidget {
                   Text(
                     steps[i].$2,
                     style: TextStyle(
-                      fontFamily: 'monospace',
+                      fontFamily: 'Space Mono',
                       fontSize: 10,
                       color: i == steps.length - 1 ? harborCobalt : harborFaint,
                     ),
@@ -231,7 +239,7 @@ class SignalScreen extends StatelessWidget {
                 Text(
                   'TP1 ${signal.tp1 == null ? '—' : formatLevel(signal.tp1!)}',
                   style: const TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'Space Mono',
                     fontSize: 11,
                     letterSpacing: 0.8,
                     color: harborFaint,
@@ -241,7 +249,7 @@ class SignalScreen extends StatelessWidget {
                 Text(
                   '+${pipsTo(signal.tp1 ?? signal.entryMid, signal.entryMid)} PIPS',
                   style: const TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'Space Mono',
                     fontSize: 10,
                     color: harborFaint,
                   ),
@@ -258,7 +266,7 @@ class SignalScreen extends StatelessWidget {
     final tps = {1: signal.tp1, 2: signal.tp2, 3: signal.tp3};
     final cells = <Widget>[
       LevelCell(
-        icon: Icons.my_location,
+        icon: HarborIcons.target,
         title: 'ENTRY ZONE',
         value:
             '${formatLevel(signal.entryLow)}-${formatLevel(signal.entryHigh)}',
@@ -267,7 +275,7 @@ class SignalScreen extends StatelessWidget {
         valueColor: harborCobalt,
       ),
       LevelCell(
-        icon: Icons.shield_outlined,
+        icon: HarborIcons.shieldCheck,
         title: 'STOP LOSS',
         value: formatLevel(signal.stopLoss),
         subtitle:
@@ -285,7 +293,7 @@ class SignalScreen extends StatelessWidget {
       );
       cells.add(
         LevelCell(
-          icon: Icons.flag_outlined,
+          icon: HarborIcons.flag,
           title: 'TP$n',
           value: formatLevel(tp),
           subtitle:
@@ -318,9 +326,10 @@ class _ContextBadge extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
+              fontFamily: 'Sora',
               fontSize: 9,
               fontWeight: FontWeight.w600,
-              letterSpacing: 1.6,
+              letterSpacing: 1.3,
               color: harborFaint,
             ),
           ),
@@ -328,6 +337,7 @@ class _ContextBadge extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
+              fontFamily: 'Sora',
               fontSize: 12,
               fontWeight: FontWeight.w700,
               color: harborLong,

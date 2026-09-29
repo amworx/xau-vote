@@ -1,7 +1,7 @@
 /// Shared Harbor building blocks used across the 6 screens.
 ///
-/// Icons: plain Material Icons are the closest offline equivalent of the
-/// mockups' Flaticon UIcons (see theme.dart note).
+/// Icons are the bundled Flaticon UIcons ([HarborIcons]); Sora is the
+/// display font and Space Mono ([mono]) renders every numeral.
 library;
 
 import 'dart:async';
@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../icons.dart';
 import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
@@ -32,7 +33,7 @@ class HarborHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(
-            Icons.candlestick_chart,
+            HarborIcons.chartCandlestick,
             color: Colors.white,
             size: 20,
           ),
@@ -44,6 +45,7 @@ class HarborHeader extends StatelessWidget {
             const Text(
               'XAU RADAR',
               style: TextStyle(
+                fontFamily: 'Sora',
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.6,
@@ -52,10 +54,10 @@ class HarborHeader extends StatelessWidget {
             Text(
               subtitle,
               style: const TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'Space Mono',
                 fontSize: 10,
                 color: harborFaint,
-                letterSpacing: 1,
+                letterSpacing: 0.8,
               ),
             ),
           ],
@@ -83,10 +85,10 @@ class HarborHeader extends StatelessWidget {
               Text(
                 statusText ?? 'LIVE',
                 style: const TextStyle(
-                  fontFamily: 'monospace',
+                  fontFamily: 'Space Mono',
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
+                  letterSpacing: 1,
                   color: harborLong,
                 ),
               ),
@@ -109,9 +111,9 @@ class KickLabel extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(
-        fontFamily: 'monospace',
+        fontFamily: 'Space Mono',
         fontSize: 10,
-        letterSpacing: 2.6,
+        letterSpacing: 2.2,
         color: harborFaint,
       ),
     );
@@ -130,7 +132,7 @@ class StrengthMeter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           children: [
             Row(
@@ -139,17 +141,17 @@ class StrengthMeter extends StatelessWidget {
                 const Text(
                   'CONSENSUS STRENGTH',
                   style: TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'Space Mono',
                     fontSize: 10,
-                    letterSpacing: 2.4,
+                    letterSpacing: 2,
                     color: harborFaint,
                   ),
                 ),
                 Text(
                   '${signal.strength}/100',
                   style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 13,
+                    fontFamily: 'Space Mono',
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -169,9 +171,9 @@ class StrengthMeter extends StatelessWidget {
             Text(
               '${bandLabel(signal.band)} AGREEMENT · ${signal.agreeCount}/${signal.totalCount} SOURCES',
               style: const TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'Space Mono',
                 fontSize: 10,
-                letterSpacing: 1,
+                letterSpacing: 0.6,
                 color: harborDim,
               ),
             ),
@@ -204,7 +206,7 @@ class LevelCell extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -215,9 +217,10 @@ class LevelCell extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
+                    fontFamily: 'Sora',
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 2.2,
+                    letterSpacing: 2,
                     color: harborFaint,
                   ),
                 ),
@@ -227,8 +230,8 @@ class LevelCell extends StatelessWidget {
             Text(
               value,
               style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 17,
+                fontFamily: 'Space Mono',
+                fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: valueColor,
               ),
@@ -237,7 +240,7 @@ class LevelCell extends StatelessWidget {
             Text(
               subtitle,
               style: const TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'Space Mono',
                 fontSize: 10,
                 color: harborFaint,
               ),
@@ -270,9 +273,10 @@ class TargetSelector extends StatelessWidget {
       style: const ButtonStyle(
         textStyle: WidgetStatePropertyAll(
           TextStyle(
-            fontFamily: 'monospace',
-            fontSize: 11,
+            fontFamily: 'Space Mono',
+            fontSize: 10,
             fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
           ),
         ),
       ),
@@ -353,10 +357,10 @@ class StatusPill extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          fontFamily: 'monospace',
+          fontFamily: 'Space Mono',
           fontSize: 10,
           fontWeight: FontWeight.w700,
-          letterSpacing: 1.4,
+          letterSpacing: 1.2,
           color: fg,
         ),
       ),
@@ -378,6 +382,7 @@ class DirectionMark extends StatelessWidget {
         return Text(
           '▲ LONG',
           style: TextStyle(
+            fontFamily: 'Sora',
             fontSize: size,
             fontWeight: FontWeight.w800,
             letterSpacing: 1,
@@ -388,6 +393,7 @@ class DirectionMark extends StatelessWidget {
         return Text(
           '▼ SHORT',
           style: TextStyle(
+            fontFamily: 'Sora',
             fontSize: size,
             fontWeight: FontWeight.w800,
             letterSpacing: 1,
@@ -399,6 +405,7 @@ class DirectionMark extends StatelessWidget {
         return Text(
           '○ NO SIGNAL',
           style: TextStyle(
+            fontFamily: 'Sora',
             fontSize: size,
             fontWeight: FontWeight.w800,
             letterSpacing: 1,
@@ -450,14 +457,14 @@ class ImpactPill extends StatelessWidget {
         fg = harborShort;
         bg = harborShortSoft;
       case EventImpact.medium:
-        fg = const Color(0xFFB7791F);
-        bg = const Color(0xFFFDF0D5);
+        fg = harborWarn;
+        bg = harborWarnSoft;
       case EventImpact.low:
         fg = harborDim;
         bg = const Color(0xFFE7ECF2);
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
@@ -465,7 +472,7 @@ class ImpactPill extends StatelessWidget {
       child: Text(
         impactLabel(impact),
         style: TextStyle(
-          fontFamily: 'monospace',
+          fontFamily: 'Space Mono',
           fontSize: 10,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.2,
@@ -501,7 +508,7 @@ class PressurePill extends StatelessWidget {
         bg = const Color(0xFFE7ECF2);
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
@@ -509,7 +516,7 @@ class PressurePill extends StatelessWidget {
       child: Text(
         pressureLabel(pressure),
         style: TextStyle(
-          fontFamily: 'monospace',
+          fontFamily: 'Space Mono',
           fontSize: 10,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.2,
@@ -542,7 +549,11 @@ class MacroBackdropStrip extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.public, size: 15, color: Color(0xFF93A1B8)),
+            const Icon(
+              HarborIcons.layers,
+              size: 15,
+              color: Color(0xFF93A1B8),
+            ),
             const SizedBox(width: 9),
             Expanded(
               child: Text(
@@ -550,13 +561,17 @@ class MacroBackdropStrip extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontFamily: 'monospace',
+                  fontFamily: 'Space Mono',
                   fontSize: 11,
                   color: Colors.white,
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right, size: 16, color: Color(0xFF93A1B8)),
+            const Icon(
+              HarborIcons.arrowUpRight,
+              size: 16,
+              color: Color(0xFF93A1B8),
+            ),
           ],
         ),
       ),
@@ -608,7 +623,7 @@ class _EventCountdownState extends State<EventCountdown> {
     return Text(
       '${widget.prefix}${formatCountdown(_remaining)}',
       style: const TextStyle(
-        fontFamily: 'monospace',
+        fontFamily: 'Space Mono',
         fontSize: 12,
         fontWeight: FontWeight.w700,
         color: harborShort,

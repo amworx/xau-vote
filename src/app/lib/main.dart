@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'config.dart';
+import 'icons.dart';
 import 'screens/events_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/radar_screen.dart';
@@ -80,27 +81,27 @@ class _Shell extends StatelessWidget {
               context.read<AppState>().setTab(index),
           destinations: const [
             NavigationDestination(
-              icon: Icon(Icons.radar),
+              icon: Icon(HarborIcons.radar, size: 20),
               label: 'RADAR',
             ),
             NavigationDestination(
-              icon: Icon(Icons.show_chart),
+              icon: Icon(HarborIcons.chartLineUp, size: 20),
               label: 'SIGNAL',
             ),
             NavigationDestination(
-              icon: Icon(Icons.layers_outlined),
+              icon: Icon(HarborIcons.layers, size: 20),
               label: 'SOURCES',
             ),
             NavigationDestination(
-              icon: Icon(Icons.history),
+              icon: Icon(HarborIcons.clock, size: 20),
               label: 'HISTORY',
             ),
             NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
+              icon: Icon(HarborIcons.settingsSliders, size: 20),
               label: 'CONFIG',
             ),
             NavigationDestination(
-              icon: Icon(Icons.event_outlined),
+              icon: Icon(HarborIcons.calendar, size: 20),
               label: 'EVENTS',
             ),
           ],

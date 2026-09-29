@@ -54,8 +54,9 @@ class HistoryScreen extends StatelessWidget {
           child: Text(
             'Pips x0.01 · per D-003',
             style: TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'Space Mono',
               fontSize: 10,
+              letterSpacing: 0.6,
               color: harborFaint,
             ),
           ),
@@ -86,6 +87,7 @@ class _Stat extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
+              fontFamily: 'Sora',
               fontSize: 17,
               fontWeight: FontWeight.w800,
               color: color ?? harborInk,
@@ -95,9 +97,10 @@ class _Stat extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
+              fontFamily: 'Sora',
               fontSize: 9,
               fontWeight: FontWeight.w600,
-              letterSpacing: 1.4,
+              letterSpacing: 1.1,
               color: harborFaint,
             ),
           ),
@@ -120,8 +123,13 @@ class _HistoryRow extends StatelessWidget {
             ? harborShort
             : harborFaint;
     return Card(
+      // Mockup `.hrow` radius is 16px (not the theme default 18px).
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: harborLine),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -132,7 +140,7 @@ class _HistoryRow extends StatelessWidget {
                 Text(
                   entry.whenText,
                   style: const TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'Space Mono',
                     fontSize: 10,
                     color: harborFaint,
                   ),
@@ -143,7 +151,7 @@ class _HistoryRow extends StatelessWidget {
             Text(
               entry.detailText,
               style: const TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'Space Mono',
                 fontSize: 11,
                 color: harborDim,
               ),
@@ -156,7 +164,7 @@ class _HistoryRow extends StatelessWidget {
                 Text(
                   entry.pipsText,
                   style: TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'Space Mono',
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: pipsColor,

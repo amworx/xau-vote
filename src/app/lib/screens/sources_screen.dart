@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/mock_fixtures.dart';
+import '../icons.dart';
 import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
@@ -43,6 +44,7 @@ class SourcesScreen extends StatelessWidget {
               Text(
                 '$agreeing / ${enabled.length} agree',
                 style: const TextStyle(
+                  fontFamily: 'Sora',
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -52,7 +54,7 @@ class SourcesScreen extends StatelessWidget {
               const Text(
                 'INDEPENDENCE 0.80 · STRONG 82',
                 style: TextStyle(
-                  fontFamily: 'monospace',
+                  fontFamily: 'Space Mono',
                   fontSize: 10,
                   color: Color(0xFF93A1B8),
                 ),
@@ -65,7 +67,7 @@ class SourcesScreen extends StatelessWidget {
           child: Text(
             'Tap a card for full details · toggle to include',
             style: TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'Space Mono',
               fontSize: 10,
               letterSpacing: 1,
               color: harborFaint,
@@ -76,7 +78,7 @@ class SourcesScreen extends StatelessWidget {
         for (final source in sources) _SourceCard(source: source),
         const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(color: harborLine),
@@ -85,7 +87,7 @@ class SourcesScreen extends StatelessWidget {
           child: const Text(
             'INDEPENDENCE CHECK — A/B/C/E cluster tightly on levels but differ in author, wording and timing → counted as 3.2 independent votes. No copy-paste detected.',
             style: TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'Space Mono',
               fontSize: 10,
               height: 1.7,
               color: harborDim,
@@ -97,7 +99,7 @@ class SourcesScreen extends StatelessWidget {
           child: Text(
             'Fingerprints verified · 21:47:12',
             style: TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'Space Mono',
               fontSize: 10,
               color: harborFaint,
             ),
@@ -147,7 +149,9 @@ class _SourceCardState extends State<_SourceCard> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        s.agrees ? Icons.check : Icons.close,
+                        s.agrees
+                            ? HarborIcons.check
+                            : HarborIcons.cross,
                         size: 14,
                         color: s.agrees ? harborLong : harborShort,
                       ),
@@ -160,6 +164,7 @@ class _SourceCardState extends State<_SourceCard> {
                           Text(
                             s.name,
                             style: const TextStyle(
+                              fontFamily: 'Sora',
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                             ),
@@ -169,7 +174,7 @@ class _SourceCardState extends State<_SourceCard> {
                           Text(
                             'TP1 ${s.tp1HitRate}% · ${s.freshnessText}',
                             style: const TextStyle(
-                              fontFamily: 'monospace',
+                              fontFamily: 'Space Mono',
                               fontSize: 10,
                               color: harborFaint,
                             ),
@@ -180,7 +185,8 @@ class _SourceCardState extends State<_SourceCard> {
                     Text(
                       s.direction == Direction.long ? 'LONG' : 'SHORT',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontFamily: 'Sora',
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.2,
                         color: dirColor,
@@ -190,13 +196,22 @@ class _SourceCardState extends State<_SourceCard> {
                     Switch(
                       value: enabled,
                       activeTrackColor: harborLong,
+                      inactiveTrackColor: harborLine,
                       onChanged: (value) => context
                           .read<AppState>()
                           .setSourceEnabled(s.id, value),
                     ),
-                    Icon(
-                      _open ? Icons.expand_less : Icons.expand_more,
-                      color: harborFaint,
+                    // Mockup `.chev` is a text glyph (›, 16px) that rotates
+                    // 90° and turns cobalt when open — not a Material icon.
+                    RotatedBox(
+                      quarterTurns: _open ? 1 : 0,
+                      child: Text(
+                        '›',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: _open ? harborCobalt : harborFaint,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -218,9 +233,9 @@ class _SourceCardState extends State<_SourceCard> {
                     const Text(
                       'HIT RATE · LAST 40 SIGNALS',
                       style: TextStyle(
-                        fontFamily: 'monospace',
+                        fontFamily: 'Space Mono',
                         fontSize: 9,
-                        letterSpacing: 2,
+                        letterSpacing: 1.6,
                         color: harborFaint,
                       ),
                     ),
@@ -236,6 +251,7 @@ class _SourceCardState extends State<_SourceCard> {
                 child: Text(
                   '"${s.reasoning}"',
                   style: const TextStyle(
+                    fontFamily: 'Sora',
                     fontSize: 12,
                     height: 1.55,
                     color: harborDim,
@@ -251,15 +267,15 @@ class _SourceCardState extends State<_SourceCard> {
                     SnackBar(content: Text('Opens ${s.sourceUrl}')),
                   );
                 },
-                icon: const Icon(Icons.open_in_new, size: 14),
+                icon: const Icon(HarborIcons.arrowUpRight, size: 14),
                 label: const Text('VIEW ORIGINAL'),
                 style: TextButton.styleFrom(
                   foregroundColor: harborCobalt,
                   textStyle: const TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'Space Mono',
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
+                    letterSpacing: 1.1,
                   ),
                 ),
               ),
@@ -279,17 +295,17 @@ class _SourceCardState extends State<_SourceCard> {
           Text(
             key,
             style: const TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'Space Mono',
               fontSize: 10,
-              letterSpacing: 1.8,
+              letterSpacing: 1.6,
               color: harborFaint,
             ),
           ),
           Text(
             value,
             style: const TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 13,
+              fontFamily: 'Space Mono',
+              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -304,11 +320,11 @@ class _SourceCardState extends State<_SourceCard> {
       child: Row(
         children: [
           SizedBox(
-            width: 30,
+            width: 26,
             child: Text(
               label,
               style: const TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'Space Mono',
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: harborDim,
@@ -329,13 +345,13 @@ class _SourceCardState extends State<_SourceCard> {
           ),
           const SizedBox(width: 8),
           SizedBox(
-            width: 36,
+            width: 34,
             child: Text(
               '$percent%',
               textAlign: TextAlign.right,
               style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 11,
+                fontFamily: 'Space Mono',
+                fontSize: 10,
                 fontWeight: FontWeight.w700,
               ),
             ),

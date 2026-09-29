@@ -61,6 +61,30 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  assets:
+    - assets/fonts/
+
+  fonts:
+    - family: Sora
+      fonts:
+        - asset: assets/fonts/sora-v17-latin-regular.ttf
+          weight: 400
+        - asset: assets/fonts/sora-v17-latin-600.ttf
+          weight: 600
+        - asset: assets/fonts/sora-v17-latin-700.ttf
+          weight: 700
+        - asset: assets/fonts/sora-v17-latin-800.ttf
+          weight: 800
+    - family: Space Mono
+      fonts:
+        - asset: assets/fonts/space-mono-v17-latin-regular.ttf
+          weight: 400
+        - asset: assets/fonts/space-mono-v17-latin-700.ttf
+          weight: 700
+    - family: UIcons
+      fonts:
+        - asset: assets/fonts/uicons-regular-rounded.ttf
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

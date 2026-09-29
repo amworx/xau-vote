@@ -151,8 +151,22 @@ class SettingsScreen extends StatelessWidget {
           child: Text(
             'Pip x0.01 · per D-003 · v0.1 MVP',
             style: TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'Space Mono',
               fontSize: 10,
+              letterSpacing: 0.6,
+              color: harborFaint,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Font/icon license attribution (required, display only).
+        const Center(
+          child: Text(
+            'UIcons by Flaticon',
+            style: TextStyle(
+              fontFamily: 'Space Mono',
+              fontSize: 10,
+              letterSpacing: 0.6,
               color: harborFaint,
             ),
           ),
@@ -183,9 +197,10 @@ class _Group extends StatelessWidget {
             child: Text(
               title,
               style: const TextStyle(
+                fontFamily: 'Sora',
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
-                letterSpacing: 2.4,
+                letterSpacing: 2,
                 color: harborCobalt,
               ),
             ),
@@ -218,11 +233,22 @@ class _StaticRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 13)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Sora',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 11, color: harborFaint),
+                  style: const TextStyle(
+                    fontFamily: 'Sora',
+                    fontSize: 10,
+                    color: harborFaint,
+                  ),
                 ),
               ],
             ),
@@ -230,7 +256,7 @@ class _StaticRow extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'Space Mono',
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
@@ -261,7 +287,14 @@ class _TargetOption extends StatelessWidget {
         child: Row(
           children: [
             Radio<TargetSelection>(value: value),
-            Text(label, style: const TextStyle(fontSize: 13)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
@@ -292,11 +325,22 @@ class _ToggleRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 13)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Sora',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 11, color: harborFaint),
+                  style: const TextStyle(
+                    fontFamily: 'Sora',
+                    fontSize: 10,
+                    color: harborFaint,
+                  ),
                 ),
               ],
             ),
@@ -305,6 +349,7 @@ class _ToggleRow extends StatelessWidget {
             value: value,
             onChanged: onChanged,
             activeTrackColor: harborLong,
+            inactiveTrackColor: harborLine,
           ),
         ],
       ),
