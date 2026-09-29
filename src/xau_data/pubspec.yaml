@@ -1,0 +1,17 @@
+name: xau_data
+description: XAU Radar data layer with provider interfaces, mocks and offline pipeline. Pure Dart.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  xau_core:
+    path: ../xau_core
+  xau_lifecycle:
+    path: ../xau_lifecycle
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
