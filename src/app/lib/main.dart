@@ -1,14 +1,15 @@
 /// XAU Radar — free, mobile-first day-trading assistant for XAUUSD.
 ///
-/// Harbor light-first theme, 5 screens (Radar · Signal · Sources ·
-/// History · Settings) behind a bottom nav, provider state, MOCK_MODE
-/// fixtures by default. See README.md for scope and live-wire stubs.
+/// Harbor light-first theme, 6 screens (Radar · Signal · Sources ·
+/// History · Settings · Events) behind a bottom nav, provider state,
+/// MOCK_MODE fixtures by default. See README.md for scope and live-wire stubs.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'config.dart';
+import 'screens/events_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/radar_screen.dart';
 import 'screens/settings_screen.dart';
@@ -51,6 +52,7 @@ class _Shell extends StatelessWidget {
     SourcesScreen(),
     HistoryScreen(),
     SettingsScreen(),
+    EventsScreen(),
   ];
 
   @override
@@ -96,6 +98,10 @@ class _Shell extends StatelessWidget {
             NavigationDestination(
               icon: Icon(Icons.settings_outlined),
               label: 'CONFIG',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.event_outlined),
+              label: 'EVENTS',
             ),
           ],
         ),

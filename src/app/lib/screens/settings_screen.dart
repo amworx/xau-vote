@@ -107,6 +107,45 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ),
+        _Group(
+          title: 'EVENTS · CONTEXT ONLY',
+          children: [
+            _StaticRow(
+              title: 'Blackout before HIGH event',
+              subtitle: 'No new signals in this window',
+              value: '${state.blackoutBeforeMin} min',
+            ),
+            _StaticRow(
+              title: 'Blackout after HIGH event',
+              subtitle: 'Resume scan after release',
+              value: '${state.blackoutAfterMin} min',
+            ),
+            _ToggleRow(
+              title: '60-min warning',
+              subtitle: 'HIGH event approaching',
+              value: state.notifyEvent60,
+              onChanged: state.setNotifyEvent60,
+            ),
+            _ToggleRow(
+              title: '15-min warning',
+              subtitle: 'Blackout about to start',
+              value: state.notifyEvent15,
+              onChanged: state.setNotifyEvent15,
+            ),
+            _ToggleRow(
+              title: 'Surprises',
+              subtitle: 'Actual vs forecast gaps',
+              value: state.notifySurprises,
+              onChanged: state.setNotifySurprises,
+            ),
+            _ToggleRow(
+              title: 'News spikes',
+              subtitle: 'Unusual gold-news volume',
+              value: state.notifyNewsSpikes,
+              onChanged: state.setNotifyNewsSpikes,
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
         const Center(
           child: Text(

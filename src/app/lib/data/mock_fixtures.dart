@@ -181,4 +181,126 @@ abstract final class MockFixtures {
       pipsText: '0 PIPS',
     ),
   ];
+
+  // -------------------------------------------------------------------------
+  // TASK-07 — events & news fixtures (MOCK_MODE). Rule 9: context only.
+  // -------------------------------------------------------------------------
+
+  /// Upcoming HIGH/MEDIUM events, chronological (addendum §5.2).
+  static const List<DisplayEvent> upcomingEvents = [
+    DisplayEvent(
+      id: 'evt-nfp',
+      title: 'NFP — Non-Farm Payrolls',
+      currency: 'USD',
+      impact: EventImpact.high,
+      startsIn: Duration(minutes: 12, seconds: 41),
+      forecast: '180K',
+      previous: '175K',
+    ),
+    DisplayEvent(
+      id: 'evt-retail',
+      title: 'Retail Sales m/m',
+      currency: 'USD',
+      impact: EventImpact.medium,
+      startsIn: Duration(minutes: 42),
+      forecast: '0.3%',
+      previous: '0.1%',
+    ),
+    DisplayEvent(
+      id: 'evt-ecb',
+      title: 'ECB Rate Decision',
+      currency: 'EUR',
+      impact: EventImpact.high,
+      startsIn: Duration(hours: 2, minutes: 15),
+      forecast: '2.00%',
+      previous: '2.15%',
+    ),
+    DisplayEvent(
+      id: 'evt-fomc',
+      title: 'FOMC Decision',
+      currency: 'USD',
+      impact: EventImpact.high,
+      startsIn: Duration(days: 6, hours: 3),
+      forecast: null,
+      previous: '4.50%',
+    ),
+  ];
+
+  /// Past events with actuals vs forecast + surprise flags (addendum §3.3).
+  static const List<DisplayEvent> resultEvents = [
+    DisplayEvent(
+      id: 'res-cpi',
+      title: 'CPI y/y',
+      currency: 'USD',
+      impact: EventImpact.high,
+      startsIn: Duration(minutes: -130),
+      forecast: '3.1%',
+      previous: '3.0%',
+      actual: '3.4%',
+      surprise: 'hot',
+    ),
+    DisplayEvent(
+      id: 'res-nfp',
+      title: 'NFP — Non-Farm Payrolls',
+      currency: 'USD',
+      impact: EventImpact.high,
+      startsIn: Duration(days: -3),
+      forecast: '180K',
+      previous: '175K',
+      actual: '185K',
+      surprise: 'inline',
+    ),
+    DisplayEvent(
+      id: 'res-ppi',
+      title: 'PPI m/m',
+      currency: 'USD',
+      impact: EventImpact.medium,
+      startsIn: Duration(days: -5),
+      forecast: '0.3%',
+      previous: '0.2%',
+      actual: '0.0%',
+      surprise: 'cold',
+    ),
+  ];
+
+  /// Latest digest themes → the Radar "Macro backdrop" strip (addendum §3.2).
+  static const List<DisplayDigestTheme> digestThemes = [
+    DisplayDigestTheme(
+      theme: 'Hawkish Fed repricing',
+      pressure: NewsPressure.hawkish,
+      evidenceCount: 3,
+    ),
+    DisplayDigestTheme(
+      theme: 'Dovish ECB tilt',
+      pressure: NewsPressure.dovish,
+      evidenceCount: 2,
+    ),
+    DisplayDigestTheme(
+      theme: 'Neutral Asia flows',
+      pressure: NewsPressure.neutral,
+      evidenceCount: 2,
+    ),
+  ];
+
+  /// Latest collected headlines (title + source + age + link only).
+  static const List<DisplayNewsItem> headlines = [
+    DisplayNewsItem(
+      source: 'Manual Desk',
+      title: 'Gold holds range ahead of US payrolls data',
+      ageText: '12m AGO',
+      url: 'https://example.com/news/gold-range-seed',
+    ),
+    DisplayNewsItem(
+      source: 'Manual Desk',
+      title: 'Fed officials reiterate data-dependent stance',
+      ageText: '44m AGO',
+      url: 'https://example.com/news/fed-stance-seed',
+    ),
+    DisplayNewsItem(
+      source: 'Manual Desk',
+      title: 'Dollar index steady as traders await CPI surprise fallout',
+      ageText: '1h AGO',
+      url: 'https://example.com/news/dollar-steady-seed',
+    ),
+  ];
 }

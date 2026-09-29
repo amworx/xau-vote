@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 import '../models/display_models.dart';
 
 /// Radar preview scenarios available in MOCK_MODE.
-enum RadarScenario { strong, noConsensus, developing }
+enum RadarScenario { strong, noConsensus, developing, blackout }
 
 /// Global UI + preference state.
 class AppState extends ChangeNotifier {
@@ -32,6 +32,15 @@ class AppState extends ChangeNotifier {
   // Invalidation alerts are safety-critical: always on, not user-toggled.
   bool _notifyTargets = true;
 
+  // TASK-07 — Events settings (addendum §5.3). In-memory for the MVP;
+  // blackout windows feed the guard copy in Settings only until T5.7.
+  int _blackoutBeforeMin = 30;
+  int _blackoutAfterMin = 15;
+  bool _notifyEvent60 = true;
+  bool _notifyEvent15 = true;
+  bool _notifySurprises = true;
+  bool _notifyNewsSpikes = false;
+
   int get tabIndex => _tabIndex;
   RadarScenario get scenario => _scenario;
   TargetSelection get targets => _targets;
@@ -42,6 +51,13 @@ class AppState extends ChangeNotifier {
   bool get notifyConfirmation => _notifyConfirmation;
   bool get notifyInvalidation => true;
   bool get notifyTargets => _notifyTargets;
+
+  int get blackoutBeforeMin => _blackoutBeforeMin;
+  int get blackoutAfterMin => _blackoutAfterMin;
+  bool get notifyEvent60 => _notifyEvent60;
+  bool get notifyEvent15 => _notifyEvent15;
+  bool get notifySurprises => _notifySurprises;
+  bool get notifyNewsSpikes => _notifyNewsSpikes;
 
   bool isSourceEnabled(String id) => _sourceEnabled[id] ?? true;
 
@@ -92,6 +108,45 @@ class AppState extends ChangeNotifier {
   void setNotifyTargets(bool value) {
     if (value == _notifyTargets) return;
     _notifyTargets = value;
+    notifyListeners();
+  }
+
+  void setNotifyEvent60(bool value) {
+    if (value == _notifyEvent60) return;
+    _notifyEvent60 = value;
+    notifyListeners();
+  }
+
+  void setNotifyEvent15(bool value) {
+    if (value == _notifyEvent15) return;
+    _notifyEvent15 = value;
+    notifyListeners();
+  }
+
+  void setNotifySurprises(bool value) {
+    if (value == _notifySurprises) return;
+    _notifySurprises = value;
+    notifyListeners();
+  }
+
+  void setNotifyNewsSpikes(bool value) {
+    if (value == _notifyNewsSpikes) return;
+    _notifyNewsSpikes = value;
+    notifyListeners();
+  }
+
+  /// Blackout windows (addendum §5.3, minutes). Editable stepping arrives
+  /// with live Settings persistence (T5.7); setters exist so the fields
+  /// stay intentionally mutable.
+  void setBlackoutBeforeMin(int value) {
+    if (value == _blackoutBeforeMin) return;
+    _blackoutBeforeMin = value;
+    notifyListeners();
+  }
+
+  void setBlackoutAfterMin(int value) {
+    if (value == _blackoutAfterMin) return;
+    _blackoutAfterMin = value;
     notifyListeners();
   }
 }

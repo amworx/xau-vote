@@ -227,3 +227,114 @@ String formatLevel(double value) {
   }
   return formatPrice(value);
 }
+
+// ---------------------------------------------------------------------------
+// TASK-07 — events & news display models (addendum docs/economic-calendar-news.md).
+//
+// LOCAL duplicates like the rest of this file (live wiring in T5.7 maps the
+// Supabase rows). Rule 9 applies: these models carry CONTEXT ONLY — they can
+// suppress, delay, annotate, or explain a signal, never create or flip one.
+// ---------------------------------------------------------------------------
+
+/// Calendar event impact (addendum §2). LOW rows are stored, hidden by filter.
+enum EventImpact { high, medium, low }
+
+/// Label for an [EventImpact] pill (e.g. `HIGH`).
+String impactLabel(EventImpact impact) {
+  switch (impact) {
+    case EventImpact.high:
+      return 'HIGH';
+    case EventImpact.medium:
+      return 'MEDIUM';
+    case EventImpact.low:
+      return 'LOW';
+  }
+}
+
+/// One scheduled economic event (upcoming or past).
+class DisplayEvent {
+  const DisplayEvent({
+    required this.id,
+    required this.title,
+    required this.currency,
+    required this.impact,
+    required this.startsIn,
+    this.forecast,
+    this.previous,
+    this.actual,
+    this.surprise,
+  });
+
+  final String id;
+  final String title;
+  final String currency;
+  final EventImpact impact;
+
+  /// Time until release from fixture load (MOCK_MODE). Live mode replaces
+  /// this with the server `starts_at` timestamp.
+  final Duration startsIn;
+  final String? forecast;
+  final String? previous;
+  final String? actual;
+
+  /// Post-release flag: 'hot' | 'cold' | 'inline' | null (no result yet).
+  /// Volatility context only — never a direction.
+  final String? surprise;
+
+  bool get isPast => startsIn.isNegative;
+  bool get isSurprise => surprise == 'hot' || surprise == 'cold';
+}
+
+/// USD-pressure reading per digest theme (addendum §3.2, display only).
+enum NewsPressure { hawkish, dovish, neutral, unclear }
+
+/// Label for a [NewsPressure] pill (e.g. `HAWKISH`).
+String pressureLabel(NewsPressure pressure) {
+  switch (pressure) {
+    case NewsPressure.hawkish:
+      return 'HAWKISH';
+    case NewsPressure.dovish:
+      return 'DOVISH';
+    case NewsPressure.neutral:
+      return 'NEUTRAL';
+    case NewsPressure.unclear:
+      return 'UNCLEAR';
+  }
+}
+
+/// One macro-backdrop theme with evidence links (fixed schema, no prose).
+class DisplayDigestTheme {
+  const DisplayDigestTheme({
+    required this.theme,
+    required this.pressure,
+    required this.evidenceCount,
+  });
+
+  final String theme;
+  final NewsPressure pressure;
+  final int evidenceCount;
+}
+
+/// One collected headline (title + source + link only, never full text).
+class DisplayNewsItem {
+  const DisplayNewsItem({
+    required this.source,
+    required this.title,
+    required this.ageText,
+    required this.url,
+  });
+
+  final String source;
+  final String title;
+  final String ageText;
+  final String url;
+}
+
+/// Formats a [Duration] as `HH:MM:SS` (negative → `00:00:00`).
+String formatCountdown(Duration remaining) {
+  final s = remaining.isNegative ? 0 : remaining.inSeconds;
+  final h = (s ~/ 3600).toString().padLeft(2, '0');
+  final m = ((s % 3600) ~/ 60).toString().padLeft(2, '0');
+  final sec = (s % 60).toString().padLeft(2, '0');
+  return '$h:$m:$sec';
+}

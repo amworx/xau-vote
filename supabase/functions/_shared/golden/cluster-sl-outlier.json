@@ -1,0 +1,7 @@
+{
+  "name": "spec §9 SL outlier rejection",
+  "stopLosses": [4260, 4262, 4263, 4265, 4300],
+  "expectedSlConsensus": 4262.5,
+  "expectedSlOutliers": [4300],
+  "expectedInlierSpan": [4260, 4265]
+}

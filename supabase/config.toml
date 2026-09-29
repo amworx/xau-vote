@@ -1,0 +1,26 @@
+[project]
+name = "xau-radar"
+
+[functions.collect-ideas]
+enabled = true
+verify_jwt = true
+
+[functions.build-consensus]
+enabled = true
+verify_jwt = true
+
+[functions.tick]
+enabled = true
+verify_jwt = true
+
+[functions.fetch-events]
+enabled = true
+verify_jwt = true
+
+[functions.news-collect]
+enabled = true
+verify_jwt = true
+
+[functions.news-digest]
+enabled = true
+verify_jwt = true

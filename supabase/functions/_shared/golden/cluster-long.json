@@ -1,0 +1,15 @@
+{
+  "name": "spec §6 A/B/C LONG cluster",
+  "entryZones": [
+    { "low": 4275, "high": 4280 },
+    { "low": 4276, "high": 4281 },
+    { "low": 4274, "high": 4279 }
+  ],
+  "expectedEntry": { "low": 4275, "high": 4280 },
+  "stopLosses": [4262, 4264, 4263],
+  "expectedSlConsensus": 4263,
+  "expectedSlOutliers": [],
+  "takeProfits": { "1": [4295, 4298, 4296], "2": [4315, 4320, 4318] },
+  "expectedTp1": 4296,
+  "expectedTp2": 4318
+}

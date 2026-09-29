@@ -1,7 +1,8 @@
 # XAU Radar — Flutter app (`src/app/`)
 
-MOCK_MODE build of the 5-screen MVP (spec §24): Radar · Signal · Sources ·
-History · Settings. Harbor light-first design (mist `#E9ECEF`, cobalt
+MOCK_MODE build of the 6-screen MVP (spec §24 + addendum
+`docs/economic-calendar-news.md`): Radar · Signal · Sources · History ·
+Settings · Events. Harbor light-first design (mist `#E9ECEF`, cobalt
 `#2347F5`); plain Material Icons stand in for the mockups' Flaticon UIcons
 to keep the MVP fully offline.
 
@@ -35,8 +36,11 @@ required. Release builds assert mock mode until T5.7 lands.
   `firebase_core` + `firebase_messaging` (token registration only,
   guarded). No `url_launcher` — "View Original" shows a placeholder
   snackbar `Opens <url>` until T5.7 opens URLs externally.
-- **Scope:** exactly 5 screens + bottom nav. No Events screen, no charts,
-  no auth — all deferred per spec §24 exclusions.
+- **Scope:** 6 screens + bottom nav. Events (TASK-07: Upcoming countdowns,
+  Results surprise flags, News headlines + macro backdrop; Radar gains the
+  HIGH-event blackout banner, MEDIUM caution line, and backdrop strip —
+  all context, never votes per rule 9). No charts, no auth — deferred per
+  spec §24 exclusions.
 - **Agreement, not forecasts:** strength renders as band label + score
   (`STRONG 82`, `82/100`) only; a widget test fails the build if forecast
   language ever renders.

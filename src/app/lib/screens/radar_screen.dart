@@ -34,7 +34,30 @@ class RadarScreen extends StatelessWidget {
           RadarScenario.strong => _consensusBody(context, MockFixtures.strongLong),
           RadarScenario.developing => _consensusBody(context, MockFixtures.developing),
           RadarScenario.noConsensus => _noConsensusBody(),
+          RadarScenario.blackout => _blackoutBody(context),
         },
+        const SizedBox(height: 10),
+        // MEDIUM-event context line (badge only — never votes, rule 9).
+        if (state.scenario == RadarScenario.strong ||
+            state.scenario == RadarScenario.developing)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Center(
+              child: Text(
+                'Caution: Retail Sales in 42m',
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  color: harborDim,
+                ),
+              ),
+            ),
+          ),
+        // Macro backdrop strip (latest digest, display only → Events tab).
+        MacroBackdropStrip(
+          themes: MockFixtures.digestThemes,
+          onTap: () => context.read<AppState>().setTab(5),
+        ),
       ],
     );
   }
@@ -46,6 +69,7 @@ class RadarScreen extends StatelessWidget {
         ButtonSegment(value: RadarScenario.strong, label: Text('STRONG')),
         ButtonSegment(value: RadarScenario.developing, label: Text('DEVELOPING')),
         ButtonSegment(value: RadarScenario.noConsensus, label: Text('DIVIDED')),
+        ButtonSegment(value: RadarScenario.blackout, label: Text('EVENT')),
       ],
       selected: {state.scenario},
       onSelectionChanged: (selected) => state.setScenario(selected.first),
@@ -307,6 +331,74 @@ class RadarScreen extends StatelessWidget {
       );
     }
     return LevelGrid(cells: cells);
+  }
+
+  /// Blackout banner (addendum §5.1): replaces the signal card during a
+  /// HIGH-event window. Countdown here is a static mock snapshot — the live
+  /// 1-second ticker lives on the Events screen ([EventCountdown]).
+  Widget _blackoutBody(BuildContext context) {
+    final event = MockFixtures.upcomingEvents.first;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+        child: Column(
+          children: [
+            const Text(
+              '⚠ HIGH-IMPACT EVENT',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2,
+                color: harborShort,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              event.title,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${event.currency} · HIGH · in ${formatCountdown(event.startsIn)}',
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+                color: harborDim,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'New signals paused until 15 min after release.',
+              style: TextStyle(fontSize: 13, color: harborDim),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 14),
+            FilledButton(
+              onPressed: () => context.read<AppState>().setTab(5),
+              style: FilledButton.styleFrom(
+                backgroundColor: harborInk,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.6,
+                ),
+              ),
+              child: const Text('VIEW EVENTS'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// NO CONSENSUS divided state (spec §3). Never fabricates a signal.

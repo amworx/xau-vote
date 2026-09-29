@@ -1,0 +1,58 @@
+{
+  "name": "spec §11 R:R + §7 bands + §15 freshness + §14 transitions + guard",
+  "riskReward": {
+    "entry": 4278,
+    "stopLoss": 4263,
+    "takeProfits": [4295, 4315, 4340],
+    "expectedRisk": 15,
+    "expectedRewards": [17, 37, 62],
+    "expectedRatios": [1.1333333333333333, 2.466666666666667, 4.133333333333334]
+  },
+  "bands": [
+    { "score": 0, "band": "WEAK" },
+    { "score": 39, "band": "WEAK" },
+    { "score": 40, "band": "DEVELOPING" },
+    { "score": 59, "band": "DEVELOPING" },
+    { "score": 60, "band": "MODERATE" },
+    { "score": 74, "band": "MODERATE" },
+    { "score": 75, "band": "STRONG" },
+    { "score": 82, "band": "STRONG" },
+    { "score": 89, "band": "STRONG" },
+    { "score": 90, "band": "VERY_STRONG" },
+    { "score": 100, "band": "VERY_STRONG" }
+  ],
+  "freshness": [
+    { "ageMinutes": 0, "band": "veryFresh" },
+    { "ageMinutes": 14.9, "band": "veryFresh" },
+    { "ageMinutes": 15, "band": "fresh" },
+    { "ageMinutes": 29.9, "band": "fresh" },
+    { "ageMinutes": 30, "band": "aging" },
+    { "ageMinutes": 59.9, "band": "aging" },
+    { "ageMinutes": 60, "band": "expired" }
+  ],
+  "legalTransitions": [
+    ["developing", "ready"],
+    ["ready", "confirmed"],
+    ["confirmed", "active"],
+    ["active", "tp1Hit"],
+    ["tp1Hit", "tp2Hit"],
+    ["tp2Hit", "tp3Hit"],
+    ["ready", "expired"],
+    ["active", "invalidated"]
+  ],
+  "illegalTransitions": [
+    ["ready", "active"],
+    ["developing", "confirmed"],
+    ["active", "tp2Hit"]
+  ],
+  "guard": {
+    "eventStartMs": 1760000000000,
+    "cases": [
+      { "nowMs": 1759998200000, "impact": "HIGH", "blackout": true },
+      { "nowMs": 1760000900000, "impact": "HIGH", "blackout": true },
+      { "nowMs": 1759998100000, "impact": "HIGH", "blackout": false },
+      { "nowMs": 1760001000000, "impact": "HIGH", "blackout": false },
+      { "nowMs": 1759998190000, "impact": "MEDIUM", "blackout": false }
+    ]
+  }
+}

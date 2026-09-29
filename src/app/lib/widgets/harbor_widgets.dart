@@ -1,8 +1,10 @@
-/// Shared Harbor building blocks used across the 5 screens.
+/// Shared Harbor building blocks used across the 6 screens.
 ///
 /// Icons: plain Material Icons are the closest offline equivalent of the
 /// mockups' Flaticon UIcons (see theme.dart note).
 library;
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -426,5 +428,191 @@ String bestRrLine(DisplaySignal signal, TargetSelection selection) {
       return 'TP1 + TP2 · BEST R:R ${rr(signal.tp2)}';
     case TargetSelection.all:
       return 'TP1 + TP2 + TP3 · BEST R:R ${rr(signal.tp3)}';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TASK-07 — event & news widgets (addendum §5). Context only, never votes.
+// ---------------------------------------------------------------------------
+
+/// Impact pill for calendar rows (HIGH = red tint, MEDIUM = amber, LOW = dim).
+class ImpactPill extends StatelessWidget {
+  const ImpactPill({super.key, required this.impact});
+
+  final EventImpact impact;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color fg;
+    final Color bg;
+    switch (impact) {
+      case EventImpact.high:
+        fg = harborShort;
+        bg = harborShortSoft;
+      case EventImpact.medium:
+        fg = const Color(0xFFB7791F);
+        bg = const Color(0xFFFDF0D5);
+      case EventImpact.low:
+        fg = harborDim;
+        bg = const Color(0xFFE7ECF2);
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        impactLabel(impact),
+        style: TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+          color: fg,
+        ),
+      ),
+    );
+  }
+}
+
+/// Pressure pill for digest themes (display-only macro context).
+class PressurePill extends StatelessWidget {
+  const PressurePill({super.key, required this.pressure});
+
+  final NewsPressure pressure;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color fg;
+    final Color bg;
+    switch (pressure) {
+      case NewsPressure.hawkish:
+        fg = harborShort;
+        bg = harborShortSoft;
+      case NewsPressure.dovish:
+        fg = harborLong;
+        bg = harborLongSoft;
+      case NewsPressure.neutral:
+        fg = harborCobalt;
+        bg = const Color(0xFFE3EBFF);
+      case NewsPressure.unclear:
+        fg = harborDim;
+        bg = const Color(0xFFE7ECF2);
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        pressureLabel(pressure),
+        style: TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+          color: fg,
+        ),
+      ),
+    );
+  }
+}
+
+/// "Macro backdrop" strip (addendum §5.1): one-line digest summary shown
+/// under the Radar card. Tap navigates to the Events tab. Display only.
+class MacroBackdropStrip extends StatelessWidget {
+  const MacroBackdropStrip({super.key, required this.themes, this.onTap});
+
+  final List<DisplayDigestTheme> themes;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final line = themes.map((t) => t.theme).join(' · ');
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: harborInk,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.public, size: 15, color: Color(0xFF93A1B8)),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                line,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 16, color: Color(0xFF93A1B8)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Live 1-second countdown to [startsIn] from first build (addendum §5.1).
+///
+/// The target is pinned in [initState] so rebuilds don't shift it. Tests
+/// must use `tester.pump()` (not `pumpAndSettle`) while this is mounted —
+/// the periodic timer never lets the frame scheduler settle.
+class EventCountdown extends StatefulWidget {
+  const EventCountdown({super.key, required this.startsIn, this.prefix = 'in '});
+
+  final Duration startsIn;
+  final String prefix;
+
+  @override
+  State<EventCountdown> createState() => _EventCountdownState();
+}
+
+class _EventCountdownState extends State<EventCountdown> {
+  late final DateTime _target;
+  late Duration _remaining;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _target = DateTime.now().add(widget.startsIn);
+    _remaining = widget.startsIn;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        _remaining = _target.difference(DateTime.now());
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '${widget.prefix}${formatCountdown(_remaining)}',
+      style: const TextStyle(
+        fontFamily: 'monospace',
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: harborShort,
+      ),
+    );
   }
 }
