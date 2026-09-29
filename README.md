@@ -73,6 +73,12 @@ Until then the app runs end-to-end on mocks, which is also how CI works.
 - Events/news are context and guardrails, never direction votes.
 - Every external source needs a recorded licensing review before production use.
 
+## Fonts & icons (bundled offline)
+
+- Sora + Space Mono (SIL Open Font License 1.1) in `src/app/assets/fonts/`
+- UIcons Regular Rounded 2.6.0 by Flaticon — free use **with attribution**
+  ("UIcons by Flaticon", shown in Settings → About)
+
 ## Contributing
 
 1. Read `AGENTS.md`, then the task file for your phase in `tasks/`.
