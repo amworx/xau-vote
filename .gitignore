@@ -1,0 +1,33 @@
+# XAU Radar — shared ignores (each Dart/Flutter package also carries its own).
+# See https://dart.dev/tools/private-files and https://docs.flutter.dev/tools/private-files
+
+# Secrets / environment — NEVER commit these (see AGENTS.md gotcha list pattern)
+.env
+.env.*
+*.keystore
+keystore.properties
+CREDENTIALS.txt
+storepass.txt
+phone_ssh.txt
+
+# Supabase
+supabase/.branches
+supabase/.temp
+
+# Flutter artifacts (the Flutter app commits pubspec.lock intentionally;
+# engine packages ignore theirs via their own .gitignore)
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+.flutter-version.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Logs and scratch
+*.log
