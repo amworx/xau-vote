@@ -252,6 +252,7 @@
     <a href="#"><i class="fi fi-rr-layers" aria-hidden="true"></i>Sources</a>
     <a href="#"><i class="fi fi-rr-clock" aria-hidden="true"></i>History</a>
     <a href="#"><i class="fi fi-rr-settings-sliders" aria-hidden="true"></i>Config</a>
+    <a href="screen-6-events.html"><i class="fi fi-rr-calendar" aria-hidden="true"></i>Events</a>
   </nav>
 </div>
 <script>
@@ -343,7 +344,7 @@
   });
 
   /* ── cross-link screens ── */
-  var map = { RADAR: 'mockup-11A-harbor.html', SIGNAL: 'screen-2-signal.html', SOURCES: 'screen-3-sources.html', HISTORY: 'screen-4-history.html', CONFIG: 'screen-5-settings.html' };
+  var map = { RADAR: 'mockup-11A-harbor.html', SIGNAL: 'screen-2-signal.html', SOURCES: 'screen-3-sources.html', HISTORY: 'screen-4-history.html', CONFIG: 'screen-5-settings.html', EVENTS: 'screen-6-events.html' };
   document.querySelectorAll('nav a').forEach(function(a){
     var t = a.textContent.trim().toUpperCase();
     if (map[t]) a.setAttribute('href', map[t]);

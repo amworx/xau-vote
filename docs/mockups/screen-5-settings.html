@@ -3,74 +3,71 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="XAU Radar - settings and control panel.">
-<meta name="theme-color" content="#0C1A2E">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1A2E'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23E8C35A' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
+<meta name="description" content="XAU Radar settings screen in Harbor style.">
+<meta name="theme-color" content="#E9ECEF">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232347F5'/%3E%3Cpath d='M10 22L16 8l6 14' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<title>XAU Radar - Screen 5: Settings (Blueprint)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- App icons: Flaticon UIcons, Regular Rounded (fi-rr-*), free license with attribution. -->
+<link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+<title>XAU Radar - Config</title>
 <style>
   :root{
-    --bg:#0C1A2E;
-    --ink:#DCE8F7;
-    --dim:#8AA2C0;
-    --faint:#5A7396;
-    --line:#2B4A73;
-    --gold:#E8C35A;
-    --long:#4ADE9E;
-    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+    --bg:#E9ECEF;
+    --card:#FFFFFF;
+    --ink:#0D1526;
+    --dim:#5A6B84;
+    --faint:#8FA0B8;
+    --line:#D5DCE6;
+    --accent:#2347F5;
+    --long:#0E9F6E;
+    --disp:"Sora",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html{font-size:16px}
-  body{font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#050B16;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
-  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden;background-image:linear-gradient(rgba(125,180,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(125,180,255,.06) 1px,transparent 1px);background-size:22px 22px}
+  body{font-family:var(--disp);background:#C9D2DC;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
   .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim);font-family:var(--mono)}
   .statusbar .right{display:flex;gap:6px;align-items:center}
-  header{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 6px;font-family:var(--mono)}
-  .brand .name{font-size:.82rem;font-weight:700;letter-spacing:.14em}
-  .brand .name span{color:var(--gold)}
-  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
-  .live i{width:7px;height:7px;background:var(--long)}
-  main{flex:1;display:flex;flex-direction:column;padding:8px 22px 12px;overflow-y:auto}
-  .dwg{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--faint)}
-  .group{margin-top:14px;border:1px solid var(--line);background:rgba(10,22,38,.55)}
-  .group > .gh{padding:10px 14px;font-family:var(--mono);font-size:.6rem;letter-spacing:.22em;color:var(--gold);border-bottom:1px solid var(--line)}
-  .srow{display:flex;align-items:center;gap:10px;padding:12px 14px;min-height:52px;font-family:var(--mono);font-size:.72rem;letter-spacing:.04em}
+  header{display:flex;align-items:center;gap:11px;padding:10px 20px 4px}
+  .mark{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mark .fi{font-size:20px;color:#fff}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.1em}
+  .brand .sub{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:2px;letter-spacing:.08em}
+  .livepill{margin-left:auto;display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-height:44px;font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--long)}
+  .livepill i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;padding:10px 16px 12px;overflow-y:auto}
+  .fi{line-height:1}
+  .kick{font-family:var(--mono);font-size:.6rem;letter-spacing:.22em;color:var(--faint)}
+  .group{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .group > .gh{padding:12px 16px 10px;font-size:.62rem;font-weight:700;letter-spacing:.2em;color:var(--accent);border-bottom:1px solid var(--line)}
+  .srow{display:flex;align-items:center;gap:10px;padding:12px 16px;min-height:56px;font-size:.76rem;font-weight:500}
   .srow + .srow{border-top:1px solid var(--line)}
-  .srow .sub{display:block;font-size:.6rem;color:var(--faint);letter-spacing:.06em;margin-top:3px}
-  .srow .val{margin-left:auto;font-size:.7rem;font-weight:700;color:var(--ink);white-space:nowrap}
-  /* toggle */
-  .tgl{margin-left:auto;position:relative;width:48px;height:28px;flex-shrink:0;cursor:pointer}
+  .srow .sub{display:block;font-size:.62rem;color:var(--faint);font-weight:400;margin-top:3px}
+  .srow .val{margin-left:auto;font-family:var(--mono);font-size:.68rem;font-weight:700;white-space:nowrap}
+  .tgl{margin-left:auto;position:relative;width:50px;height:30px;flex-shrink:0;cursor:pointer}
   .tgl input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0}
-  .tgl .tr{position:absolute;inset:0;border-radius:999px;background:#1B2A45;border:1px solid var(--line);transition:background .15s ease}
-  .tgl .th{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--dim);transition:left .15s ease,background .15s ease}
-  .tgl input:checked + .tr{background:rgba(74,222,158,.25);border-color:var(--long)}
-  .tgl input:checked + .tr + .th, .tgl input:checked ~ .th{left:23px;background:var(--long)}
-  .tgl input:focus-visible ~ .tr{outline:2px solid var(--gold);outline-offset:2px}
-  /* radio list */
-  .radio-row{display:flex;align-items:center;gap:10px;padding:12px 14px;min-height:52px;font-family:var(--mono);font-size:.72rem;cursor:pointer}
+  .tgl .tr{position:absolute;inset:0;border-radius:999px;background:#D5DCE6;transition:background .15s ease}
+  .tgl .th{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(13,21,38,.3);transition:left .15s ease}
+  .tgl input:checked + .tr{background:var(--long)}
+  .tgl input:checked ~ .th{left:23px}
+  .tgl input:disabled ~ .tr{opacity:.6}
+  .tgl input:focus-visible ~ .tr{outline:2px solid var(--accent);outline-offset:2px}
+  .radio-row{display:flex;align-items:center;gap:11px;padding:12px 16px;min-height:56px;font-size:.76rem;font-weight:500;cursor:pointer}
   .radio-row + .radio-row{border-top:1px solid var(--line)}
-  .radio-row .rd{width:16px;height:16px;border-radius:50%;border:2px solid var(--faint);flex-shrink:0}
+  .radio-row .rd{width:18px;height:18px;border-radius:50%;border:2px solid var(--faint);flex-shrink:0}
   .radio-row input{position:absolute;opacity:0}
-  .radio-row input:checked + .rd{border-color:var(--gold);background:radial-gradient(circle,var(--gold) 0 4px,transparent 5px)}
-  .radio-row input:focus-visible + .rd{outline:2px solid var(--gold);outline-offset:2px}
-  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--faint)}
-  nav{display:flex;border-top:1px solid var(--line);background:rgba(10,22,38,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
-  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.1em;min-height:48px;min-width:48px}
-  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6}
-  nav a.active{color:var(--gold)}
-  nav a.active svg{stroke:var(--gold)}
-  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
-  /* ── redesign pass: type, grain, press states ── */
-  body{font-family:"Space Grotesk","Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-  :root{--mono:"IBM Plex Mono","SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace}
-  .phone::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:60;opacity:.55;background-image:radial-gradient(rgba(255,255,255,.028) 1px,transparent 1.6px);background-size:3px 3px}
-  .cta,.ghost,.chip,.iconbtn,.tabs button,.seg button,.bell{transition:filter .18s ease,transform .12s ease,background .18s ease,color .18s ease}
-  .cta:hover{filter:brightness(1.08)}
-  .cta:active,.ghost:active,.chip:active,.iconbtn:active{transform:translateY(1px)}
-  nav a{transition:color .18s ease}
-  nav a:hover{color:var(--ink)}
+  .radio-row input:checked + .rd{border-color:var(--accent);background:radial-gradient(circle,var(--accent) 0 5px,transparent 6px)}
+  .radio-row input:focus-visible + .rd{outline:2px solid var(--accent);outline-offset:2px}
+  .radio-row .val{margin-left:auto;font-family:var(--mono);font-size:.64rem;font-weight:700;color:var(--dim)}
+  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;color:var(--faint)}
+  nav{display:flex;background:var(--card);border-top:1px solid var(--line);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.08em;min-height:48px;min-width:48px;border-radius:12px}
+  nav a .fi{font-size:20px}
+  nav a.active{color:var(--accent)}
+  nav a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 </style>
 </head>
 <body>
@@ -80,15 +77,16 @@
     <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
   </span></div>
   <header>
-    <div class="brand"><div class="name">XAU<span>RADAR</span> · CONFIG</div></div>
-    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+    <div class="mark" aria-hidden="true"><i class="fi fi-rr-chart-candlestick"></i></div>
+    <div class="brand"><div class="name">XAU RADAR</div><div class="sub">CONFIG</div></div>
+    <div class="livepill" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</div>
   </header>
   <main>
-    <div class="dwg">FIG.5 - CONTROL PANEL</div>
+    <div class="kick">CONTROL PANEL</div>
 
     <div class="group">
       <div class="gh">TIMEFRAMES</div>
-      <div class="srow"><span>Signal / Confirm / Context<span class="sub">Fixed by product spec §2</span></span><span class="val">15M / 5M / 1H</span></div>
+      <div class="srow"><span>Signal / Confirm / Context<span class="sub">Fixed by product spec</span></span><span class="val">15M / 5M / 1H</span></div>
       <div class="srow"><span>Default view<span class="sub">Screen shown on launch</span></span><span class="val">RADAR</span></div>
     </div>
 
@@ -101,16 +99,16 @@
 
     <div class="group">
       <div class="gh">DISPLAY · PIP SIZE</div>
-      <label class="radio-row"><input type="radio" name="pip" checked><span class="rd"></span>0.01 - FXPRO / VANTAGE<span class="val" style="margin-left:auto">DEFAULT</span></label>
-      <label class="radio-row"><input type="radio" name="pip"><span class="rd"></span>0.10 - CLASSIC<span class="val" style="margin-left:auto">÷10</span></label>
+      <label class="radio-row"><input type="radio" name="pip" checked><span class="rd"></span>0.01 - FXPRO / VANTAGE<span class="val">DEFAULT</span></label>
+      <label class="radio-row"><input type="radio" name="pip"><span class="rd"></span>0.10 - CLASSIC<span class="val">÷10</span></label>
     </div>
 
     <div class="group">
       <div class="gh">NOTIFICATIONS · SIGNALS</div>
-      <div class="srow"><span>Consensus forming<span class="sub">Developing → ready transitions</span></span><label class="tgl"><input type="checkbox" checked><span class="tr"></span><span class="th"></span></label></div>
+      <div class="srow"><span>Consensus forming<span class="sub">Developing to ready transitions</span></span><label class="tgl"><input type="checkbox" checked><span class="tr"></span><span class="th"></span></label></div>
       <div class="srow"><span>Entry approaching<span class="sub">Price enters the zone</span></span><label class="tgl"><input type="checkbox" checked><span class="tr"></span><span class="th"></span></label></div>
       <div class="srow"><span>Confirmation<span class="sub">5M confirms the setup</span></span><label class="tgl"><input type="checkbox" checked><span class="tr"></span><span class="th"></span></label></div>
-      <div class="srow"><span>Invalidation<span class="sub">Setup fails - always on</span></span><label class="tgl"><input type="checkbox" checked disabled><span class="tr"></span><span class="th"></span></label></div>
+      <div class="srow"><span>Invalidation<span class="sub">Setup fails, always on</span></span><label class="tgl"><input type="checkbox" checked disabled><span class="tr"></span><span class="th"></span></label></div>
       <div class="srow"><span>Targets hit<span class="sub">TP1 / TP2 / TP3</span></span><label class="tgl"><input type="checkbox" checked><span class="tr"></span><span class="th"></span></label></div>
     </div>
 
@@ -135,25 +133,16 @@
       <div class="srow"><span>Muted events<span class="sub">Never alert or blackout</span></span><span class="val">0</span></div>
     </div>
 
-    <div class="micro">PIP = 0.01 · PER D-003 · v0.1 MVP</div>
+    <div class="micro">Pip x0.01 · per D-003 · v0.1 MVP</div>
   </main>
   <nav aria-label="Primary">
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10M12 20V4M18 20v-8"/></svg>RADAR</a>
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>SIGNAL</a>
-    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/></svg>SOURCES</a>
-    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>HISTORY</a>
-    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>CONFIG</a>
+    <a href="mockup-11A-harbor.html"><i class="fi fi-rr-radar" aria-hidden="true"></i>Radar</a>
+    <a href="screen-2-signal.html"><i class="fi fi-rr-chart-line-up" aria-hidden="true"></i>Signal</a>
+    <a href="screen-3-sources.html"><i class="fi fi-rr-layers" aria-hidden="true"></i>Sources</a>
+    <a href="screen-4-history.html"><i class="fi fi-rr-clock" aria-hidden="true"></i>History</a>
+    <a href="screen-5-settings.html" class="active" aria-current="page"><i class="fi fi-rr-settings-sliders" aria-hidden="true"></i>Config</a>
+    <a href="screen-6-events.html"><i class="fi fi-rr-calendar" aria-hidden="true"></i>Events</a>
   </nav>
 </div>
-<script>
-/* redesign: cross-link mockup screens (no dead nav links) */
-(function(){
-  var map = { RADAR: 'mockup-8B-blueprint.html', SIGNAL: 'screen-2-signal.html', SOURCES: 'screen-3-sources.html', HISTORY: 'screen-4-history.html', CONFIG: 'screen-5-settings.html', SETTINGS: 'screen-5-settings.html', EVENTS: 'screen-6-events.html' };
-  document.querySelectorAll('nav a').forEach(function(a){
-    var t = a.textContent.trim().toUpperCase();
-    if (map[t]) a.setAttribute('href', map[t]);
-  });
-})();
-</script>
 </body>
 </html>

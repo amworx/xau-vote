@@ -3,110 +3,105 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="XAU Radar - source ledger behind the consensus.">
-<meta name="theme-color" content="#0C1A2E">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1A2E'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23E8C35A' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
+<meta name="description" content="XAU Radar sources screen in Harbor style.">
+<meta name="theme-color" content="#E9ECEF">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232347F5'/%3E%3Cpath d='M10 22L16 8l6 14' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<title>XAU Radar - Screen 3: Sources (Blueprint)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- App icons: Flaticon UIcons, Regular Rounded (fi-rr-*), free license with attribution. -->
+<link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+<title>XAU Radar - Sources</title>
 <style>
   :root{
-    --bg:#0C1A2E;
-    --ink:#DCE8F7;
-    --dim:#8AA2C0;
-    --faint:#5A7396;
-    --line:#2B4A73;
-    --gold:#E8C35A;
-    --long:#4ADE9E;
-    --short:#F0716F;
-    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+    --bg:#E9ECEF;
+    --card:#FFFFFF;
+    --ink:#0D1526;
+    --dim:#5A6B84;
+    --faint:#8FA0B8;
+    --line:#D5DCE6;
+    --accent:#2347F5;
+    --long:#0E9F6E;
+    --long-soft:#DFF5EA;
+    --short:#E05252;
+    --short-soft:#FBE3E3;
+    --disp:"Sora",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html{font-size:16px}
-  body{font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#050B16;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
-  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden;background-image:linear-gradient(rgba(125,180,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(125,180,255,.06) 1px,transparent 1px);background-size:22px 22px}
+  body{font-family:var(--disp);background:#C9D2DC;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
   .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim);font-family:var(--mono)}
   .statusbar .right{display:flex;gap:6px;align-items:center}
-  header{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 6px;font-family:var(--mono)}
-  .brand .name{font-size:.82rem;font-weight:700;letter-spacing:.14em}
-  .brand .name span{color:var(--gold)}
-  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
-  .live i{width:7px;height:7px;background:var(--long)}
-  main{flex:1;display:flex;flex-direction:column;padding:8px 22px 12px;overflow-y:auto}
-  .dwg{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--faint)}
-  .sum{display:flex;align-items:baseline;gap:10px;margin-top:8px;font-family:var(--mono)}
-  .sum .n{font-size:1.3rem;font-weight:700}
-  .sum .n b{color:var(--long)}
-  .sum .s{font-size:.66rem;color:var(--dim);margin-left:auto}
-  .sum .s b{color:var(--gold)}
-  .nocons{margin-top:12px;border:1px dashed var(--gold);border-radius:8px;padding:14px;text-align:center;font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.12em;color:var(--gold)}
+  header{display:flex;align-items:center;gap:11px;padding:10px 20px 4px}
+  .mark{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mark .fi{font-size:20px;color:#fff}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.1em}
+  .brand .sub{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:2px;letter-spacing:.08em}
+  .livepill{margin-left:auto;display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-height:44px;font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--long)}
+  .livepill i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;padding:10px 16px 12px;overflow-y:auto}
+  .fi{line-height:1}
+  .sumcard{background:var(--ink);color:#fff;border-radius:18px;padding:16px;display:flex;align-items:baseline;gap:10px}
+  .sumcard .n{font-size:1.25rem;font-weight:800}
+  .sumcard .n b{color:var(--long)}
+  .sumcard .s{margin-left:auto;font-family:var(--mono);font-size:.64rem;color:#93A1B8}
+  .sumcard .s b{color:var(--gold,#E8C35A)}
+  .nocons{margin-top:10px;border:1.5px dashed var(--accent);border-radius:14px;padding:14px;text-align:center;font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.1em;color:var(--accent);background:var(--card)}
   .nocons[hidden]{display:none}
-  .hint{margin-top:10px;font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;color:var(--faint);text-align:center}
-  /* compact card */
-  .card{margin-top:10px;border:1px solid var(--line);background:rgba(10,22,38,.55)}
-  .card.dis{opacity:.8;border-style:dashed}
-  .card.off{opacity:.45}
-  .chead{display:flex;align-items:center;gap:10px;padding:12px 14px;min-height:56px;cursor:pointer;font-family:var(--mono)}
-  .chead:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
-  .card .tick{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:700;flex-shrink:0}
-  .card.yes .tick{background:rgba(74,222,158,.14);color:var(--long);border:1px solid rgba(74,222,158,.4)}
-  .card.no .tick{background:rgba(240,113,111,.12);color:var(--short);border:1px solid rgba(240,113,111,.4)}
-  .card .who{min-width:0}
-  .card .src{font-size:.78rem;font-weight:700;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .card .sub{font-size:.6rem;color:var(--faint);margin-top:3px;letter-spacing:.04em}
-  .card .sub b{color:var(--long)}
-  .card.no .sub b{color:var(--short)}
-  .card .dir{margin-left:auto;font-size:.72rem;font-weight:800;letter-spacing:.12em;flex-shrink:0}
-  .card.yes .dir{color:var(--long)}
-  .card.no .dir{color:var(--short)}
-  .chev{color:var(--faint);font-size:.9rem;flex-shrink:0;transition:transform .15s ease;line-height:1}
-  .card.open .chev{transform:rotate(90deg);color:var(--gold)}
+  .hint{margin-top:10px;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--faint);text-align:center}
+  .card{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .card.off{opacity:.5}
+  .chead{display:flex;align-items:center;gap:10px;padding:13px 14px;min-height:60px;cursor:pointer}
+  .chead:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .tick{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .tick .fi{font-size:14px}
+  .card.yes .tick{background:var(--long-soft);color:var(--long)}
+  .card.no .tick{background:var(--short-soft);color:var(--short)}
+  .who{min-width:0;flex:1}
+  .who .src{font-size:.8rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .who .sub{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:3px}
+  .who .sub b{color:var(--long)}
+  .card.no .who .sub b{color:var(--short)}
+  .dirv{font-size:.78rem;font-weight:800;letter-spacing:.1em;flex-shrink:0}
+  .card.yes .dirv{color:var(--long)}
+  .card.no .dirv{color:var(--short)}
+  .chev{color:var(--faint);font-size:1rem;flex-shrink:0;transition:transform .15s ease;line-height:1}
+  .card.open .chev{transform:rotate(90deg);color:var(--accent)}
   .stgl{position:relative;width:48px;height:28px;flex-shrink:0;cursor:pointer}
   .stgl input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0}
-  .stgl .tr{position:absolute;inset:0;border-radius:999px;background:#1B2A45;border:1px solid var(--line);transition:background .15s ease}
-  .stgl .th{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--dim);transition:left .15s ease,background .15s ease}
-  .stgl input:checked + .tr{background:rgba(74,222,158,.25);border-color:var(--long)}
-  .stgl input:checked ~ .th{left:23px;background:var(--long)}
-  .stgl input:focus-visible ~ .tr{outline:2px solid var(--gold);outline-offset:2px}
-  /* expanded details */
+  .stgl .tr{position:absolute;inset:0;border-radius:999px;background:#D5DCE6;transition:background .15s ease}
+  .stgl .th{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(13,21,38,.25);transition:left .15s ease}
+  .stgl input:checked + .tr{background:var(--long)}
+  .stgl input:checked ~ .th{left:23px}
+  .stgl input:focus-visible ~ .tr{outline:2px solid var(--accent);outline-offset:2px}
   .details{border-top:1px solid var(--line)}
   .details[hidden]{display:none}
-  .card .rows{font-family:var(--mono)}
-  .card .r{display:flex;justify-content:space-between;padding:10px 14px;font-size:.76rem;min-height:44px}
-  .card .r + .r{border-top:1px solid var(--line)}
-  .card .k{color:var(--faint);font-size:.6rem;letter-spacing:.14em}
-  .card .v{font-weight:700}
-  .card.yes .r.tp .v{color:var(--long)}
+  .r{display:flex;justify-content:space-between;padding:11px 14px;font-family:var(--mono);font-size:.78rem;min-height:44px}
+  .r + .r{border-top:1px solid var(--line)}
+  .r .k{font-size:.6rem;letter-spacing:.16em;color:var(--faint)}
+  .r .v{font-weight:700}
+  .r.tp .v{color:var(--long)}
   .hits{padding:10px 14px 12px;border-top:1px solid var(--line);font-family:var(--mono)}
   .hits .hh{font-size:.58rem;letter-spacing:.18em;color:var(--faint);margin-bottom:9px}
   .hits .hrow2{display:flex;align-items:center;gap:9px;padding:4px 0;min-height:28px}
   .hits .hrow2 span{font-size:.62rem;font-weight:700;color:var(--dim);width:26px;flex-shrink:0}
-  .hits .bar{flex:1;height:6px;border-radius:3px;background:#1B2A45;overflow:hidden}
+  .hits .bar{flex:1;height:6px;border-radius:3px;background:#E0E7F0;overflow:hidden}
   .hits .bar i{display:block;height:100%;background:var(--long);border-radius:3px}
-  .hits .hrow2 b{font-size:.64rem;color:var(--text);width:34px;text-align:right;flex-shrink:0}
-  .card .why{padding:10px 14px;font-size:.7rem;line-height:1.55;color:var(--dim);border-top:1px solid var(--line)}
-  .card .orig{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;min-height:48px;border-top:1px solid var(--line);color:var(--gold);font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.12em;text-decoration:none}
-  .card .orig svg{width:14px;height:14px}
-  .card .orig:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
-  .indep{margin-top:12px;border:1px dashed var(--line);padding:11px 14px;font-family:var(--mono);font-size:.62rem;line-height:1.7;color:var(--dim)}
-  .indep b{color:var(--gold)}
-  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--faint)}
-  nav{display:flex;border-top:1px solid var(--line);background:rgba(10,22,38,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
-  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.1em;min-height:48px;min-width:48px}
-  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6}
-  nav a.active{color:var(--gold)}
-  nav a.active svg{stroke:var(--gold)}
-  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
-  /* ── redesign pass: type, grain, press states ── */
-  body{font-family:"Space Grotesk","Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-  :root{--mono:"IBM Plex Mono","SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace}
-  .phone::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:60;opacity:.55;background-image:radial-gradient(rgba(255,255,255,.028) 1px,transparent 1.6px);background-size:3px 3px}
-  .cta,.ghost,.chip,.iconbtn,.tabs button,.seg button,.bell{transition:filter .18s ease,transform .12s ease,background .18s ease,color .18s ease}
-  .cta:hover{filter:brightness(1.08)}
-  .cta:active,.ghost:active,.chip:active,.iconbtn:active{transform:translateY(1px)}
-  nav a{transition:color .18s ease}
-  nav a:hover{color:var(--ink)}
+  .hits .hrow2 b{font-size:.64rem;width:34px;text-align:right;flex-shrink:0}
+  .why{padding:10px 14px;font-size:.74rem;line-height:1.55;color:var(--dim);border-top:1px solid var(--line)}
+  .orig{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;min-height:48px;border-top:1px solid var(--line);color:var(--accent);font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.1em;text-decoration:none}
+  .orig .fi{font-size:14px}
+  .orig:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .indep{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-family:var(--mono);font-size:.62rem;line-height:1.7;color:var(--dim)}
+  .indep b{color:var(--ink)}
+  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;color:var(--faint)}
+  nav{display:flex;background:var(--card);border-top:1px solid var(--line);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.08em;min-height:48px;min-width:48px;border-radius:12px}
+  nav a .fi{font-size:20px}
+  nav a.active{color:var(--accent)}
+  nav a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 </style>
 </head>
 <body>
@@ -116,149 +111,135 @@
     <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
   </span></div>
   <header>
-    <div class="brand"><div class="name">XAU<span>RADAR</span> · SOURCES</div></div>
-    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+    <div class="mark" aria-hidden="true"><i class="fi fi-rr-chart-candlestick"></i></div>
+    <div class="brand"><div class="name">XAU RADAR</div><div class="sub">SOURCES · #A482</div></div>
+    <div class="livepill" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</div>
   </header>
   <main>
-    <div class="dwg">FIG.3 - SOURCE LEDGER · SIGNAL #A482</div>
-    <div class="sum"><span class="n" id="sumN"><b>4 / 5</b> agree</span><span class="s" id="sumMeta">INDEPENDENCE <b>0.80</b> · STRONG 82</span></div>
-    <div class="nocons" id="nocons" hidden>NO CONSENSUS - ENABLE AT LEAST 2 AGREEING SOURCES</div>
+    <div class="sumcard"><span class="n" id="sumN"><b>4 / 5</b> agree</span><span class="s" id="sumMeta">INDEPENDENCE <b>0.80</b> · STRONG 82</span></div>
+    <div class="nocons" id="nocons" hidden>NO CONSENSUS · ENABLE 2+ AGREEING SOURCES</div>
     <div class="hint">Tap a card for full details · Toggle to include</div>
 
     <section class="card yes" data-id="A">
       <div class="chead" tabindex="0" role="button" aria-expanded="false" aria-label="Desk A details">
-        <span class="tick">✓</span>
+        <span class="tick"><i class="fi fi-rr-check" aria-hidden="true"></i></span>
         <span class="who"><span class="src">DESK A · GoldPulse</span><span class="sub" style="display:block">TP1 <b>78%</b> · 6m AGO</span></span>
-        <span class="dir">LONG</span>
+        <span class="dirv">LONG</span>
         <label class="stgl" aria-label="Include Desk A in consensus"><input type="checkbox" checked data-id="A"><span class="tr"></span><span class="th"></span></label>
         <span class="chev">›</span>
       </div>
       <div class="details" hidden>
-        <div class="rows">
-          <div class="r"><span class="k">ENTRY</span><span class="v">4,275-4,280</span></div>
-          <div class="r"><span class="k">STOP</span><span class="v">4,262 · −1600p</span></div>
-          <div class="r tp"><span class="k">TARGETS</span><span class="v">4,295 / 4,315</span></div>
-        </div>
+        <div class="r"><span class="k">ENTRY</span><span class="v">4,275-4,280</span></div>
+        <div class="r"><span class="k">STOP</span><span class="v">4,262 · −1600p</span></div>
+        <div class="r tp"><span class="k">TARGETS</span><span class="v">4,295 / 4,315</span></div>
         <div class="hits"><div class="hh">HIT RATE · LAST 40 SIGNALS</div>
           <div class="hrow2"><span>TP1</span><div class="bar"><i style="width:78%"></i></div><b>78%</b></div>
           <div class="hrow2"><span>TP2</span><div class="bar"><i style="width:54%"></i></div><b>54%</b></div>
           <div class="hrow2"><span>TP3</span><div class="bar"><i style="width:31%"></i></div><b>31%</b></div>
         </div>
         <div class="why">"Bounce off the 4275 shelf; momentum turning up on the 15M."</div>
-        <a class="orig" href="#" onclick="return false">VIEW ORIGINAL
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+        <a class="orig" href="#" onclick="return false">VIEW ORIGINAL <i class="fi fi-rr-arrow-up-right" aria-hidden="true"></i></a>
       </div>
     </section>
 
     <section class="card yes" data-id="B">
       <div class="chead" tabindex="0" role="button" aria-expanded="false" aria-label="Desk B details">
-        <span class="tick">✓</span>
+        <span class="tick"><i class="fi fi-rr-check" aria-hidden="true"></i></span>
         <span class="who"><span class="src">DESK B · AurumNotes</span><span class="sub" style="display:block">TP1 <b>71%</b> · 11m AGO</span></span>
-        <span class="dir">LONG</span>
+        <span class="dirv">LONG</span>
         <label class="stgl" aria-label="Include Desk B in consensus"><input type="checkbox" checked data-id="B"><span class="tr"></span><span class="th"></span></label>
         <span class="chev">›</span>
       </div>
       <div class="details" hidden>
-        <div class="rows">
-          <div class="r"><span class="k">ENTRY</span><span class="v">4,276-4,281</span></div>
-          <div class="r"><span class="k">STOP</span><span class="v">4,264 · −1500p</span></div>
-          <div class="r tp"><span class="k">TARGETS</span><span class="v">4,298 / 4,320</span></div>
-        </div>
+        <div class="r"><span class="k">ENTRY</span><span class="v">4,276-4,281</span></div>
+        <div class="r"><span class="k">STOP</span><span class="v">4,264 · −1500p</span></div>
+        <div class="r tp"><span class="k">TARGETS</span><span class="v">4,298 / 4,320</span></div>
         <div class="hits"><div class="hh">HIT RATE · LAST 40 SIGNALS</div>
           <div class="hrow2"><span>TP1</span><div class="bar"><i style="width:71%"></i></div><b>71%</b></div>
           <div class="hrow2"><span>TP2</span><div class="bar"><i style="width:48%"></i></div><b>48%</b></div>
           <div class="hrow2"><span>TP3</span><div class="bar"><i style="width:29%"></i></div><b>29%</b></div>
         </div>
         <div class="why">"Higher low printed; entry on retest of broken intraday high."</div>
-        <a class="orig" href="#" onclick="return false">VIEW ORIGINAL
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+        <a class="orig" href="#" onclick="return false">VIEW ORIGINAL <i class="fi fi-rr-arrow-up-right" aria-hidden="true"></i></a>
       </div>
     </section>
 
     <section class="card yes" data-id="C">
       <div class="chead" tabindex="0" role="button" aria-expanded="false" aria-label="Desk C details">
-        <span class="tick">✓</span>
+        <span class="tick"><i class="fi fi-rr-check" aria-hidden="true"></i></span>
         <span class="who"><span class="src">DESK C · BullionDesk</span><span class="sub" style="display:block">TP1 <b>82%</b> · 14m AGO</span></span>
-        <span class="dir">LONG</span>
+        <span class="dirv">LONG</span>
         <label class="stgl" aria-label="Include Desk C in consensus"><input type="checkbox" checked data-id="C"><span class="tr"></span><span class="th"></span></label>
         <span class="chev">›</span>
       </div>
       <div class="details" hidden>
-        <div class="rows">
-          <div class="r"><span class="k">ENTRY</span><span class="v">4,274-4,279</span></div>
-          <div class="r"><span class="k">STOP</span><span class="v">4,263 · −1600p</span></div>
-          <div class="r tp"><span class="k">TARGETS</span><span class="v">4,296 / 4,318</span></div>
-        </div>
+        <div class="r"><span class="k">ENTRY</span><span class="v">4,274-4,279</span></div>
+        <div class="r"><span class="k">STOP</span><span class="v">4,263 · −1600p</span></div>
+        <div class="r tp"><span class="k">TARGETS</span><span class="v">4,296 / 4,318</span></div>
         <div class="hits"><div class="hh">HIT RATE · LAST 40 SIGNALS</div>
           <div class="hrow2"><span>TP1</span><div class="bar"><i style="width:82%"></i></div><b>82%</b></div>
           <div class="hrow2"><span>TP2</span><div class="bar"><i style="width:57%"></i></div><b>57%</b></div>
           <div class="hrow2"><span>TP3</span><div class="bar"><i style="width:33%"></i></div><b>33%</b></div>
         </div>
-        <div class="why">"Cluster of bids 4274–80; invalidation clean below 4263."</div>
-        <a class="orig" href="#" onclick="return false">VIEW ORIGINAL
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+        <div class="why">"Cluster of bids 4274-80; invalidation clean below 4263."</div>
+        <a class="orig" href="#" onclick="return false">VIEW ORIGINAL <i class="fi fi-rr-arrow-up-right" aria-hidden="true"></i></a>
       </div>
     </section>
 
     <section class="card yes" data-id="E">
       <div class="chead" tabindex="0" role="button" aria-expanded="false" aria-label="Desk E details">
-        <span class="tick">✓</span>
+        <span class="tick"><i class="fi fi-rr-check" aria-hidden="true"></i></span>
         <span class="who"><span class="src">DESK E · MetalWire</span><span class="sub" style="display:block">TP1 <b>64%</b> · 19m AGO</span></span>
-        <span class="dir">LONG</span>
+        <span class="dirv">LONG</span>
         <label class="stgl" aria-label="Include Desk E in consensus"><input type="checkbox" checked data-id="E"><span class="tr"></span><span class="th"></span></label>
         <span class="chev">›</span>
       </div>
       <div class="details" hidden>
-        <div class="rows">
-          <div class="r"><span class="k">ENTRY</span><span class="v">4,275-4,282</span></div>
-          <div class="r"><span class="k">STOP</span><span class="v">4,261 · −1800p</span></div>
-          <div class="r tp"><span class="k">TARGETS</span><span class="v">4,294 / 4,316</span></div>
-        </div>
+        <div class="r"><span class="k">ENTRY</span><span class="v">4,275-4,282</span></div>
+        <div class="r"><span class="k">STOP</span><span class="v">4,261 · −1800p</span></div>
+        <div class="r tp"><span class="k">TARGETS</span><span class="v">4,294 / 4,316</span></div>
         <div class="hits"><div class="hh">HIT RATE · LAST 40 SIGNALS</div>
           <div class="hrow2"><span>TP1</span><div class="bar"><i style="width:64%"></i></div><b>64%</b></div>
           <div class="hrow2"><span>TP2</span><div class="bar"><i style="width:41%"></i></div><b>41%</b></div>
           <div class="hrow2"><span>TP3</span><div class="bar"><i style="width:22%"></i></div><b>22%</b></div>
         </div>
         <div class="why">"Asia low holding; long dips toward the zone."</div>
-        <a class="orig" href="#" onclick="return false">VIEW ORIGINAL
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+        <a class="orig" href="#" onclick="return false">VIEW ORIGINAL <i class="fi fi-rr-arrow-up-right" aria-hidden="true"></i></a>
       </div>
     </section>
 
     <section class="card no dis" data-id="D">
       <div class="chead" tabindex="0" role="button" aria-expanded="false" aria-label="Desk D details">
-        <span class="tick">✗</span>
+        <span class="tick"><i class="fi fi-rr-cross" aria-hidden="true"></i></span>
         <span class="who"><span class="src">DESK D · BearBullion</span><span class="sub" style="display:block">TP1 <b>58%</b> · 22m AGO</span></span>
-        <span class="dir">SHORT</span>
+        <span class="dirv">SHORT</span>
         <label class="stgl" aria-label="Include Desk D in consensus"><input type="checkbox" checked data-id="D"><span class="tr"></span><span class="th"></span></label>
         <span class="chev">›</span>
       </div>
       <div class="details" hidden>
-        <div class="rows">
-          <div class="r"><span class="k">ENTRY</span><span class="v">4,285</span></div>
-          <div class="r"><span class="k">STOP</span><span class="v">4,300</span></div>
-          <div class="r"><span class="k">TARGET</span><span class="v">4,260</span></div>
-        </div>
+        <div class="r"><span class="k">ENTRY</span><span class="v">4,285</span></div>
+        <div class="r"><span class="k">STOP</span><span class="v">4,300</span></div>
+        <div class="r"><span class="k">TARGET</span><span class="v">4,260</span></div>
         <div class="hits"><div class="hh">HIT RATE · LAST 25 SIGNALS</div>
           <div class="hrow2"><span>TP1</span><div class="bar"><i style="width:58%"></i></div><b>58%</b></div>
           <div class="hrow2"><span>TP2</span><div class="bar"><i style="width:36%"></i></div><b>36%</b></div>
           <div class="hrow2"><span>TP3</span><div class="bar"><i style="width:20%"></i></div><b>20%</b></div>
         </div>
         <div class="why">Excluded from cluster - entry 5+ pts outside the zone.</div>
-        <a class="orig" href="#" onclick="return false">VIEW ORIGINAL
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
+        <a class="orig" href="#" onclick="return false">VIEW ORIGINAL <i class="fi fi-rr-arrow-up-right" aria-hidden="true"></i></a>
       </div>
     </section>
 
-    <div class="indep">INDEPENDENCE CHECK - A/B/C/E cluster tightly on levels but differ in <b>author, wording &amp; timing</b> → counted as <b>3.2 independent votes</b>. No copy-paste detected.</div>
-    <div class="micro">FINGERPRINTS VERIFIED · 21:47:12</div>
+    <div class="indep">INDEPENDENCE CHECK - A/B/C/E cluster tightly on levels but differ in <b>author, wording and timing</b> → counted as <b>3.2 independent votes</b>. No copy-paste detected.</div>
+    <div class="micro">Fingerprints verified · 21:47:12</div>
   </main>
   <nav aria-label="Primary">
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10M12 20V4M18 20v-8"/></svg>RADAR</a>
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>SIGNAL</a>
-    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/></svg>SOURCES</a>
-    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>HISTORY</a>
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>CONFIG</a>
+    <a href="mockup-11A-harbor.html"><i class="fi fi-rr-radar" aria-hidden="true"></i>Radar</a>
+    <a href="screen-2-signal.html"><i class="fi fi-rr-chart-line-up" aria-hidden="true"></i>Signal</a>
+    <a href="screen-3-sources.html" class="active" aria-current="page"><i class="fi fi-rr-layers" aria-hidden="true"></i>Sources</a>
+    <a href="screen-4-history.html"><i class="fi fi-rr-clock" aria-hidden="true"></i>History</a>
+    <a href="screen-5-settings.html"><i class="fi fi-rr-settings-sliders" aria-hidden="true"></i>Config</a>
+    <a href="screen-6-events.html"><i class="fi fi-rr-calendar" aria-hidden="true"></i>Events</a>
   </nav>
 </div>
 <script>
@@ -283,7 +264,7 @@
       nocons.hidden = true;
     } else {
       var why = enabled.length === 0 ? 'NO SOURCES ENABLED'
-        : (agr < 2 ? 'NEED 2+ AGREEING' : 'TIED ' + agr + '–' + sho);
+        : (agr < 2 ? 'NEED 2+ AGREEING' : 'TIED ' + agr + '-' + sho);
       sumN.textContent = 'NO CONSENSUS';
       sumMeta.innerHTML = why + ' · <b>' + agr + ' / ' + enabled.length + '</b>';
       nocons.hidden = false;
@@ -296,7 +277,6 @@
       recompute();
     });
   });
-  /* expand / collapse card details (toggle switch exempt) */
   document.querySelectorAll('.chead').forEach(function(head){
     function toggle(){
       var card = head.closest('.card');
@@ -314,16 +294,6 @@
       if (e.target.closest('.stgl')) return;
       if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
     });
-  });
-})();
-</script>
-<script>
-/* redesign: cross-link mockup screens (no dead nav links) */
-(function(){
-  var map = { RADAR: 'mockup-8B-blueprint.html', SIGNAL: 'screen-2-signal.html', SOURCES: 'screen-3-sources.html', HISTORY: 'screen-4-history.html', CONFIG: 'screen-5-settings.html', SETTINGS: 'screen-5-settings.html', EVENTS: 'screen-6-events.html' };
-  document.querySelectorAll('nav a').forEach(function(a){
-    var t = a.textContent.trim().toUpperCase();
-    if (map[t]) a.setAttribute('href', map[t]);
   });
 })();
 </script>

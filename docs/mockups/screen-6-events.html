@@ -3,102 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="XAU Radar - economic events board and news.">
-<meta name="theme-color" content="#0C1A2E">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1A2E'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23E8C35A' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
+<meta name="description" content="XAU Radar events screen in Harbor style.">
+<meta name="theme-color" content="#E9ECEF">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232347F5'/%3E%3Cpath d='M10 22L16 8l6 14' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<title>XAU Radar - Screen 6: Events (Blueprint)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- App icons: Flaticon UIcons, Regular Rounded (fi-rr-*), free license with attribution. -->
+<link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+<title>XAU Radar - Events</title>
 <style>
   :root{
-    --bg:#0C1A2E;
-    --ink:#DCE8F7;
-    --dim:#8AA2C0;
-    --faint:#5A7396;
-    --line:#2B4A73;
-    --gold:#E8C35A;
-    --long:#4ADE9E;
-    --short:#F0716F;
-    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+    --bg:#E9ECEF;
+    --card:#FFFFFF;
+    --ink:#0D1526;
+    --dim:#5A6B84;
+    --faint:#8FA0B8;
+    --line:#D5DCE6;
+    --accent:#2347F5;
+    --long:#0E9F6E;
+    --long-soft:#DFF5EA;
+    --short:#E05252;
+    --short-soft:#FBE3E3;
+    --warn:#8A6414;
+    --warn-soft:#F6ECD4;
+    --disp:"Sora",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html{font-size:16px}
-  body{font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#050B16;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
-  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden;background-image:linear-gradient(rgba(125,180,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(125,180,255,.06) 1px,transparent 1px);background-size:22px 22px}
+  body{font-family:var(--disp);background:#C9D2DC;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
   .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim);font-family:var(--mono)}
   .statusbar .right{display:flex;gap:6px;align-items:center}
-  header{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 6px;font-family:var(--mono)}
-  .brand .name{font-size:.82rem;font-weight:700;letter-spacing:.14em}
-  .brand .name span{color:var(--gold)}
-  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
-  .live i{width:7px;height:7px;background:var(--long)}
-  main{flex:1;display:flex;flex-direction:column;padding:8px 22px 12px;overflow-y:auto}
-  .dwg{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--faint)}
-  /* tabs */
-  .tabs{display:flex;margin-top:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-  .tabs button{flex:1;background:transparent;border:none;color:var(--dim);font-family:var(--mono);font-weight:700;font-size:.66rem;letter-spacing:.1em;padding:13px 0;min-height:48px;cursor:pointer;border-left:1px solid var(--line)}
-  .tabs button:first-child{border-left:none}
-  .tabs button[aria-selected="true"]{background:var(--gold);color:#2A2008}
-  .tabs button:focus-visible{outline:2px solid #fff;outline-offset:-2px}
-  .pane{margin-top:12px}
-  .pane[hidden]{display:none}
-  /* filters */
-  .filters{margin-top:10px;border:1px solid var(--line);background:rgba(10,22,38,.55)}
-  .filters .frow{display:flex;align-items:center;gap:8px;padding:10px 12px}
-  .filters .frow + .frow{border-top:1px solid var(--line)}
-  .filters .fl{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;color:var(--faint);width:64px;flex-shrink:0}
-  .chip{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:999px;font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.08em;padding:8px 0;min-width:52px;min-height:40px;cursor:pointer}
-  .chip.on{background:var(--gold);border-color:var(--gold);color:#2A2008}
-  .chip:focus-visible{outline:2px solid #fff;outline-offset:1px}
+  header{display:flex;align-items:center;gap:11px;padding:10px 20px 4px}
+  .mark{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mark .fi{font-size:20px;color:#fff}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.1em}
+  .brand .sub{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:2px;letter-spacing:.08em}
+  .livepill{margin-left:auto;display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-height:44px;font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--long)}
+  .livepill i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;padding:10px 16px 12px;overflow-y:auto}
+  .fi{line-height:1}
+  .kick{font-family:var(--mono);font-size:.6rem;letter-spacing:.22em;color:var(--faint)}
+  .tabs{display:flex;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+  .tabs button{flex:1;background:transparent;border:none;border-radius:10px;font-family:var(--mono);font-size:.64rem;font-weight:700;letter-spacing:.08em;color:var(--dim);padding:12px 0;min-height:48px;cursor:pointer}
+  .tabs button[aria-selected="true"]{background:var(--ink);color:#fff}
+  .tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .filters{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+  .filters .frow{display:flex;align-items:center;gap:8px}
+  .filters .frow + .frow{margin-top:10px}
+  .filters .fl{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;color:var(--faint);width:56px;flex-shrink:0}
+  .chip{background:transparent;border:1.5px solid var(--line);color:var(--dim);border-radius:999px;font-family:var(--mono);font-size:.62rem;font-weight:700;padding:9px 0;min-width:56px;min-height:44px;cursor:pointer}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
   .seg{display:flex;flex:1;gap:6px}
-  .seg button{flex:1;background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.08em;padding:9px 0;min-height:40px;cursor:pointer}
-  .seg button.on{background:rgba(232,195,90,.14);border-color:var(--gold);color:var(--gold)}
-  .seg button:focus-visible{outline:2px solid #fff;outline-offset:1px}
-  .guard{margin-top:10px;border:1px dashed var(--gold);border-radius:8px;padding:11px 14px;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;color:var(--gold);line-height:1.7}
-  .bell{background:transparent;border:1px solid var(--line);border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--gold);cursor:pointer;flex-shrink:0;margin-left:10px}
-  .bell svg{width:17px;height:17px}
-  .bell.off{opacity:.35}
-  .bell:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+  .seg button{flex:1;background:transparent;border:1.5px solid var(--line);color:var(--dim);border-radius:10px;font-family:var(--mono);font-size:.6rem;font-weight:700;padding:10px 0;min-height:44px;cursor:pointer}
+  .seg button.on{background:rgba(35,71,245,.1);border-color:var(--accent);color:var(--accent)}
+  .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .guard{margin-top:10px;border:1.5px dashed var(--accent);border-radius:14px;padding:12px 14px;font-family:var(--mono);font-size:.62rem;letter-spacing:.06em;color:var(--accent);line-height:1.8;background:var(--card)}
+  .pane{margin-top:10px}
+  .pane[hidden]{display:none}
+  .erow{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:10px;overflow:hidden}
   .erow.muted{opacity:.45}
-  .erow{border:1px solid var(--line);background:rgba(10,22,38,.55);margin-bottom:10px}
-  .erow .top{display:flex;align-items:center;gap:10px;padding:11px 14px;font-family:var(--mono)}
-  .erow .imp{font-size:.58rem;font-weight:700;letter-spacing:.14em;border-radius:4px;padding:4px 8px;flex-shrink:0}
-  .erow .imp.HIGH{color:var(--short);border:1px solid rgba(240,113,111,.5)}
-  .erow .imp.MED{color:var(--gold);border:1px solid rgba(232,195,90,.5)}
-  .erow .imp.LOW{color:var(--faint);border:1px solid var(--line)}
-  .erow .t{font-size:.74rem;font-weight:700}
-  .erow .when{margin-left:auto;font-size:.62rem;color:var(--dim);white-space:nowrap}
+  .erow .top{display:flex;align-items:center;gap:10px;padding:12px 12px 12px 14px}
+  .erow .imp{font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.12em;border-radius:6px;padding:5px 9px;flex-shrink:0}
+  .erow .imp.HIGH{color:var(--short);background:var(--short-soft)}
+  .erow .imp.MED{color:var(--warn);background:var(--warn-soft)}
+  .erow .imp.LOW{color:var(--dim);background:#E7ECF2}
+  .erow .t{font-size:.78rem;font-weight:700}
+  .erow .when{margin-left:auto;font-family:var(--mono);font-size:.62rem;color:var(--dim);white-space:nowrap}
   .erow .when.hot{color:var(--short);font-weight:700}
-  .erow .vals{display:flex;gap:8px;padding:0 14px 4px;font-family:var(--mono);font-size:.62rem;color:var(--faint)}
+  .bell{background:transparent;border:1.5px solid var(--line);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--accent);cursor:pointer;flex-shrink:0}
+  .bell .fi{font-size:18px}
+  .bell.off{opacity:.35}
+  .bell:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .erow .vals{display:flex;gap:10px;padding:0 14px 4px;font-family:var(--mono);font-size:.62rem;color:var(--faint)}
   .erow .vals b{color:var(--dim)}
   .erow .vals .sur{color:var(--short);font-weight:700}
   .erow .vals .ok{color:var(--long)}
-  .erow .note{padding:9px 14px;font-size:.66rem;line-height:1.5;color:var(--dim);border-top:1px solid var(--line)}
-  .backdrop{border:1px dashed var(--line);padding:11px 14px;margin-bottom:10px;font-family:var(--mono);font-size:.64rem;line-height:2;color:var(--dim)}
+  .erow .note{padding:10px 14px;font-size:.7rem;line-height:1.55;color:var(--dim);border-top:1px solid var(--line)}
+  .backdrop{background:var(--ink);color:#fff;border-radius:16px;padding:13px 16px;margin-bottom:10px;font-family:var(--mono);font-size:.64rem;line-height:2}
   .backdrop .hk{color:var(--short);font-weight:700}
   .backdrop .dv{color:var(--long);font-weight:700}
-  .backdrop .nt{color:var(--dim)}
-  .news{border:1px solid var(--line);background:rgba(10,22,38,.55);margin-bottom:10px;padding:11px 14px}
-  .news .h{font-size:.78rem;line-height:1.45}
-  .news .m{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:6px;letter-spacing:.06em}
-  .news .m b{color:var(--gold)}
-  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--faint)}
-  nav{display:flex;border-top:1px solid var(--line);background:rgba(10,22,38,.96);padding:6px 6px calc(10px + env(safe-area-inset-bottom))}
-  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.52rem;font-weight:700;letter-spacing:.06em;min-height:48px;min-width:48px}
-  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6}
-  nav a.active{color:var(--gold)}
-  nav a.active svg{stroke:var(--gold)}
-  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
-  /* ── redesign pass: type, grain, press states ── */
-  body{font-family:"Space Grotesk","Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-  :root{--mono:"IBM Plex Mono","SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace}
-  .phone::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:60;opacity:.55;background-image:radial-gradient(rgba(255,255,255,.028) 1px,transparent 1.6px);background-size:3px 3px}
-  .cta,.ghost,.chip,.iconbtn,.tabs button,.seg button,.bell{transition:filter .18s ease,transform .12s ease,background .18s ease,color .18s ease}
-  .cta:hover{filter:brightness(1.08)}
-  .cta:active,.ghost:active,.chip:active,.iconbtn:active{transform:translateY(1px)}
-  nav a{transition:color .18s ease}
-  nav a:hover{color:var(--ink)}
+  .backdrop .nt{color:#93A1B8}
+  .news{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:10px;padding:12px 14px}
+  .news .h{font-size:.8rem;line-height:1.45;font-weight:500}
+  .news .m{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:7px;letter-spacing:.04em}
+  .news .m b{color:var(--accent)}
+  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;color:var(--faint)}
+  nav{display:flex;background:var(--card);border-top:1px solid var(--line);padding:6px 6px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.52rem;font-weight:700;letter-spacing:.04em;min-height:48px;min-width:48px;border-radius:12px}
+  nav a .fi{font-size:20px}
+  nav a.active{color:var(--accent)}
+  nav a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 </style>
 </head>
 <body>
@@ -108,11 +106,12 @@
     <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
   </span></div>
   <header>
-    <div class="brand"><div class="name">XAU<span>RADAR</span> · EVENTS</div></div>
-    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+    <div class="mark" aria-hidden="true"><i class="fi fi-rr-chart-candlestick"></i></div>
+    <div class="brand"><div class="name">XAU RADAR</div><div class="sub">EVENTS · USD WEEK</div></div>
+    <div class="livepill" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</div>
   </header>
   <main>
-    <div class="dwg">FIG.6 - EVENT BOARD · USD WEEK</div>
+    <div class="kick">EVENT BOARD · USD WEEK</div>
     <div class="tabs" role="tablist" aria-label="Events views">
       <button type="button" role="tab" aria-selected="true" data-pane="paneUp">UPCOMING</button>
       <button type="button" role="tab" aria-selected="false" data-pane="paneRes">RESULTS</button>
@@ -137,32 +136,32 @@
 
     <div class="pane" id="paneUp" role="tabpanel">
       <div class="erow" data-id="nfp" data-ccy="USD" data-impact="HIGH" data-bo="FRI 15:00">
-        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">NFP · Non-Farm Payrolls</span><span class="when hot">FRI 15:30</span><button class="bell" aria-pressed="true" aria-label="Mute NFP alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
-        <div class="vals"><span>FCAST <b>185K</b></span><span>PREV <b>178K</b></span><span>BLACKOUT <b>T−30/+15</b></span></div>
+        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">NFP · Non-Farm Payrolls</span><span class="when hot">FRI 15:30</span><button class="bell" aria-pressed="true" aria-label="Mute NFP alerts"><i class="fi fi-rr-bell" aria-hidden="true"></i></button></div>
+        <div class="vals"><span>FCAST <b>185K</b></span><span>PREV <b>178K</b></span><span>BLACKOUT <b>T-30/+15</b></span></div>
         <div class="note">New signals auto-pause 30 min before. Open setups get a caution badge.</div>
       </div>
       <div class="erow" data-id="cpi" data-ccy="USD" data-impact="HIGH" data-bo="WED 15:00">
-        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">CPI m/m</span><span class="when">WED 15:30</span><button class="bell" aria-pressed="true" aria-label="Mute CPI alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
+        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">CPI m/m</span><span class="when">WED 15:30</span><button class="bell" aria-pressed="true" aria-label="Mute CPI alerts"><i class="fi fi-rr-bell" aria-hidden="true"></i></button></div>
         <div class="vals"><span>FCAST <b>0.3%</b></span><span>PREV <b>0.2%</b></span><span>SURPRISE&gt; <b>±0.2pp</b></span></div>
       </div>
       <div class="erow" data-id="fomc" data-ccy="USD" data-impact="HIGH" data-bo="THU 20:30">
-        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">FOMC Statement</span><span class="when">THU 21:00</span><button class="bell" aria-pressed="true" aria-label="Mute FOMC alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
+        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">FOMC Statement</span><span class="when">THU 21:00</span><button class="bell" aria-pressed="true" aria-label="Mute FOMC alerts"><i class="fi fi-rr-bell" aria-hidden="true"></i></button></div>
         <div class="vals"><span>FCAST <b>HOLD</b></span><span>PREV <b>HOLD</b></span></div>
       </div>
       <div class="erow" data-id="ecb" data-ccy="EUR" data-impact="HIGH">
-        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">ECB Press Conference</span><span class="when">THU 15:45</span><button class="bell" aria-pressed="true" aria-label="Mute ECB alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
+        <div class="top"><span class="imp HIGH">HIGH</span><span class="t">ECB Press Conference</span><span class="when">THU 15:45</span><button class="bell" aria-pressed="true" aria-label="Mute ECB alerts"><i class="fi fi-rr-bell" aria-hidden="true"></i></button></div>
         <div class="vals"><span>NON-USD HIGH</span><span>CAUTION BADGE ONLY</span></div>
       </div>
       <div class="erow" data-id="retail" data-ccy="USD" data-impact="MED">
-        <div class="top"><span class="imp MED">MED</span><span class="t">Retail Sales m/m</span><span class="when">TUE 15:30</span><button class="bell" aria-pressed="true" aria-label="Mute Retail Sales alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
+        <div class="top"><span class="imp MED">MED</span><span class="t">Retail Sales m/m</span><span class="when">TUE 15:30</span><button class="bell" aria-pressed="true" aria-label="Mute Retail Sales alerts"><i class="fi fi-rr-bell" aria-hidden="true"></i></button></div>
         <div class="vals"><span>FCAST <b>0.4%</b></span><span>PREV <b>0.6%</b></span></div>
       </div>
       <div class="erow" data-id="ukcpi" data-ccy="GBP" data-impact="MED">
-        <div class="top"><span class="imp MED">MED</span><span class="t">UK CPI y/y</span><span class="when">WED 09:00</span><button class="bell" aria-pressed="true" aria-label="Mute UK CPI alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
+        <div class="top"><span class="imp MED">MED</span><span class="t">UK CPI y/y</span><span class="when">WED 09:00</span><button class="bell" aria-pressed="true" aria-label="Mute UK CPI alerts"><i class="fi fi-rr-bell" aria-hidden="true"></i></button></div>
         <div class="vals"><span>FCAST <b>3.2%</b></span><span>PREV <b>3.4%</b></span></div>
       </div>
       <div class="erow" data-id="crude" data-ccy="USD" data-impact="LOW">
-        <div class="top"><span class="imp LOW">LOW</span><span class="t">Crude Inventories</span><span class="when">WED 17:30</span><button class="bell" aria-pressed="true" aria-label="Mute Crude alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button></div>
+        <div class="top"><span class="imp LOW">LOW</span><span class="t">Crude Inventories</span><span class="when">WED 17:30</span><button class="bell" aria-pressed="true" aria-label="Mute Crude alerts"><i class="fi fi-rr-bell" aria-hidden="true"></i></button></div>
         <div class="vals"><span>STORED ONLY</span><span>NO GUARD · NO ALERTS</span></div>
       </div>
     </div>
@@ -170,35 +169,36 @@
     <div class="pane" id="paneRes" role="tabpanel" hidden>
       <div class="erow">
         <div class="top"><span class="imp HIGH">HIGH</span><span class="t">PPI m/m</span><span class="when">DONE</span></div>
-        <div class="vals"><span>ACT <b>0.5%</b></span><span>FCAST <b>0.3%</b></span><span class="sur">SURPRISE +0.2</span></div>
+        <div class="vals"><span>ACT <b>0.5%</b></span><span>FCAST <b>0.3%</b></span><span class="sur" style="color:var(--short);font-weight:700">SURPRISE +0.2</span></div>
         <div class="note">Post-surprise signals carry a context flag for 60 min.</div>
       </div>
       <div class="erow">
         <div class="top"><span class="imp HIGH">HIGH</span><span class="t">Unemployment Rate</span><span class="when">DONE</span></div>
-        <div class="vals"><span>ACT <b>4.1%</b></span><span>FCAST <b>4.1%</b></span><span class="ok">IN LINE</span></div>
+        <div class="vals"><span>ACT <b>4.1%</b></span><span>FCAST <b>4.1%</b></span><span class="ok" style="color:var(--long)">IN LINE</span></div>
       </div>
       <div class="erow">
         <div class="top"><span class="imp MED">MED</span><span class="t">ISM Services PMI</span><span class="when">DONE</span></div>
-        <div class="vals"><span>ACT <b>53.8</b></span><span>FCAST <b>52.5</b></span><span class="ok">MILD BEAT</span></div>
+        <div class="vals"><span>ACT <b>53.8</b></span><span>FCAST <b>52.5</b></span><span class="ok" style="color:var(--long)">MILD BEAT</span></div>
       </div>
     </div>
 
     <div class="pane" id="paneNews" role="tabpanel" hidden>
-      <div class="backdrop">MACRO BACKDROP · 21:00 DIGEST<br><span class="hk">▲ HAWKISH</span> Fed repricing · <span class="dv">▼ DOVISH</span> ECB · <span class="nt">- NEUTRAL Asia demand</span></div>
+      <div class="backdrop">MACRO BACKDROP · 21:00 DIGEST<br><span class="hk">▲ HAWKISH</span> Fed repricing · <span class="dv">▼ DOVISH</span> ECB · <span class="nt">— NEUTRAL Asia demand</span></div>
       <div class="news"><div class="h">Fed officials push back on rate-cut bets as gold holds near highs</div><div class="m">REUTERS · 2H AGO · <b>HAWKISH</b> · OPEN ↗</div></div>
       <div class="news"><div class="h">ECB signals patience; euro softens, dollar firms</div><div class="m">BLOOMBERG · 4H AGO · <b>DOVISH-USD+</b> · OPEN ↗</div></div>
       <div class="news"><div class="h">Central-bank buying pace steady, WGC data show</div><div class="m">KITCO · 6H AGO · <b>NEUTRAL</b> · OPEN ↗</div></div>
       <div class="news"><div class="h">Treasury yields climb ahead of payrolls; metals mixed</div><div class="m">MARKETWATCH · 8H AGO · <b>HAWKISH</b> · OPEN ↗</div></div>
     </div>
 
-    <div class="micro">FMP CALENDAR, MANUAL SEED OK · HEADLINES LINK OUT</div>
+    <div class="micro">FMP calendar, manual seed ok · headlines link out</div>
   </main>
   <nav aria-label="Primary">
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10M12 20V4M18 20v-8"/></svg>RADAR</a>
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>SIGNAL</a>
-    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/></svg>SOURCES</a>
-    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>HISTORY</a>
-    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 8h18"/><rect x="3" y="4" width="18" height="17" rx="2"/></svg>EVENTS</a>
+    <a href="mockup-11A-harbor.html"><i class="fi fi-rr-radar" aria-hidden="true"></i>Radar</a>
+    <a href="screen-2-signal.html"><i class="fi fi-rr-chart-line-up" aria-hidden="true"></i>Signal</a>
+    <a href="screen-3-sources.html"><i class="fi fi-rr-layers" aria-hidden="true"></i>Sources</a>
+    <a href="screen-4-history.html"><i class="fi fi-rr-clock" aria-hidden="true"></i>History</a>
+    <a href="screen-6-events.html" class="active" aria-current="page"><i class="fi fi-rr-calendar" aria-hidden="true"></i>Events</a>
+    <a href="screen-5-settings.html"><i class="fi fi-rr-settings-sliders" aria-hidden="true"></i>Config</a>
   </nav>
 </div>
 <script>
@@ -210,15 +210,12 @@
       t.setAttribute('aria-selected','true'); document.getElementById(t.dataset.pane).hidden = false;
     });
   });
-
-  /* ── Filters: currency + impact + per-event mute drive the guard ── */
   var rank = { HIGH: 3, MED: 2, LOW: 1 };
   var impLabel = { HIGH: 'HIGH ONLY', MED: 'HIGH+MED', LOW: 'ALL' };
   var ccys = { USD: true, EUR: true, GBP: true };
   var minImp = 'MED';
   var muted = {};
   var guardLine = document.getElementById('guardLine');
-
   function apply(){
     var armed = 0, mutedCount = 0, nextBo = '-';
     document.querySelectorAll('#paneUp .erow').forEach(function(r){
@@ -234,10 +231,8 @@
         }
       }
     });
-    var on = Object.keys(ccys).filter(function(c){ return ccys[c]; }).join('·') || 'NONE';
-    guardLine.textContent = 'GUARD: ' + on + ' · ' + impLabel[minImp] +
-      ' · ' + armed + ' ARMED' + (mutedCount ? ' · ' + mutedCount + ' MUTED' : '') +
-      ' · NEXT BLACKOUT ' + nextBo;
+    var on = Object.keys(ccys).filter(function(c){ return ccys[c]; }).join('+') || 'NONE';
+    guardLine.textContent = 'GUARD: ' + on + ' · ' + impLabel[minImp] + ' · ' + armed + ' ARMED' + (mutedCount ? ' · ' + mutedCount + ' MUTED' : '') + ' · NEXT BLACKOUT ' + nextBo;
   }
   document.querySelectorAll('.chip').forEach(function(c){
     c.addEventListener('click', function(){
@@ -252,9 +247,9 @@
     b.addEventListener('click', function(){
       minImp = b.dataset.imp;
       document.querySelectorAll('.seg button').forEach(function(x){
-        var on = x === b;
-        x.classList.toggle('on', on);
-        x.setAttribute('aria-pressed', on ? 'true' : 'false');
+        var on2 = x === b;
+        x.classList.toggle('on', on2);
+        x.setAttribute('aria-pressed', on2 ? 'true' : 'false');
       });
       apply();
     });
@@ -271,16 +266,6 @@
     });
   });
   apply();
-})();
-</script>
-<script>
-/* redesign: cross-link mockup screens (no dead nav links) */
-(function(){
-  var map = { RADAR: 'mockup-8B-blueprint.html', SIGNAL: 'screen-2-signal.html', SOURCES: 'screen-3-sources.html', HISTORY: 'screen-4-history.html', CONFIG: 'screen-5-settings.html', SETTINGS: 'screen-5-settings.html', EVENTS: 'screen-6-events.html' };
-  document.querySelectorAll('nav a').forEach(function(a){
-    var t = a.textContent.trim().toUpperCase();
-    if (map[t]) a.setAttribute('href', map[t]);
-  });
 })();
 </script>
 </body>

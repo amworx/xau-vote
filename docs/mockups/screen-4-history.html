@@ -3,81 +3,78 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="XAU Radar - past signals and their outcomes.">
-<meta name="theme-color" content="#0C1A2E">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1A2E'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23E8C35A' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
+<meta name="description" content="XAU Radar history screen in Harbor style.">
+<meta name="theme-color" content="#E9ECEF">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232347F5'/%3E%3Cpath d='M10 22L16 8l6 14' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<title>XAU Radar - Screen 4: History (Blueprint)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- App icons: Flaticon UIcons, Regular Rounded (fi-rr-*), free license with attribution. -->
+<link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+<title>XAU Radar - History</title>
 <style>
   :root{
-    --bg:#0C1A2E;
-    --ink:#DCE8F7;
-    --dim:#8AA2C0;
-    --faint:#5A7396;
-    --line:#2B4A73;
-    --gold:#E8C35A;
-    --long:#4ADE9E;
-    --short:#F0716F;
-    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+    --bg:#E9ECEF;
+    --card:#FFFFFF;
+    --ink:#0D1526;
+    --dim:#5A6B84;
+    --faint:#8FA0B8;
+    --line:#D5DCE6;
+    --accent:#2347F5;
+    --long:#0E9F6E;
+    --long-soft:#DFF5EA;
+    --short:#E05252;
+    --short-soft:#FBE3E3;
+    --disp:"Sora",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html{font-size:16px}
-  body{font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#050B16;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
-  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden;background-image:linear-gradient(rgba(125,180,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(125,180,255,.06) 1px,transparent 1px);background-size:22px 22px}
+  body{font-family:var(--disp);background:#C9D2DC;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
   .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim);font-family:var(--mono)}
   .statusbar .right{display:flex;gap:6px;align-items:center}
-  header{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 6px;font-family:var(--mono)}
-  .brand .name{font-size:.82rem;font-weight:700;letter-spacing:.14em}
-  .brand .name span{color:var(--gold)}
-  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
-  .live i{width:7px;height:7px;background:var(--long)}
-  main{flex:1;display:flex;flex-direction:column;padding:8px 22px 12px;overflow-y:auto}
-  .dwg{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--faint)}
-  .stats{display:flex;gap:8px;margin-top:10px}
-  .stat{flex:1;border:1px solid var(--line);border-radius:6px;padding:10px 6px;text-align:center;font-family:var(--mono);background:rgba(10,22,38,.55);min-height:44px}
-  .stat .n{font-size:1.05rem;font-weight:700}
-  .stat .k{font-size:.6rem;letter-spacing:.14em;color:var(--faint);margin-top:3px}
+  header{display:flex;align-items:center;gap:11px;padding:10px 20px 4px}
+  .mark{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mark .fi{font-size:20px;color:#fff}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.1em}
+  .brand .sub{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:2px;letter-spacing:.08em}
+  .livepill{margin-left:auto;display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-height:44px;font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--long)}
+  .livepill i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;padding:10px 16px 12px;overflow-y:auto}
+  .fi{line-height:1}
+  .kick{font-family:var(--mono);font-size:.6rem;letter-spacing:.22em;color:var(--faint)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 4px;text-align:center;min-height:48px}
+  .stat .n{font-size:1.05rem;font-weight:800}
+  .stat .k{font-size:.58rem;font-weight:600;letter-spacing:.12em;color:var(--faint);margin-top:3px}
   .stat .n.g{color:var(--long)}
-  .stat .n.y{color:var(--gold)}
   .stat .n.r{color:var(--short)}
-  .hrow{margin-top:12px;border:1px solid var(--line);background:rgba(10,22,38,.55)}
-  .hrow .top{display:flex;align-items:center;gap:10px;padding:11px 14px;font-family:var(--mono)}
-  .hrow .d{font-size:.78rem;font-weight:800;letter-spacing:.08em}
+  .stat .n.y{color:var(--accent)}
+  .hrow{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 14px}
+  .hrow .top{display:flex;align-items:center;gap:9px}
+  .hrow .d{font-size:.82rem;font-weight:800;letter-spacing:.06em}
   .hrow .d.LONG{color:var(--long)}
   .hrow .d.SHORT{color:var(--short)}
   .hrow .d.NONE{color:var(--faint)}
-  .hrow .t{margin-left:auto;font-size:.6rem;color:var(--faint)}
-  .hrow .mid{padding:0 14px 4px;font-family:var(--mono);font-size:.68rem;color:var(--dim)}
+  .hrow .t{margin-left:auto;font-family:var(--mono);font-size:.6rem;color:var(--faint)}
+  .hrow .mid{margin-top:8px;font-family:var(--mono);font-size:.68rem;color:var(--dim)}
   .hrow .mid b{color:var(--ink)}
-  .hrow .bot{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
-  .pill{font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.14em;border-radius:999px;padding:5px 12px}
-  .pill.tp1{color:var(--long);border:1px solid rgba(74,222,158,.5)}
-  .pill.tp2{color:var(--long);border:1px solid var(--long);background:rgba(74,222,158,.1)}
-  .pill.inv{color:var(--short);border:1px solid rgba(240,113,111,.5)}
-  .pill.exp{color:var(--dim);border:1px solid var(--line)}
-  .pill.none{color:var(--faint);border:1px dashed var(--line)}
-  .hrow .pips{font-family:var(--mono);font-size:.68rem;font-weight:700}
+  .hrow .bot{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+  .pill{font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.12em;border-radius:999px;padding:6px 13px}
+  .pill.tp1,.pill.tp2{color:var(--long);background:var(--long-soft)}
+  .pill.inv{color:var(--short);background:var(--short-soft)}
+  .pill.exp,.pill.none{color:var(--dim);background:#E7ECF2}
+  .hrow .pips{font-family:var(--mono);font-size:.72rem;font-weight:700}
   .hrow .pips.g{color:var(--long)}
   .hrow .pips.r{color:var(--short)}
   .hrow .pips.z{color:var(--faint)}
-  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--faint)}
-  nav{display:flex;border-top:1px solid var(--line);background:rgba(10,22,38,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
-  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.1em;min-height:48px;min-width:48px}
-  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6}
-  nav a.active{color:var(--gold)}
-  nav a.active svg{stroke:var(--gold)}
-  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
-  /* ── redesign pass: type, grain, press states ── */
-  body{font-family:"Space Grotesk","Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-  :root{--mono:"IBM Plex Mono","SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace}
-  .phone::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:60;opacity:.55;background-image:radial-gradient(rgba(255,255,255,.028) 1px,transparent 1.6px);background-size:3px 3px}
-  .cta,.ghost,.chip,.iconbtn,.tabs button,.seg button,.bell{transition:filter .18s ease,transform .12s ease,background .18s ease,color .18s ease}
-  .cta:hover{filter:brightness(1.08)}
-  .cta:active,.ghost:active,.chip:active,.iconbtn:active{transform:translateY(1px)}
-  nav a{transition:color .18s ease}
-  nav a:hover{color:var(--ink)}
+  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;color:var(--faint)}
+  nav{display:flex;background:var(--card);border-top:1px solid var(--line);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.08em;min-height:48px;min-width:48px;border-radius:12px}
+  nav a .fi{font-size:20px}
+  nav a.active{color:var(--accent)}
+  nav a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 </style>
 </head>
 <body>
@@ -87,11 +84,12 @@
     <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
   </span></div>
   <header>
-    <div class="brand"><div class="name">XAU<span>RADAR</span> · HISTORY</div></div>
-    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</span>
+    <div class="mark" aria-hidden="true"><i class="fi fi-rr-chart-candlestick"></i></div>
+    <div class="brand"><div class="name">XAU RADAR</div><div class="sub">HISTORY · 7 DAYS</div></div>
+    <div class="livepill" role="status" aria-label="Live"><i aria-hidden="true"></i>LIVE</div>
   </header>
   <main>
-    <div class="dwg">FIG.4 - SIGNAL LOG · 7 DAYS</div>
+    <div class="kick">SIGNAL LOG · 7 DAYS</div>
     <div class="stats">
       <div class="stat"><div class="n g">9</div><div class="k">TP HIT</div></div>
       <div class="stat"><div class="n r">3</div><div class="k">INVALIDATED</div></div>
@@ -101,17 +99,17 @@
 
     <div class="hrow">
       <div class="top"><span class="d LONG">▲ LONG</span><span class="t">TODAY · 14:20</span></div>
-      <div class="mid">IN <b>4,102–07</b> · SL <b>4,088</b>, TP2 <b>4,138</b> · STRONG 84</div>
+      <div class="mid">IN <b>4,102-07</b> · SL <b>4,088</b> · TP2 <b>4,138</b> · STRONG 84</div>
       <div class="bot"><span class="pill tp2">TP2 HIT</span><span class="pips g">+3100 PIPS</span></div>
     </div>
     <div class="hrow">
       <div class="top"><span class="d SHORT">▼ SHORT</span><span class="t">TODAY · 09:05</span></div>
-      <div class="mid">IN <b>4,150–55</b> · SL <b>4,168</b> · OUT <b>4,170</b> · MODERATE 66</div>
-      <div class="bot"><span class="pill inv">INVALIDATED</span><span class="pips r">−1500 PIPS</span></div>
+      <div class="mid">IN <b>4,150-55</b> · SL <b>4,168</b> · OUT <b>4,170</b> · MODERATE 66</div>
+      <div class="bot"><span class="pill inv">INVALIDATED</span><span class="pips r">-1500 PIPS</span></div>
     </div>
     <div class="hrow">
       <div class="top"><span class="d LONG">▲ LONG</span><span class="t">YESTERDAY · 16:40</span></div>
-      <div class="mid">IN <b>4,090–95</b> · SL <b>4,078</b>, TP1 <b>4,112</b> · STRONG 81</div>
+      <div class="mid">IN <b>4,090-95</b> · SL <b>4,078</b> · TP1 <b>4,112</b> · STRONG 81</div>
       <div class="bot"><span class="pill tp1">TP1 HIT</span><span class="pips g">+1700 PIPS</span></div>
     </div>
     <div class="hrow">
@@ -121,29 +119,20 @@
     </div>
     <div class="hrow">
       <div class="top"><span class="d LONG">▲ LONG</span><span class="t">2 DAYS AGO · 10:30</span></div>
-      <div class="mid">IN <b>4,060–65</b> · expired before confirmation</div>
+      <div class="mid">IN <b>4,060-65</b> · expired before confirmation</div>
       <div class="bot"><span class="pill exp">EXPIRED</span><span class="pips z">0 PIPS</span></div>
     </div>
 
-    <div class="micro">PIPS = 0.10 · PER BROKER CONVENTION D-003</div>
+    <div class="micro">Pips x0.01 · per D-003</div>
   </main>
   <nav aria-label="Primary">
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10M12 20V4M18 20v-8"/></svg>RADAR</a>
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>SIGNAL</a>
-    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/></svg>SOURCES</a>
-    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>HISTORY</a>
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>CONFIG</a>
+    <a href="mockup-11A-harbor.html"><i class="fi fi-rr-radar" aria-hidden="true"></i>Radar</a>
+    <a href="screen-2-signal.html"><i class="fi fi-rr-chart-line-up" aria-hidden="true"></i>Signal</a>
+    <a href="screen-3-sources.html"><i class="fi fi-rr-layers" aria-hidden="true"></i>Sources</a>
+    <a href="screen-4-history.html" class="active" aria-current="page"><i class="fi fi-rr-clock" aria-hidden="true"></i>History</a>
+    <a href="screen-5-settings.html"><i class="fi fi-rr-settings-sliders" aria-hidden="true"></i>Config</a>
+    <a href="screen-6-events.html"><i class="fi fi-rr-calendar" aria-hidden="true"></i>Events</a>
   </nav>
 </div>
-<script>
-/* redesign: cross-link mockup screens (no dead nav links) */
-(function(){
-  var map = { RADAR: 'mockup-8B-blueprint.html', SIGNAL: 'screen-2-signal.html', SOURCES: 'screen-3-sources.html', HISTORY: 'screen-4-history.html', CONFIG: 'screen-5-settings.html', SETTINGS: 'screen-5-settings.html', EVENTS: 'screen-6-events.html' };
-  document.querySelectorAll('nav a').forEach(function(a){
-    var t = a.textContent.trim().toUpperCase();
-    if (map[t]) a.setAttribute('href', map[t]);
-  });
-})();
-</script>
 </body>
 </html>

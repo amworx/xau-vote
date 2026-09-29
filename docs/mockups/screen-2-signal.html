@@ -3,102 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="XAU Radar - active 15-minute XAUUSD setup.">
-<meta name="theme-color" content="#0C1A2E">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1A2E'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23E8C35A' font-family='monospace' font-weight='bold'%3EX%3C/text%3E%3C/svg%3E">
+<meta name="description" content="XAU Radar signal screen in Harbor style.">
+<meta name="theme-color" content="#E9ECEF">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232347F5'/%3E%3Cpath d='M10 22L16 8l6 14' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<title>XAU Radar - Screen 2: Signal (Blueprint)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- App icons: Flaticon UIcons, Regular Rounded (fi-rr-*), free license with attribution. -->
+<link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+<title>XAU Radar - Signal</title>
 <style>
   :root{
-    --bg:#0C1A2E;
-    --ink:#DCE8F7;
-    --dim:#8AA2C0;
-    --faint:#5A7396;
-    --line:#2B4A73;
-    --gold:#E8C35A;
-    --gold-ink:#2A2008;
-    --long:#4ADE9E;
-    --short:#F0716F;
-    --info:#7DB4FF;
-    --mono:"SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+    --bg:#E9ECEF;
+    --card:#FFFFFF;
+    --ink:#0D1526;
+    --dim:#5A6B84;
+    --faint:#8FA0B8;
+    --line:#D5DCE6;
+    --accent:#2347F5;
+    --accent-ink:#FFFFFF;
+    --long:#0E9F6E;
+    --long-soft:#DFF5EA;
+    --short:#E05252;
+    --info:#2347F5;
+    --disp:"Sora",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html{font-size:16px}
-  body{font-family:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#050B16;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
-  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden;background-image:linear-gradient(rgba(125,180,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(125,180,255,.06) 1px,transparent 1px);background-size:22px 22px}
+  body{font-family:var(--disp);background:#C9D2DC;color:var(--ink);display:flex;justify-content:center;min-height:100vh}
+  .phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
   .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font-size:.74rem;color:var(--dim);font-family:var(--mono)}
   .statusbar .right{display:flex;gap:6px;align-items:center}
-  header{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 6px;font-family:var(--mono)}
-  .brand .name{font-size:.82rem;font-weight:700;letter-spacing:.14em}
-  .brand .name span{color:var(--gold)}
-  .live{display:flex;align-items:center;gap:6px;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--long);min-height:44px}
-  .live i{width:7px;height:7px;background:var(--long)}
-  main{flex:1;display:flex;flex-direction:column;padding:8px 22px 12px;overflow-y:auto}
-  .dwg{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;color:var(--faint)}
-  .title{font-family:var(--mono);font-size:1.5rem;font-weight:700;letter-spacing:.1em;color:var(--long);margin-top:6px}
-  .title small{font-size:.68rem;color:var(--dim);letter-spacing:.06em}
-  /* lifecycle timeline */
-  .life{margin-top:12px;border:1px solid var(--line);background:rgba(10,22,38,.55)}
-  .life .lrow{display:flex;align-items:center;gap:10px;padding:9px 14px;min-height:44px;font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;color:var(--faint)}
+  header{display:flex;align-items:center;gap:11px;padding:10px 20px 4px}
+  .mark{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mark .fi{font-size:20px;color:#fff}
+  .brand .name{font-size:.9rem;font-weight:800;letter-spacing:.1em}
+  .brand .sub{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:2px;letter-spacing:.08em}
+  .livepill{margin-left:auto;display:flex;align-items:center;gap:7px;background:var(--long-soft);border-radius:999px;padding:8px 14px;min-height:44px;font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--long)}
+  .livepill i{width:7px;height:7px;border-radius:50%;background:var(--long)}
+  main{flex:1;display:flex;flex-direction:column;padding:10px 16px 12px;overflow-y:auto}
+  .fi{line-height:1}
+  .kick{font-family:var(--mono);font-size:.6rem;letter-spacing:.22em;color:var(--faint)}
+  .title{display:flex;align-items:baseline;gap:10px;margin-top:6px}
+  .title .w{font-size:1.7rem;font-weight:800;letter-spacing:.06em;color:var(--long)}
+  .title small{font-family:var(--mono);font-size:.68rem;color:var(--dim)}
+  .life{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .life .lrow{display:flex;align-items:center;gap:10px;padding:12px 16px;min-height:48px;font-family:var(--mono);font-size:.66rem;letter-spacing:.06em;color:var(--faint)}
   .life .lrow + .lrow{border-top:1px solid var(--line)}
-  .life .dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--faint);flex-shrink:0}
+  .life .dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--line);flex-shrink:0}
   .life .lrow.done{color:var(--dim)}
   .life .lrow.done .dot{border-color:var(--long);background:var(--long)}
-  .life .lrow.now{color:var(--ink);background:rgba(232,195,90,.06)}
-  .life .lrow.now .dot{border-color:var(--gold);background:var(--gold)}
-  .life .lrow .rt{margin-left:auto;color:var(--faint);font-size:.6rem}
-  .life .lrow.now .rt{color:var(--gold)}
-  /* levels */
-  .spec{margin-top:12px;border:1px solid var(--line);font-family:var(--mono);background:rgba(10,22,38,.55)}
-  .spec .sr{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;min-height:48px}
-  .spec .sr + .sr{border-top:1px solid var(--line)}
-  .spec .k{color:var(--faint);font-size:.64rem;letter-spacing:.14em}
-  .spec .rv{display:flex;flex-direction:column;align-items:flex-end}
-  .spec .v{font-weight:700;font-size:1.02rem}
-  .spec .pp{font-size:.58rem;letter-spacing:.1em;color:var(--faint);margin-top:3px}
-  .spec .entry .v{color:var(--info)}
-  .spec .sl .v{color:var(--short)}
-  .spec .tp .v{color:var(--long)}
-  /* context badges */
-  .badges{display:flex;gap:8px;margin-top:12px}
-  .badge{flex:1;border:1px solid var(--line);border-radius:6px;padding:9px 6px;text-align:center;font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;color:var(--dim);min-height:44px}
-  .badge b{display:block;font-size:.68rem;margin-top:3px;letter-spacing:.08em}
-  .badge .g{color:var(--long)}
-  .badge .y{color:var(--gold)}
-  /* target selection */
-  .tpsel{margin-top:12px;border:1px solid var(--line);background:rgba(10,22,38,.55);font-family:var(--mono)}
-  .tpsel .opt{display:flex;align-items:center;gap:10px;padding:12px 14px;min-height:48px;font-size:.72rem;letter-spacing:.06em;color:var(--dim);cursor:pointer}
-  .tpsel .opt + .opt{border-top:1px solid var(--line)}
-  .tpsel .radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--faint);flex-shrink:0}
-  .tpsel .opt.sel{color:var(--ink)}
-  .tpsel .opt.sel .radio{border-color:var(--gold);background:radial-gradient(circle,var(--gold) 0 4px,transparent 5px)}
-  .pstrip{display:flex;justify-content:space-between;align-items:center;margin-top:12px;border:1px solid var(--line);padding:12px 14px;min-height:48px;font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;color:var(--dim);background:rgba(10,22,38,.55)}
-  .pstrip b{font-size:.72rem;color:var(--long)}
-  .cta{margin-top:12px;width:100%;background:var(--gold);color:var(--gold-ink);border:none;border-radius:4px;font-family:var(--mono);font-weight:700;font-size:.85rem;letter-spacing:.14em;padding:15px;min-height:54px;cursor:pointer}
-  .cta:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .life .lrow.now{color:var(--ink);font-weight:700;background:rgba(35,71,245,.05)}
+  .life .lrow.now .dot{border-color:var(--accent);background:var(--accent)}
+  .life .lrow .rt{margin-left:auto;font-size:.6rem;color:var(--faint)}
+  .life .lrow.now .rt{color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:13px 14px;min-height:48px}
+  .cell.wide{grid-column:span 2}
+  .cell .k{font-size:.6rem;font-weight:600;letter-spacing:.2em;color:var(--faint)}
+  .cell .v{font-family:var(--mono);font-size:1.02rem;font-weight:700;margin-top:7px}
+  .cell .s{font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:3px}
+  .cell.entry .v{color:var(--info)}
+  .cell.sl .v{color:var(--short)}
+  .cell.tp .v{color:var(--long)}
+  .badges{display:flex;gap:8px;margin-top:10px}
+  .badge{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center;min-height:48px}
+  .badge .h{font-size:.58rem;font-weight:600;letter-spacing:.14em;color:var(--faint)}
+  .badge .v{font-size:.72rem;font-weight:700;margin-top:4px}
+  .badge .v.g{color:var(--long)}
+  .tpseg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;margin-top:10px}
+  .tpseg button{flex:1;background:transparent;border:none;border-radius:10px;font-family:var(--mono);font-size:.64rem;font-weight:700;color:var(--dim);padding:11px 0;min-height:44px;cursor:pointer}
+  .tpseg button.on{background:var(--ink);color:#fff}
+  .tpseg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .pstrip{display:flex;justify-content:space-between;align-items:center;margin-top:10px;background:var(--long-soft);border-radius:14px;padding:13px 16px;min-height:52px;font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;color:var(--long)}
+  .pstrip b{font-size:.72rem}
+  .cta{margin-top:12px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:16px;font-weight:700;font-size:.85rem;letter-spacing:.1em;padding:16px;min-height:56px;cursor:pointer;width:100%;box-shadow:0 12px 24px -12px rgba(35,71,245,.55)}
+  .cta:hover{filter:brightness(1.07)}
+  .cta:active{transform:translateY(1px)}
+  .cta:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
   .share-row{display:flex;gap:10px;margin-top:10px}
-  .ghost{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:4px;font-family:var(--mono);font-weight:700;font-size:.7rem;letter-spacing:.1em;padding:13px;min-height:48px;cursor:pointer}
-  .ghost svg{width:15px;height:15px;flex-shrink:0}
-  .ghost:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--faint)}
-  .micro .ok{color:var(--long)}
-  nav{display:flex;border-top:1px solid var(--line);background:rgba(10,22,38,.96);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
-  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.1em;min-height:48px;min-width:48px}
-  nav a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6}
-  nav a.active{color:var(--gold)}
-  nav a.active svg{stroke:var(--gold)}
-  nav a:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
-  /* ── redesign pass: type, grain, press states ── */
-  body{font-family:"Space Grotesk","Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-  :root{--mono:"IBM Plex Mono","SF Mono","JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace}
-  .phone::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:60;opacity:.55;background-image:radial-gradient(rgba(255,255,255,.028) 1px,transparent 1.6px);background-size:3px 3px}
-  .cta,.ghost,.chip,.iconbtn,.tabs button,.seg button,.bell{transition:filter .18s ease,transform .12s ease,background .18s ease,color .18s ease}
-  .cta:hover{filter:brightness(1.08)}
-  .cta:active,.ghost:active,.chip:active,.iconbtn:active{transform:translateY(1px)}
-  nav a{transition:color .18s ease}
-  nav a:hover{color:var(--ink)}
+  .btn-share{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;border-radius:14px;font-size:.78rem;font-weight:700;padding:14px;min-height:52px;cursor:pointer}
+  .btn-share .fi{font-size:17px}
+  .btn-share.copy{background:#E3EBFF;color:var(--accent);border:none}
+  .btn-share.send{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+  .btn-share:active{transform:translateY(1px)}
+  .btn-share:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .micro{margin-top:10px;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;color:var(--faint)}
+  nav{display:flex;background:var(--card);border-top:1px solid var(--line);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+  nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 6px;color:var(--faint);text-decoration:none;font-family:var(--mono);font-size:.58rem;font-weight:700;letter-spacing:.08em;min-height:48px;min-width:48px;border-radius:12px}
+  nav a .fi{font-size:20px}
+  nav a.active{color:var(--accent)}
+  nav a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 </style>
 </head>
 <body>
@@ -108,12 +104,13 @@
     <svg width="22" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4a2 2 0 0 0 0-4z" fill="currentColor" stroke="none"/></svg>
   </span></div>
   <header>
-    <div class="brand"><div class="name">XAU<span>RADAR</span> · SIGNAL</div></div>
-    <span class="live" role="status" aria-label="Live"><i aria-hidden="true"></i>ACTIVE</span>
+    <div class="mark" aria-hidden="true"><i class="fi fi-rr-chart-candlestick"></i></div>
+    <div class="brand"><div class="name">XAU RADAR</div><div class="sub">SIGNAL · #A482</div></div>
+    <div class="livepill" role="status" aria-label="Active"><i aria-hidden="true"></i>ACTIVE</div>
   </header>
   <main>
-    <div class="dwg">FIG.2 - ACTIVE SETUP · 15M LONG · #A482</div>
-    <div class="title">LONG <small>4,278.30 · STRONG 82</small></div>
+    <div class="kick">ACTIVE SETUP · 15M LONG</div>
+    <div class="title"><span class="w">LONG</span><small>4,278.30 · STRONG 82</small></div>
 
     <div class="life" aria-label="Signal lifecycle">
       <div class="lrow done"><span class="dot"></span>DEVELOPING<span class="rt">21:31</span></div>
@@ -123,49 +120,50 @@
       <div class="lrow"><span class="dot"></span>TP1 4,295<span class="rt">+1700 PIPS</span></div>
     </div>
 
-    <div class="spec">
-      <div class="sr entry"><span class="k">ENTRY ZONE</span><span class="rv"><span class="v">4,275-4,280</span><span class="pp">500-PIP ZONE</span></span></div>
-      <div class="sr sl"><span class="k">STOP LOSS</span><span class="rv"><span class="v">4,262</span><span class="pp">−1600 PIPS · RISK 16 PTS</span></span></div>
-      <div class="sr tp"><span class="k">TP1</span><span class="rv"><span class="v">4,295</span><span class="pp">+1700 PIPS · R:R 1:1.5</span></span></div>
-      <div class="sr tp"><span class="k">TP2</span><span class="rv"><span class="v">4,315</span><span class="pp">+3700 PIPS · R:R 1:3.0</span></span></div>
-      <div class="sr tp"><span class="k">TP3</span><span class="rv"><span class="v">4,340</span><span class="pp">+6200 PIPS · R:R 1:4.1</span></span></div>
+    <div class="grid2">
+      <div class="cell entry"><div class="k">ENTRY ZONE</div><div class="v">4,275-4,280</div><div class="s">500-pip zone</div></div>
+      <div class="cell sl"><div class="k">STOP LOSS</div><div class="v">4,262</div><div class="s">-1600 pips · risk 16 pts</div></div>
+      <div class="cell tp"><div class="k">TP1</div><div class="v">4,295</div><div class="s">+1700 · 1:1.5</div></div>
+      <div class="cell tp"><div class="k">TP2</div><div class="v">4,315</div><div class="s">+3700 · 1:3.0</div></div>
+      <div class="cell tp wide"><div class="k">TP3</div><div class="v">4,340</div><div class="s">+6200 pips · 1:4.1</div></div>
     </div>
 
     <div class="badges">
-      <div class="badge">1H TREND<b class="g">SUPPORTIVE</b></div>
-      <div class="badge">5M CONFIRM<b class="g">CONFIRMED</b></div>
-      <div class="badge">POSITION<b class="g">+30 PIPS</b></div>
+      <div class="badge"><div class="h">1H TREND</div><div class="v g">SUPPORTIVE</div></div>
+      <div class="badge"><div class="h">5M CONFIRM</div><div class="v g">CONFIRMED</div></div>
+      <div class="badge"><div class="h">POSITION</div><div class="v g">+30 PIPS</div></div>
     </div>
 
-    <div class="tpsel" role="radiogroup" aria-label="Target selection">
-      <div class="opt" role="radio" aria-checked="false" tabindex="0"><span class="radio"></span>TP1 ONLY</div>
-      <div class="opt" role="radio" aria-checked="false" tabindex="0"><span class="radio"></span>TP1 + TP2</div>
-      <div class="opt sel" role="radio" aria-checked="true" tabindex="0"><span class="radio"></span>TP1 + TP2 + TP3</div>
+    <div class="tpseg" role="radiogroup" aria-label="Target selection">
+      <button type="button" role="radio" aria-checked="false">TP1</button>
+      <button type="button" role="radio" aria-checked="false">TP1 + 2</button>
+      <button type="button" role="radio" aria-checked="true" class="on">TP1 + 2 + 3</button>
     </div>
 
     <div class="pstrip"><span>POSITION STATUS</span><b>● IN-PROFIT +30 PIPS</b></div>
 
-    <button class="cta" type="button">COPY SIGNAL TEXT ⧉</button>
+    <button class="cta" type="button"><span>Copy signal text</span></button>
     <div class="share-row">
-      <button class="ghost" id="copyBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
-      <button class="ghost" id="shareBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>Share</button>
+      <button class="btn-share copy" id="copyBtn" type="button"><i class="fi fi-rr-copy" aria-hidden="true"></i><span>Copy</span></button>
+      <button class="btn-share send" id="shareBtn" type="button"><i class="fi fi-rr-share" aria-hidden="true"></i><span>Share</span></button>
     </div>
-    <div class="micro">OPENED 21:44:03 · <span class="ok">1H SUPP</span>, EXPIRES 22:44</div>
+    <div class="micro">Opened 21:44:03, expires 22:44</div>
   </main>
   <nav aria-label="Primary">
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V10M12 20V4M18 20v-8"/></svg>RADAR</a>
-    <a href="#" class="active" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>SIGNAL</a>
-    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/></svg>SOURCES</a>
-    <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>HISTORY</a>
-    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>CONFIG</a>
+    <a href="mockup-11A-harbor.html"><i class="fi fi-rr-radar" aria-hidden="true"></i>Radar</a>
+    <a href="screen-2-signal.html" class="active" aria-current="page"><i class="fi fi-rr-chart-line-up" aria-hidden="true"></i>Signal</a>
+    <a href="screen-3-sources.html"><i class="fi fi-rr-layers" aria-hidden="true"></i>Sources</a>
+    <a href="screen-4-history.html"><i class="fi fi-rr-clock" aria-hidden="true"></i>History</a>
+    <a href="screen-5-settings.html"><i class="fi fi-rr-settings-sliders" aria-hidden="true"></i>Config</a>
+    <a href="screen-6-events.html"><i class="fi fi-rr-calendar" aria-hidden="true"></i>Events</a>
   </nav>
 </div>
 <script>
 (function(){
-  var TEXT = 'XAUUSD 15M - LONG\nEntry 4,275–4,280\nSL 4,262 (−1600 pips)\nTP1 4,295 (+1700), TP2 4,315 (+3700), TP3 4,340 (+6200)\nConsensus STRONG 82/100, 4/5 agree\n- via XAU Radar';
+  var TEXT = 'XAUUSD 15M - LONG\nEntry 4,275-4,280\nSL 4,262 (-1600 pips)\nTP1 4,295 (+1700), TP2 4,315 (+3700), TP3 4,340 (+6200)\nConsensus STRONG 82/100, 4/5 agree\n- via XAU Radar';
   var copyBtn = document.getElementById('copyBtn');
   var shareBtn = document.getElementById('shareBtn');
-  function flash(btn, msg){ var old = btn.innerHTML; btn.innerHTML = msg; setTimeout(function(){ btn.innerHTML = old; }, 1600); }
+  function flash(btn, msg){ var label = btn.querySelector('span'); var old = label.textContent; label.textContent = msg; setTimeout(function(){ label.textContent = old; }, 1600); }
   function copyText(t, ok){
     function fallback(){
       var ta = document.createElement('textarea');
@@ -177,30 +175,20 @@
     if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); }
     else { fallback(); }
   }
-  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied ✓'); }); });
+  copyBtn.addEventListener('click', function(){ copyText(TEXT, function(){ flash(copyBtn, 'Copied'); }); });
   shareBtn.addEventListener('click', function(){
     if (navigator.share){ navigator.share({ title: 'XAU Radar signal', text: TEXT }).catch(function(){}); }
-    else { copyText(TEXT, function(){ flash(shareBtn, 'Copied ✓'); }); }
+    else { copyText(TEXT, function(){ flash(shareBtn, 'Shared'); }); }
   });
-  document.querySelectorAll('.tpsel .opt').forEach(function(o){
+  document.querySelectorAll('.tpseg button').forEach(function(o){
     function pick(){
-      document.querySelectorAll('.tpsel .opt').forEach(function(x){ x.classList.remove('sel'); x.setAttribute('aria-checked','false'); });
-      o.classList.add('sel'); o.setAttribute('aria-checked','true');
+      document.querySelectorAll('.tpseg button').forEach(function(x){ x.classList.remove('on'); x.setAttribute('aria-checked','false'); });
+      o.classList.add('on'); o.setAttribute('aria-checked','true');
     }
     o.addEventListener('click', pick);
     o.addEventListener('keydown', function(e){ if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); pick(); } });
   });
-  document.querySelector('.cta').addEventListener('click', function(){ copyText(TEXT, function(){ flash(document.querySelector('.cta'), 'COPIED ✓'); }); });
-})();
-</script>
-<script>
-/* redesign: cross-link mockup screens (no dead nav links) */
-(function(){
-  var map = { RADAR: 'mockup-8B-blueprint.html', SIGNAL: 'screen-2-signal.html', SOURCES: 'screen-3-sources.html', HISTORY: 'screen-4-history.html', CONFIG: 'screen-5-settings.html', SETTINGS: 'screen-5-settings.html', EVENTS: 'screen-6-events.html' };
-  document.querySelectorAll('nav a').forEach(function(a){
-    var t = a.textContent.trim().toUpperCase();
-    if (map[t]) a.setAttribute('href', map[t]);
-  });
+  document.querySelector('.cta').addEventListener('click', function(){ copyText(TEXT, function(){ flash(document.querySelector('.cta'), 'Copied'); }); });
 })();
 </script>
 </body>

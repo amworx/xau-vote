@@ -347,6 +347,21 @@
 
 ---
 
+## EVT-20260928-0026
+
+- **id:** EVT-20260928-0026
+- **timestamp:** 2026-09-28T23:55:00+03:00
+- **mode:** BUILD (design system rollout)
+- **action:** Apply Harbor design to all app pages
+- **summary:** Rewrote screens 2-6 in the Harbor language (light mist, cobalt accent, Sora + Space Mono, UIcons incl. verified calendar/bell glyphs, 6-item navs everywhere): Signal (lifecycle, full levels, badges, working TP selector, copy/share), Sources (compact expandable cards, toggles, hit bars, live recompute), History (stat tiles, outcome pills), Settings (radios, light toggles, pip selector, event-filter mirror), Events (tabs, currency/impact filters, bells, guard line). All interactions re-tested working; icons verified non-zero; minor size bumps (3 spots); previews re-captured and reviewed.
+- **result:** success — one coherent 6-screen Harbor app + splash
+- **files:** screen-2..6-*.html + previews
+- **errors:** none
+- **lessons:** rewriting beats patching when the visual language changes this much — carried-over JS needed only selector-compatible IDs
+- **tags:** ui, mockups, harbor-rollout
+
+---
+
 ## EVT-20260928-0025
 
 - **id:** EVT-20260928-0025
