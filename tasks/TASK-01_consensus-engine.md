@@ -2,7 +2,7 @@
 
 - **phase:** 1
 - **plan:** `plans/2026-09-26_mvp-build-plan.md`
-- **status:** pending
+- **status:** complete (2026-09-29, mock-backed; live steps pending gates)
 - **depends on:** TASK-00 (models)
 - **gates:** none — pure Dart, unit tests only
 

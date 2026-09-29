@@ -2,7 +2,7 @@
 
 - **phase:** 4
 - **plan:** `plans/2026-09-26_mvp-build-plan.md`
-- **status:** pending
+- **status:** complete (2026-09-29, mock-backed; live steps pending gates)
 - **depends on:** TASK-03
 - **gates:** **G2** (user confirmation before provisioning remote project / applying migrations)
 

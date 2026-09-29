@@ -2,7 +2,7 @@
 
 - **phase:** 0
 - **plan:** `plans/2026-09-26_mvp-build-plan.md`
-- **status:** pending
+- **status:** complete (2026-09-29, mock-backed; live steps pending gates)
 - **gates:** none (no installs, no cloud)
 
 ## T0.1 — Supabase schema design

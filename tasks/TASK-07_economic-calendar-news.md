@@ -2,7 +2,7 @@
 
 - **phase:** 7 (after Phase 4 backend; app work parallel with Phase 5)
 - **plan:** `plans/2026-09-26_mvp-build-plan.md` + `docs/economic-calendar-news.md` (authoritative for this task)
-- **status:** pending
+- **status:** complete (2026-09-29, mock-backed; live steps pending gates)
 - **depends on:** TASK-04 (backend patterns), TASK-03 (provider-interface pattern)
 - **gates:** **G5** (user confirmation + recorded licensing review before enabling FMP or any news provider; manual-seed mode needs no gate)
 

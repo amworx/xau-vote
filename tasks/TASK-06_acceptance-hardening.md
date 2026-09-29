@@ -2,7 +2,7 @@
 
 - **phase:** 6
 - **plan:** `plans/2026-09-26_mvp-build-plan.md`
-- **status:** pending
+- **status:** complete (2026-09-29, mock-backed; live steps pending gates)
 - **depends on:** TASK-04, TASK-05
 
 ## T6.1 — End-to-end acceptance walkthrough

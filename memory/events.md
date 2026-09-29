@@ -272,6 +272,33 @@
 
 ---
 
+## EVT-20260929-0026
+
+- **id:** EVT-20260929-0026
+- **timestamp:** 2026-09-29T21:30:00+03:00
+- **mode:** BUILD (full MVP implementation)
+- **action:** Execute all task phases 0–7 + acceptance (user: loop until finished)
+- **summary:** Full build loop executed via 4 workers + master verification. Phases: Worker A (TASK-00 schema SQL + TASK-01 xau_core models/consensus, 51 tests), Worker B (TASK-02 lifecycle + TASK-03 data layer/pipeline, 36+18 tests), master (TASK-04: Deno-TS engine port validated by 7 Node golden tests mirroring Dart expectations, 3 edge functions, RLS migration, backend runbook), Worker C (TASK-05 Flutter Harbor app 5 screens MOCK_MODE, 9 widget tests), Worker D (TASK-07 events/news backend + 6th Events screen, 6 more tests). Fixed mid-loop: removed committed .dart_tool/pubspec.lock (added package + root .gitignore), repaired an accidental mockup overwrite via git checkout. Acceptance (TASK-06): 127/127 green, 4 analyzes clean, `flutter build web` succeeds; evidence doc maps all 23 steps. Pending (need user): G2 Supabase provisioning, device FCM receipt, G3/G4/G5 reviews, license choice. README + fork-readiness done.
+- **result:** success — everything automatable is finished and committed; 5 user-side gates remain
+- **files:** src/*, supabase/*, README.md, docs/acceptance-run-2026-09-29.md, docs/backend-runbook.md, .gitignore
+- **errors:** 1 self-inflicted file overwrite (recovered cleanly); flaky devtools screenshots (established retry pattern)
+- **lessons:** verify worker output before committing (caught committed build artifacts); TS port needs golden tests or it WILL drift from Dart
+- **tags:** build, mvp, acceptance, workers
+
+## OP-20260929-001 — Full MVP build operation
+
+- **id:** OP-20260929-001
+- **timestamp:** 2026-09-29T21:30:00+03:00
+- **workflow:** phased MVP build (0→7) + acceptance
+- **project:** xau-radar
+- **steps:** env check → Worker A (00+01) → verify/commit → Worker B (02+03) → verify/commit → artifact cleanup → Worker C (05) + master TASK-04 in parallel → verify/commit → Worker D (07) → verify/commit → acceptance matrix + web build → README/evidence/memory → commit
+- **duration:** single session
+- **result:** 127 tests green, app builds, backend code golden-tested, 5 gates pending user
+- **lessons:** one worker per phase kept reviews tractable; master-owned verification after every worker is non-negotiable
+- **reusable_pattern:** worker-build → master-verify (tests+analyze+spot-read) → commit; batch replacements via ordered literal pairs with grep inventory before/after
+
+---
+
 ## EVT-20260928-0020
 
 - **id:** EVT-20260928-0020
