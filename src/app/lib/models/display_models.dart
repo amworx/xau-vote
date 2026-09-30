@@ -101,6 +101,8 @@ class DisplaySignal {
     this.price = 4278.30,
     this.dayMove = 12.40,
     this.spread = 0.35,
+    this.dayLow,
+    this.dayHigh,
   });
 
   final String id;
@@ -118,6 +120,14 @@ class DisplaySignal {
   final double price;
   final double dayMove;
   final double spread;
+
+  /// Session low/high for the day-move bar (mockup `.day` RANGE).
+  ///
+  /// Nullable on purpose: until the market-data provider (gate G3) supplies a
+  /// real range the UI must show a neutral placeholder rather than invent
+  /// numbers (product rule 2 — never fabricate).
+  final double? dayLow;
+  final double? dayHigh;
 
   AgreementBand get band => bandForScore(strength);
 

@@ -1,13 +1,19 @@
-/// Screen 1 — Radar (spec §3, exact layout).
+/// Screen 1 — Radar (mockup `.top` … `.scenario`, exact layout).
 ///
-/// Strong-consensus card (direction, agreement label, entry/SL/TP1–3,
-/// R:R, "N / M sources agree", VIEW ANALYSIS → Signal tab) plus the
-/// NO CONSENSUS divided state and a MOCK_MODE scenario preview switch.
+/// Price block, day bar, timeframe display, the verdict card (LONG/SHORT
+/// direction, agreement strength, entry/stop/TP levels, target scope,
+/// source agreement, copy/share), plus the NO CONSENSUS, DEVELOPING and
+/// event-guardrail states. A MOCK_MODE-only demo switcher sits under the
+/// scenario strip so every required state stays reviewable.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../config.dart';
 import '../data/mock_fixtures.dart';
 import '../icons.dart';
 import '../models/display_models.dart';
@@ -18,416 +24,180 @@ import '../widgets/harbor_widgets.dart';
 class RadarScreen extends StatelessWidget {
   const RadarScreen({super.key});
 
+  /// Bottom-nav index of the Events screen.
+  static const int eventsTab = 4;
+
+  /// Market snapshot (price, day move, spread, session). Scenario switching
+  /// changes the signal, never the quote, so this is always the live one.
+  static const DisplaySignal quote = MockFixtures.strongLong;
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final consensus = state.scenario == RadarScenario.developing
+        ? MockFixtures.developing
+        : quote;
     return ListView(
       key: const PageStorageKey<String>('radar'),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: EdgeInsets.zero,
       children: [
-        const HarborHeader(subtitle: 'GOLD · XAUUSD · 15M'),
-        const SizedBox(height: 12),
-        _priceHero(MockFixtures.strongLong),
-        const SizedBox(height: 10),
-        _scenarioPreview(context, state),
-        const SizedBox(height: 10),
+        const HarborHeader(),
+        const SpotPriceBlock(signal: quote),
+        const DayMoveBar(signal: quote),
+        const TimeframeSwitch(),
         switch (state.scenario) {
-          RadarScenario.strong => _consensusBody(context, MockFixtures.strongLong),
-          RadarScenario.developing => _consensusBody(context, MockFixtures.developing),
-          RadarScenario.noConsensus => _noConsensusBody(),
-          RadarScenario.blackout => _blackoutBody(context),
+          RadarScenario.strong => _verdictCard(context, consensus),
+          RadarScenario.developing => _verdictCard(
+              context,
+              consensus,
+              stateLabel: statusLabel(consensus.status),
+            ),
+          RadarScenario.noConsensus => const _NoConsensusCard(),
+          RadarScenario.blackout => EventGuardrailBar(
+              event: MockFixtures.upcomingEvents.first,
+              onTap: () => context.read<AppState>().setTab(eventsTab),
+            ),
         },
-        const SizedBox(height: 10),
+        ScenarioStrip(pills: _scenarioPills(consensus)),
+        if (mockMode) const DemoStateRow(),
         // MEDIUM-event context line (badge only — never votes, rule 9).
         if (state.scenario == RadarScenario.strong ||
             state.scenario == RadarScenario.developing)
           const Padding(
-            padding: EdgeInsets.only(bottom: 10),
-            child: Center(
-              child: Text(
-                'Caution: Retail Sales in 42m',
-                style: TextStyle(
-                  fontFamily: 'Space Mono',
-                  fontSize: 11,
-                  color: harborDim,
+            padding: EdgeInsets.fromLTRB(18, 0, 18, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(HarborIcons.bell, size: 10, color: harborWarn),
+                SizedBox(width: 5),
+                Flexible(
+                  child: Text(
+                    'Caution: Retail Sales in 42m',
+                    style: TextStyle(
+                      fontFamily: 'Space Mono',
+                      fontSize: 10,
+                      color: harborDim,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         // Macro backdrop strip (latest digest, display only → Events tab).
-        MacroBackdropStrip(
-          themes: MockFixtures.digestThemes,
-          onTap: () => context.read<AppState>().setTab(5),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: MacroBackdropStrip(
+            themes: MockFixtures.digestThemes,
+            onTap: () => context.read<AppState>().setTab(eventsTab),
+          ),
         ),
+        const SizedBox(height: 18),
       ],
     );
   }
 
-  /// MOCK_MODE preview switch so every required state renders on demand.
-  Widget _scenarioPreview(BuildContext context, AppState state) {
-    return SegmentedButton<RadarScenario>(
-      segments: const [
-        ButtonSegment(value: RadarScenario.strong, label: Text('STRONG')),
-        ButtonSegment(value: RadarScenario.developing, label: Text('DEVELOPING')),
-        ButtonSegment(value: RadarScenario.noConsensus, label: Text('DIVIDED')),
-        ButtonSegment(value: RadarScenario.blackout, label: Text('EVENT')),
-      ],
-      selected: {state.scenario},
-      onSelectionChanged: (selected) => state.setScenario(selected.first),
-      style: const ButtonStyle(
-        textStyle: WidgetStatePropertyAll(
-          TextStyle(
-            fontFamily: 'Space Mono',
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.6,
-          ),
-        ),
+  /// Context pills below the card: the direction that lost, the invalidation
+  /// level, and the 5M confirmation state (rule 1: 5M confirms, never votes).
+  List<({String label, String value})> _scenarioPills(DisplaySignal signal) {
+    final alternate = MockFixtures.dividedVotes[Direction.short] ?? 0;
+    return [
+      (
+        label: 'Alternate',
+        value: 'SHORT $alternate/${signal.totalCount}',
       ),
-    );
-  }
-
-  /// Asymmetric two-column price hero; day-move inverts to dark ink.
-  ///
-  /// Wrapped in [IntrinsicHeight]: the [Row] stretches both cards to equal
-  /// height, which needs a bounded cross-axis that a [ListView] child does
-  /// not provide on its own (unbounded stretch breaks sliver layout).
-  Widget _priceHero(DisplaySignal signal) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          flex: 8,
-          child: Card(
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'CURRENT PRICE',
-                    style: TextStyle(
-                      fontFamily: 'Sora',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 2.2,
-                      color: harborFaint,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    formatPrice(signal.price),
-                    style: const TextStyle(
-                      fontFamily: 'Space Mono',
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          flex: 5,
-          child: Container(
-            decoration: BoxDecoration(
-              color: harborInk,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'DAY MOVE',
-                  style: TextStyle(
-                    fontFamily: 'Sora',
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 2.2,
-                    color: Color(0xFF93A1B8),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '+${signal.dayMove.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontFamily: 'Space Mono',
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: harborLong,
-                  ),
-                ),
-                Text(
-                  'spread ${signal.spread.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontFamily: 'Space Mono',
-                    fontSize: 10,
-                    color: Color(0xFF93A1B8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-      ),
-    );
-  }
-
-  /// Full §3 consensus layout for [signal].
-  Widget _consensusBody(BuildContext context, DisplaySignal signal) {
-    final state = context.watch<AppState>();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Card(
-          margin: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: signal.direction == Direction.long
-                        ? harborLongSoft
-                        : harborShortSoft,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  // The bundled UIcons set ships only the up-trend glyph;
-                  // rotate it 180° for SHORT so the badge keeps its
-                  // direction semantics (mockup shows the LONG case).
-                  child: signal.direction == Direction.long
-                      ? const Icon(
-                          HarborIcons.arrowTrendUp,
-                          color: harborLong,
-                          size: 24,
-                        )
-                      : Transform.rotate(
-                          angle: 3.141592653589793,
-                          child: Icon(
-                            HarborIcons.arrowTrendUp,
-                            color: harborShort,
-                            size: 24,
-                          ),
-                        ),
-                ),
-                const SizedBox(width: 13),
-                DirectionMark(direction: signal.direction, size: 23),
-                const Spacer(),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${signal.agreeCount}/${signal.totalCount} agree',
-                      style: const TextStyle(
-                        fontFamily: 'Space Mono',
-                        fontSize: 11,
-                        color: harborDim,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${bandLabel(signal.band)} ${signal.strength}',
-                      style: const TextStyle(
-                        fontFamily: 'Space Mono',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: harborLong,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        StrengthMeter(signal: signal),
-        const SizedBox(height: 10),
-        const TargetSelector(),
-        const SizedBox(height: 10),
-        _levelGrid(context, signal, state.targets),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: () => context.read<AppState>().goToSignal(),
-          style: FilledButton.styleFrom(
-            backgroundColor: harborCobalt,
-            foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(56),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            textStyle: const TextStyle(
-              fontFamily: 'Sora',
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.4,
-            ),
-          ),
-          child: const Text('VIEW ANALYSIS'),
-        ),
-        const SizedBox(height: 10),
-        Center(
-          child: Text(
-            bestRrLine(signal, state.targets),
-            style: const TextStyle(
-              fontFamily: 'Space Mono',
-              fontSize: 11,
-              letterSpacing: 0.8,
-              color: harborDim,
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        const Center(
-          child: Text(
-            '1H supportive · 5M ready · in-profit +30 pips',
-            style: TextStyle(
-              fontFamily: 'Space Mono',
-              fontSize: 10,
-              letterSpacing: 0.6,
-              color: harborFaint,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _levelGrid(
-    BuildContext context,
-    DisplaySignal signal,
-    TargetSelection selection,
-  ) {
-    final show = visibleTps(selection);
-    final entryText =
-        '${formatLevel(signal.entryLow)}-${formatLevel(signal.entryHigh)}';
-    final cells = <Widget>[
-      LevelCell(
-        icon: HarborIcons.target,
-        title: 'ENTRY',
-        value: entryText,
-        subtitle:
-            '${((signal.entryHigh - signal.entryLow) * 100).round()}-pip zone',
-        valueColor: harborCobalt,
-      ),
-      LevelCell(
-        icon: HarborIcons.shieldCheck,
-        title: 'STOP',
-        value: formatLevel(signal.stopLoss),
-        subtitle:
-            '-${pipsTo(signal.entryMid, signal.stopLoss).abs()} pips',
-        valueColor: harborShort,
-      ),
+      (label: 'Watch', value: formatLevel(signal.stopLoss)),
+      const (label: '5M', value: 'CONFIRMING'),
     ];
-    final tps = {1: signal.tp1, 2: signal.tp2, 3: signal.tp3};
-    for (final n in show) {
-      final tp = tps[n];
-      if (tp == null) continue;
-      final reward = pipsTo(tp, signal.entryMid);
-      final rr = riskReward(
-        target: tp,
-        entryLow: signal.entryLow,
-        stopLoss: signal.stopLoss,
-      );
-      cells.add(
-        LevelCell(
-          icon: HarborIcons.flag,
-          title: n == 3 && show.length == 3 ? 'TP3 · FINAL' : 'TP$n',
-          value: formatLevel(tp),
-          subtitle: '+$reward · 1:${rr.toStringAsFixed(1)}',
-          valueColor: harborLong,
-        ),
-      );
-    }
-    return LevelGrid(cells: cells);
   }
 
-  /// Blackout banner (addendum §5.1): replaces the signal card during a
-  /// HIGH-event window. Countdown here is a static mock snapshot — the live
-  /// 1-second ticker lives on the Events screen ([EventCountdown]).
-  Widget _blackoutBody(BuildContext context) {
-    final event = MockFixtures.upcomingEvents.first;
-    return Card(
-      margin: EdgeInsets.zero,
-      // Mockup #eventBanner is a dark inverted surface: ink fill with a
-      // short-red hairline (not the default white card + harborLine).
-      color: harborInk,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: harborShort),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
+  /// Full verdict card (mockup `.verdict`) for [signal].
+  Widget _verdictCard(
+    BuildContext context,
+    DisplaySignal signal, {
+    String? stateLabel,
+  }) {
+    final state = context.watch<AppState>();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: VerdictCardShell(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '⚠ HIGH-IMPACT EVENT',
-              style: TextStyle(
-                fontFamily: 'Space Mono',
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 2.4,
-                color: harborShort,
-              ),
+            Row(
+              children: [
+                DirectionPill(direction: signal.direction),
+                const Spacer(),
+                const Text(
+                  'updated 40s ago',
+                  style: TextStyle(
+                    fontFamily: 'Space Mono',
+                    fontSize: 9,
+                    color: harborFaint,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            Text(
-              event.title,
-              style: const TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${event.currency} · HIGH · in ${formatCountdown(event.startsIn)}',
-              style: const TextStyle(
-                fontFamily: 'Space Mono',
-                fontSize: 12,
-                color: Color(0xFF93A1B8),
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'New signals paused until 15 min after release.',
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 12,
-                height: 1.6,
-                color: Color(0xFF93A1B8),
-              ),
-              textAlign: TextAlign.center,
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (stateLabel != null) ...[
+                        HarborEyebrow(stateLabel, color: harborWarn),
+                        const SizedBox(height: 4),
+                      ],
+                      const Text(
+                        '15M Consensus Setup',
+                        style: TextStyle(
+                          fontFamily: 'Sora',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ConsensusMeter(signal: signal),
+              ],
             ),
             const SizedBox(height: 14),
-            OutlinedButton(
-              onPressed: () => context.read<AppState>().setTab(5),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                side: const BorderSide(color: Colors.white),
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            _levelGrid(signal, state.targets),
+            const SizedBox(height: 9),
+            const TargetScopePills(),
+            _agreeRow(signal, state.targets),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionButton(
+                    label: 'COPY LEVELS',
+                    onTap: () => _publish(
+                      context,
+                      signal,
+                      state.targets,
+                      'Levels copied',
+                    ),
+                  ),
                 ),
-                textStyle: const TextStyle(
-                  fontFamily: 'Space Mono',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1,
+                const SizedBox(width: 7),
+                Expanded(
+                  child: _ActionButton(
+                    label: '\u2197 SHARE',
+                    outlined: true,
+                    onTap: () => _publish(
+                      context,
+                      signal,
+                      state.targets,
+                      'Setup text copied \u2014 paste to share',
+                    ),
+                  ),
                 ),
-              ),
-              child: const Text('VIEW EVENTS'),
+              ],
             ),
           ],
         ),
@@ -435,45 +205,187 @@ class RadarScreen extends StatelessWidget {
     );
   }
 
-  /// NO CONSENSUS divided state (spec §3). Never fabricates a signal.
-  Widget _noConsensusBody() {
+  Widget _levelGrid(DisplaySignal signal, TargetSelection selection) {
+    final tps = {1: signal.tp1, 2: signal.tp2, 3: signal.tp3};
+    final cells = <Widget>[
+      VerdictLevelCell(
+        label: 'Stop',
+        value: formatLevel(signal.stopLoss),
+        sub: levelDistance(signal.entryMid, signal.stopLoss),
+      ),
+    ];
+    for (final n in visibleTps(selection)) {
+      final tp = tps[n];
+      if (tp == null) continue;
+      cells.add(
+        VerdictLevelCell(
+          label: 'TP$n',
+          value: formatLevel(tp),
+          sub: levelDistance(signal.entryMid, tp),
+        ),
+      );
+    }
+    return VerdictLevelGrid(
+      entry: VerdictLevelCell(
+        label: 'Entry',
+        value: '${formatLevel(signal.entryLow)}-'
+            '${formatLevel(signal.entryHigh)}',
+        sub: 'market zone',
+        highlighted: true,
+      ),
+      cells: cells,
+    );
+  }
+
+  Widget _agreeRow(DisplaySignal signal, TargetSelection selection) {
+    final sources = MockFixtures.sources.take(signal.totalCount);
+    return Container(
+      margin: const EdgeInsets.only(top: 13),
+      padding: const EdgeInsets.only(top: 12),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: divider)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${signal.agreeCount} of ${signal.totalCount} sources agree',
+                  style: const TextStyle(
+                    fontFamily: 'Space Mono',
+                    fontSize: 10,
+                    color: harborInk,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: [
+                    for (final source in sources)
+                      SourceChip(
+                        label: 'Source ${source.id}',
+                        agrees: source.agrees,
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'R:R',
+                style: TextStyle(
+                  fontFamily: 'Sora',
+                  fontSize: 9,
+                  color: harborDim,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                bestRrValue(signal, selection),
+                style: const TextStyle(
+                  fontFamily: 'Space Mono',
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: harborDim,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Copy/share the setup. The MVP has no platform share channel (no extra
+  /// packages), so both paths hand the summary to the clipboard and confirm
+  /// with the same toast the Signal screen's copy action uses. The toast is
+  /// raised synchronously so the feedback never waits on the clipboard.
+  void _publish(
+    BuildContext context,
+    DisplaySignal signal,
+    TargetSelection selection,
+    String toast,
+  ) {
+    unawaited(
+      Clipboard.setData(ClipboardData(text: _summary(signal, selection))),
+    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(toast)));
+  }
+
+  String _summary(DisplaySignal signal, TargetSelection selection) {
+    final direction = signal.direction == Direction.short ? 'SHORT' : 'LONG';
+    final lines = <String>[
+      'XAUUSD 15M $direction \u2014 ${bandLabel(signal.band)} '
+          '${signal.agreeCount}/${signal.totalCount}',
+      'Entry ${formatLevel(signal.entryLow)}-${formatLevel(signal.entryHigh)}'
+          ' (market zone)',
+      'Stop ${formatLevel(signal.stopLoss)} '
+          '(${levelDistance(signal.entryMid, signal.stopLoss)})',
+    ];
+    final tps = {1: signal.tp1, 2: signal.tp2, 3: signal.tp3};
+    for (final n in visibleTps(selection)) {
+      final tp = tps[n];
+      if (tp == null) continue;
+      lines.add(
+        'TP$n ${formatLevel(tp)} (${levelDistance(signal.entryMid, tp)})',
+      );
+    }
+    lines.add('R:R ${bestRrValue(signal, selection)}');
+    return lines.join('\n');
+  }
+}
+
+/// NO CONSENSUS divided state (spec §3). Never fabricates a signal.
+class _NoConsensusCard extends StatelessWidget {
+  const _NoConsensusCard();
+
+  @override
+  Widget build(BuildContext context) {
     final votes = MockFixtures.dividedVotes;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: VerdictCardShell(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const HarborEyebrow('Vote split'),
+            const SizedBox(height: 6),
             const Text(
               'NO CONSENSUS',
               style: TextStyle(
                 fontFamily: 'Sora',
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.4,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             const Text(
               'Sources are currently divided.',
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 13,
-                color: harborDim,
-              ),
+              style: TextStyle(fontFamily: 'Sora', fontSize: 12, color: harborDim),
             ),
-            const SizedBox(height: 16),
-            _voteRow('LONG', votes[Direction.long]!),
-            _voteRow('SHORT', votes[Direction.short]!),
-            _voteRow('NEUTRAL', votes[Direction.neutral]!),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+            for (final entry in const [
+              (Direction.long, 'LONG'),
+              (Direction.short, 'SHORT'),
+              (Direction.neutral, 'NEUTRAL'),
+            ]) ...[
+              _voteRow(entry.$2, votes[entry.$1] ?? 0),
+            ],
+            const SizedBox(height: 14),
             const Text(
               'Waiting for stronger agreement.',
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 13,
-                color: harborDim,
-              ),
+              style: TextStyle(fontFamily: 'Sora', fontSize: 12, color: harborDim),
             ),
           ],
         ),
@@ -482,32 +394,75 @@ class RadarScreen extends StatelessWidget {
   }
 
   Widget _voteRow(String label, int count) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: divider)),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 90,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'Space Mono',
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
-              ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Sora',
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+              color: harborDim,
             ),
           ),
+          const Spacer(),
           Text(
             '$count',
             style: const TextStyle(
               fontFamily: 'Space Mono',
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              color: harborInk,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Full-bleed action button (mockup `.actions button`).
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.label,
+    required this.onTap,
+    this.outlined = false,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool outlined;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: Material(
+        color: outlined ? Colors.white : harborCobalt,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: outlined ? harborLine : harborCobalt),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: outlined ? harborInk : Colors.white,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

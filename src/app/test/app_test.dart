@@ -58,7 +58,7 @@ void main() {
   testWidgets('Settings shows spec §24 controls with working toggles',
       (tester) async {
     await _pumpApp(tester);
-    await tester.tap(find.text('CONFIG'));
+    await tester.tap(find.text('SETTINGS'));
     await tester.pumpAndSettle();
 
     expect(find.text('15M / 5M / 1H'), findsOneWidget);

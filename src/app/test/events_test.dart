@@ -46,17 +46,17 @@ void main() {
     );
   });
 
-  testWidgets('EVENT preview shows blackout banner, never a signal',
+  testWidgets('EVENT preview shows the guardrail bar, never a signal',
       (tester) async {
     await _pumpApp(tester);
 
     await tester.tap(find.text('EVENT'));
     await tester.pumpAndSettle();
 
-    expect(find.text('⚠ HIGH-IMPACT EVENT'), findsOneWidget);
-    expect(find.text('NFP — Non-Farm Payrolls'), findsOneWidget);
-    expect(find.text('VIEW EVENTS'), findsOneWidget);
-    expect(find.text('VIEW ANALYSIS'), findsNothing);
+    expect(find.text('EVENT GUARDRAIL'), findsOneWidget);
+    expect(find.textContaining('USD HIGH impact event in'), findsOneWidget);
+    expect(find.text('COPY LEVELS'), findsNothing);
+    expect(find.text('4,275-4,280'), findsNothing);
     for (final banned in _banned) {
       expect(find.textContaining(banned), findsNothing);
     }
@@ -131,7 +131,7 @@ void main() {
   testWidgets('Settings shows the Events group (addendum §5.3)',
       (tester) async {
     await _pumpApp(tester);
-    await tester.tap(find.text('CONFIG'));
+    await tester.tap(find.text('SETTINGS'));
     await tester.pumpAndSettle();
 
     expect(find.text('EVENTS · CONTEXT ONLY'), findsOneWidget);

@@ -25,6 +25,8 @@ abstract final class MockFixtures {
     status: DisplayStatus.active,
     agreeCount: 4,
     totalCount: 5,
+    dayLow: 4266.90,
+    dayHigh: 4286.40,
   );
 
   /// Divided vote counts for the NO CONSENSUS state (spec §3).

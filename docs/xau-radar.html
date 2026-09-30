@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XAU Radar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #E9ECEF;
+            --card: #FFFFFF;
+            --ink: #0D1526;
+            --dim: #5A6B84;
+            --faint: #8FA0B8;
+            --accent: #2347F5;
+            --long: #0E9F6E;
+            --long-tint: #DFF5EA;
+            --short: #E05252;
+            --short-tint: #FBE3E3;
+            --warn: #B7791F;
+            --border: #D5DCE6;
+        }
+        body, html {
+            font-family: 'Sora', sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            font-size: 16px;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        .device {
+            max-width: 480px;
+            width: 100%;
+            height: 100vh;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+            box-shadow: 0 0 60px rgba(0,0,0,0.15);
+            position: relative;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            z-index: 50;
+        }
+        .brand { display: flex; align-items: center; gap: 8px; }
+        .brand-icon {
+            width: 24px; height: 24px; background: var(--accent);
+            border-radius: 6px; display: flex; align-items: center;
+            justify-content: center; color: white; font-weight: 800; font-size: 12px;
+        }
+        .brand-name { font-weight: 800; font-size: 14px; }
+        .connection-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--long-tint); color: var(--long);
+            padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 600;
+        }
+        .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+        
+        .content {
+            flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 80px;
+        }
+        .screen { display: none; }
+        .screen.active { display: block; }
+        
+        .card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 16px; margin-bottom: 16px;
+        }
+        
+        /* RADAR SCREEN */
+        .price-display { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+        .price-number { font-size: 40px; font-family: 'Space Mono', monospace; font-weight: 700; }
+        .price-currency { font-size: 14px; font-weight: 600; color: var(--dim); }
+        .price-move { background: var(--long); color: white; border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .price-move.down { background: var(--short); }
+        .move-stat { display: flex; flex-direction: column; gap: 2px; }
+        .move-label { font-size: 10px; font-weight: 600; opacity: 0.9; }
+        .move-value { font-size: 18px; font-family: 'Space Mono', monospace; font-weight: 700; }
+        
+        .tf-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+        .tf-btn {
+            padding: 10px; border: 1px solid var(--border); border-radius: 12px;
+            background: var(--card); color: var(--dim); font-weight: 600; font-size: 13px;
+            cursor: pointer; min-height: 44px;
+        }
+        .tf-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+        
+        .verdict-card {
+            background: var(--card); border: 2px solid var(--border);
+            border-radius: 18px; padding: 20px;
+        }
+        .verdict-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; }
+        .badge.long { background: var(--long-tint); color: var(--long); }
+        .badge.short { background: var(--short-tint); color: var(--short); }
+        .consensus-box { flex: 1; }
+        .consensus-pct { font-size: 18px; font-family: 'Space Mono', monospace; font-weight: 700; }
+        .consensus-label { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; }
+        .strength-bar { width: 100%; height: 6px; background: var(--border); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+        .strength-fill { height: 100%; background: var(--long); border-radius: 3px; }
+        
+        .levels-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+        .level-item { background: var(--bg); border-radius: 12px; padding: 12px; }
+        .level-label { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; margin-bottom: 4px; }
+        .level-value { font-size: 16px; font-family: 'Space Mono', monospace; font-weight: 700; }
+        
+        .tp-buttons { display: flex; gap: 6px; margin-top: 8px; }
+        .tp-btn { width: 24px; height: 24px; border: 2px solid var(--border); border-radius: 50%; background: white; cursor: pointer; font-size: 11px; font-weight: 700; }
+        .tp-btn.selected { background: var(--long); color: white; border-color: var(--long); }
+        
+        .agreement { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 16px; font-size: 12px; color: var(--dim); }
+        .sources-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .source-badge { background: var(--bg); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        
+        .buttons { display: flex; gap: 12px; margin-top: 16px; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; min-height: 44px; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-secondary { background: var(--bg); color: var(--ink); border: 1px solid var(--border); }
+        
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--dim); }
+        .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.2; }
+        .empty-title { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+        .empty-text { font-size: 13px; }
+        
+        /* SIGNAL SCREEN */
+        .timeline { margin: 20px 0; }
+        .timeline-item { display: flex; gap: 12px; margin-bottom: 16px; }
+        .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--border); flex-shrink: 0; margin-top: 4px; }
+        .timeline-dot.active { background: var(--accent); }
+        .timeline-dot.done { background: var(--long); }
+        .timeline-text { flex: 1; }
+        .timeline-label { font-weight: 700; font-size: 13px; }
+        .timeline-note { font-size: 11px; color: var(--dim); }
+        
+        .confirmation { background: var(--bg); border-radius: 12px; padding: 12px; margin: 16px 0; }
+        .confirm-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+        .confirm-row:last-child { border: none; }
+        .confirm-label { color: var(--dim); font-weight: 600; }
+        .confirm-value { font-family: 'Space Mono', monospace; font-weight: 700; }
+        
+        /* SOURCES SCREEN */
+        .source-item {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px; margin-bottom: 12px;
+        }
+        .source-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .source-name { font-weight: 700; font-size: 13px; }
+        .source-direction { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .source-direction.long { background: var(--long-tint); color: var(--long); }
+        .source-direction.short { background: var(--short-tint); color: var(--short); }
+        .source-levels { font-size: 12px; color: var(--dim); margin: 8px 0; line-height: 1.6; }
+        .source-levels strong { color: var(--ink); font-family: 'Space Mono', monospace; }
+        .source-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .source-actions a { font-size: 11px; color: var(--accent); font-weight: 600; cursor: pointer; }
+        
+        /* HISTORY SCREEN */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .stat-box { background: var(--long-tint); border-radius: 12px; padding: 12px; }
+        .stat-label { font-size: 10px; font-weight: 600; color: var(--long); text-transform: uppercase; }
+        .stat-value { font-size: 20px; font-family: 'Space Mono', monospace; font-weight: 700; margin-top: 4px; }
+        .setup-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; margin-bottom: 12px; font-size: 13px;
+        }
+        .setup-left { flex: 1; }
+        .setup-date { font-size: 11px; color: var(--dim); }
+        .setup-result { font-family: 'Space Mono', monospace; font-weight: 700; }
+        .setup-status { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; background: var(--long-tint); color: var(--long); }
+        
+        /* EVENTS SCREEN */
+        .guard-banner {
+            background: var(--short); color: white; padding: 12px 16px;
+            border-radius: 12px; margin-bottom: 16px; font-weight: 700; text-align: center;
+        }
+        .event-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+        .event-tab { padding: 12px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--dim); border-bottom: 2px solid transparent; }
+        .event-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .event-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px; margin-bottom: 12px;
+        }
+        .event-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .event-title { font-weight: 700; font-size: 13px; }
+        .event-time { font-size: 11px; color: var(--dim); font-family: 'Space Mono', monospace; }
+        .event-badges { display: flex; gap: 8px; margin-top: 8px; }
+        .event-badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; }
+        .event-badge.high { background: var(--short-tint); color: var(--short); }
+        .event-badge.medium { background: var(--warn-tint); color: var(--warn); }
+        .event-badge.low { background: var(--bg); color: var(--dim); }
+        
+        /* SETTINGS SCREEN */
+        .settings-section { margin-bottom: 20px; }
+        .settings-title { font-size: 12px; font-weight: 700; color: var(--dim); text-transform: uppercase; margin-bottom: 12px; }
+        .setting-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid var(--border);
+        }
+        .setting-row:last-child { border: none; }
+        .setting-label { font-size: 13px; font-weight: 600; }
+        .setting-toggle {
+            width: 44px; height: 24px; background: var(--border);
+            border-radius: 12px; cursor: pointer; position: relative;
+        }
+        .setting-toggle.on { background: var(--long); }
+        .toggle-thumb {
+            width: 20px; height: 20px; background: white;
+            border-radius: 10px; position: absolute;
+            top: 2px; left: 2px; transition: left 0.2s;
+        }
+        .setting-toggle.on .toggle-thumb { left: 22px; }
+        
+        .tab-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            max-width: 480px; margin: 0 auto; width:

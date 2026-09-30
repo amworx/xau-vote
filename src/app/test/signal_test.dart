@@ -85,7 +85,7 @@ void main() {
   testWidgets('No rendered text frames agreement as a forecast',
       (tester) async {
     await _pumpApp(tester);
-    for (final label in ['SIGNAL', 'SOURCES', 'HISTORY', 'CONFIG']) {
+    for (final label in ['SIGNAL', 'SOURCES', 'HISTORY', 'SETTINGS']) {
       await tester.tap(find.text(label));
       await tester.pumpAndSettle();
       // Build lazily-loaded rows too, so the scan covers the whole list.

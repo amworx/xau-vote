@@ -416,3 +416,27 @@
 - **errors:** none
 - **lessons:** the licensing gate already in AGENTS.md decided the FF question before it was asked — good rules pay off
 - **tags:** plan, economic-calendar, news, feature-design
+
+---
+
+## EVT-20260930-0027
+
+- **id:** EVT-20260930-0027
+- **timestamp:** 2026-09-30T00:00:00+03:00
+- **mode:** BUILD (redesign)
+- **action:** Rebuild the Radar screen + global chrome to the new designer mockup
+- **summary:** `docs/mockups/mockup.html` supersedes `mockup-11A-harbor.html` for Radar (structural redesign, not a tweak). Transcribed every size/colour/radius/padding/tracking from the mockup's inline `<style>`. Header: subtitle dropped, brand mark redrawn as a 27px CustomPainter (2px ink border, 8px radius, two cobalt bars), LIVE pill restyled. Price block replaces the IntrinsicHeight two-card hero (32px Space Mono quote, wrap-safe meta row); dark day bar moved below it as a sibling; timeframe segmented display replaces the debug switcher at that position (view-only, 15M stays active per rule 1). Verdict card rebuilt: direction pill with rotated trend arrow, 104px strength meter, 2-column level grid with a full-width highlighted Entry cell and price-distance subs, TP scope pills, agree row with source chips + R:R, copy/share actions. Debug state switcher preserved but demoted to a `DEMO STATE` pill row under the scenario strip, gated on `config.mockMode`. Blackout tall card replaced by a compact guardrail bar (whole bar routes to Events). Global `NavigationBar` replaced with a 72px custom bar (RADAR/SIGNAL/SOURCES/HISTORY/EVENTS/SETTINGS, idle `#8291a7`, no indicator) and the screen order swapped so Events precedes Settings. Signal/Sources/History/Settings/Events screen content untouched; `TargetSelector`/`LevelCell`/`LevelGrid` kept for the Signal screen. 15 neutral tokens added to `theme.dart`.
+- **result:** success - `flutter analyze` clean, `flutter test` 20/20 green
+- **files:** lib/theme.dart, lib/widgets/harbor_widgets.dart, lib/screens/radar_screen.dart, lib/main.dart, test/radar_test.dart, test/app_test.dart, test/signal_test.dart, test/events_test.dart
+- **errors:** (1) removed the `icons.dart` import from radar_screen.dart -> analyzer error, re-added. (2) price meta `Row` overflowed 33px at 390 logical width -> swapped to `Wrap(spacing 13)`, which is identical to the mockup flex row at real font metrics. (3) new test file needed `package:flutter/material.dart` and then `dart:ui` became an unnecessary import. (4) `Clipboard.setData` never completes under the widget-test binding, so the copy toast never appeared -> the snackbar is now raised synchronously and the clipboard write is `unawaited` (also better UX). (5) `signal_test.dart`/`events_test.dart` tapped the nav label `CONFIG`, which the mockup renames to `SETTINGS`, and `events_test.dart` asserted the deleted blackout card copy -> finders updated to the new design rather than reverting it.
+- **lessons:** a redesign that renames a shared label or deletes rendered copy invalidates tests outside the "owned" file list - update those finders to the new design, never bend the design back. Golden screenshots at 390px are worth generating once during a Flutter redesign even though custom fonts do not load under `flutter test` (fallback metrics are wider, so they surface real overflows).
+- **tags:** ui, redesign, radar, mockup, harbor, chrome
+
+### Decisions recorded here
+- Day bar `RANGE` renders `—`: the MVP `DisplaySignal` carries no session high/low, and rule 2 forbids inventing one. `DayMoveBar` takes an optional `range` for when the live feed supplies it.
+- Price meta `Updated` reads the device clock (`clockLabel()`) instead of freezing the mockup's literal `22:58`.
+- Quote badge shows the day move as a percentage of the implied open (`price - dayMove`); a negative day is coloured `harborShort` rather than the mockup's unconditional green.
+- Level subs are price distances (e.g. `-15.50`), not pip counts.
+- COPY LEVELS and SHARE both write the same summary to the clipboard and toast: the MVP has no platform share channel and `share_plus` is off-limits.
+- Radar gets its own `TargetScopePills` (TP1/TP2/TP3) rather than reusing `TargetSelector`, so the Signal screen and its `SegmentedButton` assertions are untouched; both read/write the same `AppState.targets`.
+- The timeframe switcher carries no gesture handler on purpose: 5M/1H taps must never change consensus (rule 1).
