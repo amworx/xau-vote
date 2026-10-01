@@ -11,8 +11,18 @@
  * 4. Queues FCM notifications for transitions when FCM_* env is present;
  *    silently skips dispatch otherwise (logged, never crashing the tick).
  *
+ * Price chain (Gate G3, resolved 2026-10-01 by live endpoint testing):
+ *   1. `gold-api.com` — verified working anonymously, no key required. When
+ *      `GOLD_API_KEY` is set it is sent as `x-access-token`, which the paid
+ *      tier expects. This is the primary source.
+ *   2. `goldprice.dev` — optional secondary (`GOLDPRICE_DEV_ENABLED=true`).
+ *   3. Last `market_snapshots` row — last-resort fallback so a provider outage
+ *      degrades to a stale price rather than skipping the tick entirely.
+ * A price is NEVER invented: if all three fail the tick reports `skipped`.
+ *
  * Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
- *      GOLD_API_KEY (optional until Gate G3), FCM_PROJECT_ID + FCM_KEY (optional)
+ *      GOLD_API_KEY (optional), GOLDPRICE_DEV_ENABLED (optional),
+ *      FCM_PROJECT_ID + FCM_KEY (optional)
  */
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import {
@@ -60,22 +70,85 @@ interface Signal {
   updated_at: string;
 }
 
-async function currentPrice(db: ReturnType<typeof createClient>): Promise<{ price: number; source: string }> {
-  const key = Deno.env.get('GOLD_API_KEY');
-  if (key) {
-    try {
-      const r = await fetch('https://api.gold-api.com/price/XAU', { headers: { 'x-access-token': key } });
-      if (r.ok) {
-        const j = await r.json() as { price?: number };
-        if (typeof j.price === 'number' && j.price > 0) return { price: j.price, source: 'gold-api' };
-      }
-    } catch { /* fall through to snapshot */ }
+/** Provider chain result: where the price came from, for auditability. */
+export interface Quote {
+  price: number;
+  source: 'gold-api' | 'goldprice.dev' | 'snapshot';
+  /** Populated only by the snapshot fallback — the row is stale by definition. */
+  stale: boolean;
+}
+
+const positive = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0;
+
+/**
+ * Primary: gold-api.com.
+ *
+ * Verified 2026-10-01 from this machine — responds anonymously with no key
+ * (`{"price":4178.5,"symbol":"XAU",...}`), and tolerates an `x-access-token`
+ * header for the paid tier. The header is sent ONLY when a key is configured
+ * so the anonymous free tier is never sent a bogus credential.
+ */
+async function fromGoldApi(): Promise<number | null> {
+  try {
+    const headers: Record<string, string> = {};
+    const key = Deno.env.get('GOLD_API_KEY');
+    if (key) headers['x-access-token'] = key;
+    const r = await fetch('https://api.gold-api.com/price/XAU', { headers });
+    if (!r.ok) return null;
+    const j = await r.json() as { price?: unknown };
+    return positive(j.price) ? j.price : null;
+  } catch {
+    return null;
   }
+}
+
+/**
+ * Secondary: goldprice.dev.
+ *
+ * Opt-in via `GOLDPRICE_DEV_ENABLED=true` because its Free tier is documented
+ * as "internal use" and its live JSON carries no bid/ask. NOTE the host is
+ * `api.goldprice.dev` — `goldprice.dev/v1/...` returns 404.
+ */
+async function fromGoldPriceDev(): Promise<number | null> {
+  if (Deno.env.get('GOLDPRICE_DEV_ENABLED') !== 'true') return null;
+  try {
+    const r = await fetch('https://api.goldprice.dev/v1/prices?symbol=XAU-USD-SPOT');
+    if (!r.ok) return null;
+    const j = await r.json() as { symbols?: Array<{ price?: unknown; is_stale?: boolean }> };
+    const first = j.symbols?.[0];
+    if (!first || first.is_stale === true) return null;
+    return positive(first.price) ? Number(first.price) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Last-resort: the newest stored snapshot, explicitly flagged stale. */
+async function fromSnapshot(db: ReturnType<typeof createClient>): Promise<Quote | null> {
   const { data } = await db.from('market_snapshots')
-    .select('price').eq('symbol', 'XAUUSD').order('timestamp', { ascending: false }).limit(1).maybeSingle();
-  const row = data as { price: number } | null;
-  if (!row) throw new Error('No market price available (no provider key, no snapshot). Tick skipped.');
-  return { price: row.price, source: 'snapshot' };
+    .select('price').eq('symbol', 'XAUUSD')
+    .order('timestamp', { ascending: false }).limit(1).maybeSingle();
+  const row = data as { price?: unknown } | null;
+  if (!positive(row?.price)) return null;
+  return { price: row.price, source: 'snapshot', stale: true };
+}
+
+/**
+ * Resolve the current XAUUSD price, provider first, snapshot last.
+ * Throws only when every source fails — the caller then reports `skipped`
+ * rather than storing a fabricated price (product rule 2).
+ */
+export async function currentPrice(db: ReturnType<typeof createClient>): Promise<Quote> {
+  const gold = await fromGoldApi();
+  if (gold !== null) return { price: gold, source: 'gold-api', stale: false };
+
+  const dev = await fromGoldPriceDev();
+  if (dev !== null) return { price: dev, source: 'goldprice.dev', stale: false };
+
+  const snap = await fromSnapshot(db);
+  if (snap) return snap;
+
+  throw new Error('No market price available (providers failed and no snapshot exists). Tick skipped.');
 }
 
 const inZone = (p: number, s: Signal): boolean => p >= s.entry_low && p <= s.entry_high;
@@ -94,6 +167,9 @@ Deno.serve(async (_req) => {
   } catch (e) {
     return Response.json({ ok: true, skipped: String(e) });
   }
+  // bid/ask stay null: none of the free price sources publish a genuine
+  // spread, and the consensus engine runs on a single mid. Inventing one
+  // would violate the never-fabricate rule (product rule 2).
   await db.from('market_snapshots').insert({
     symbol: 'XAUUSD', price: quote.price, bid: null, ask: null, timestamp: now.toISOString(),
   });
@@ -257,7 +333,8 @@ Deno.serve(async (_req) => {
     if (ok) eventDispatched++;
   }
   return Response.json({
-    ok: true, price: quote.price, source: quote.source, transitions, queued: notify, dispatched,
+    ok: true, price: quote.price, source: quote.source, stalePrice: quote.stale,
+    transitions, queued: notify, dispatched,
     eventNotifications: eventNotify, eventDispatched, freshSurprises, postSurpriseIds,
     at: now.toISOString(),
   });
