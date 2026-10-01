@@ -4,14 +4,14 @@ library;
 import 'dart:ui' show Size;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:xau_radar/main.dart';
+import 'package:xauvote/main.dart';
 
 Future<void> _pumpApp(WidgetTester tester) async {
   // Tall surface so lazily-built sliver children all exist for finders.
   tester.view.physicalSize = const Size(800, 3000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
-  await tester.pumpWidget(const XauRadarApp());
+  await tester.pumpWidget(const XauVoteApp());
   await tester.pumpAndSettle();
 }
 

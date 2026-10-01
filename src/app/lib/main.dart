@@ -24,15 +24,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Guarded: returns immediately in MOCK_MODE (zero config required).
   await BackendService.init();
-  runApp(const XauRadarApp());
+  runApp(const XauVoteApp());
 }
 
 /// Root widget. Owns the [AppState] provider so the widget tree (and widget
-/// tests pumping [XauRadarApp] directly) always has state available.
+/// tests pumping [XauVoteApp] directly) always has state available.
 /// Asserts MOCK_MODE so release builds never silently ship fixtures as
 /// live data (flip the flag deliberately for T5.7).
-class XauRadarApp extends StatelessWidget {
-  const XauRadarApp({super.key});
+class XauVoteApp extends StatelessWidget {
+  const XauVoteApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +61,7 @@ class _Shell extends StatelessWidget {
   Widget build(BuildContext context) {
     final tabIndex = context.watch<AppState>().tabIndex;
     return MaterialApp(
-      title: 'XAU Radar',
+      title: 'XV - XAU-Vote',
       debugShowCheckedModeBanner: false,
       theme: harborTheme(),
       home: Scaffold(

@@ -16,10 +16,10 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:xau_radar/data/mock_fixtures.dart';
-import 'package:xau_radar/main.dart';
-import 'package:xau_radar/models/display_models.dart';
-import 'package:xau_radar/state/app_state.dart';
+import 'package:xauvote/data/mock_fixtures.dart';
+import 'package:xauvote/main.dart';
+import 'package:xauvote/models/display_models.dart';
+import 'package:xauvote/state/app_state.dart';
 
 /// Verbatim copy of the pre-refactor implementation (hardcoded convention B).
 /// Kept so "B changes nothing" is asserted against the real old behaviour
@@ -58,7 +58,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
   tester.view.physicalSize = _phone;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
-  await tester.pumpWidget(const XauRadarApp());
+  await tester.pumpWidget(const XauVoteApp());
   await tester.pumpAndSettle();
 }
 

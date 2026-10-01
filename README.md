@@ -1,4 +1,4 @@
-# XAU Radar
+# XV (XAU-Vote)
 
 Free, mobile-first day-trading assistant for **XAUUSD (Gold)** — collects fresh
 intraday trade ideas from multiple independent sources, compares them, and
@@ -10,7 +10,7 @@ turns the strongest agreement into one clear 15-minute setup.
 ## Repo map
 
 ```
-xau-radar/
+xau-vote/
 ├── AGENTS.md                  Project rules (read before contributing)
 ├── docs/
 │   ├── mvp-specification.md   Authoritative product spec

@@ -1,6 +1,6 @@
-# XAU Radar — Project Instructions
+# XV (XAU-Vote) — Project Instructions
 
-**XAU Radar** is a free, mobile-first day-trading assistant focused exclusively on
+**XV (XAU-Vote)** is a free, mobile-first day-trading assistant focused exclusively on
 **XAUUSD (Gold)**. It collects fresh intraday Gold trade ideas from multiple
 independent sources, compares them, and turns the strongest agreement into one
 clear 15-minute trading setup.
@@ -31,7 +31,7 @@ map in `C:\Users\HP\Documents\code_repo\AGENTS.md`.
 ## Structure
 
 ```
-xau-radar/
+xau-vote/
 ├── AGENTS.md          ← this file
 ├── docs/
 │   └── mvp-specification.md   ← authoritative spec

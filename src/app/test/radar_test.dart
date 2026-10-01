@@ -8,15 +8,15 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:xau_radar/main.dart';
-import 'package:xau_radar/widgets/harbor_widgets.dart';
+import 'package:xauvote/main.dart';
+import 'package:xauvote/widgets/harbor_widgets.dart';
 
 Future<void> _pumpApp(WidgetTester tester) async {
   // Tall surface so lazily-built sliver children all exist for finders.
   tester.view.physicalSize = const Size(800, 3000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
-  await tester.pumpWidget(const XauRadarApp());
+  await tester.pumpWidget(const XauVoteApp());
   await tester.pumpAndSettle();
 }
 
@@ -26,7 +26,7 @@ void main() {
     await _pumpApp(tester);
 
     // Header: wordmark, LIVE pill, no subtitle, no cobold icon tile.
-    expect(find.text('XAU RADAR'), findsOneWidget);
+    expect(find.text('XV'), findsOneWidget);
     expect(find.text('LIVE · 18s'), findsOneWidget);
     expect(find.text('GOLD · XAUUSD · 15M'), findsNothing);
 

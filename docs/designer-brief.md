@@ -1,13 +1,13 @@
-# XAU Radar — Designer Brief
+# XV (XAU-Vote) — Designer Brief
 
 **Version:** 2026-09-29 · **Status:** ready for UI design pass
-**Repo:** `xau-radar/` · Current baseline: `docs/mockups/mockup-11A-harbor.html` + `screen-2..6-*.html`
+**Repo:** `xau-vote/` · Current baseline: `docs/mockups/mockup-11A-harbor.html` + `screen-2..6-*.html`
 
 ---
 
 ## 1. What the app is
 
-**XAU Radar** is a free, mobile-first day-trading assistant for **XAUUSD (Gold)**.
+**XV (XAU-Vote)** is a free, mobile-first day-trading assistant for **XAUUSD (Gold)**.
 It collects fresh intraday trade ideas from multiple independent sources,
 compares them, and turns the strongest agreement into **one clear 15-minute
 setup**. It does not execute trades, hold accounts, or predict the market —
@@ -44,7 +44,7 @@ History · Events · Settings**.
 
 ### 4.1 Radar (home)
 The glance screen. Sections top→bottom:
-- **Header:** brand mark + "XAU RADAR" wordmark, live-connection pill.
+- **Header:** XV brand mark + "XV" wordmark, live-connection pill.
 - **Price hero:** current XAUUSD price (large mono numeral), day-move card
   (inverted dark surface), spread line.
 - **Timeframe switcher:** 15M / 5M / 1H segmented control (switching TF is

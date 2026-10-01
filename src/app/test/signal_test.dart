@@ -6,8 +6,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:xau_radar/main.dart';
-import 'package:xau_radar/widgets/harbor_widgets.dart';
+import 'package:xauvote/main.dart';
+import 'package:xauvote/widgets/harbor_widgets.dart';
 
 /// Substrings that must never appear in any rendered text (spec §7).
 /// Written as adjacent literals so this file itself contains no banned
@@ -19,7 +19,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
   tester.view.physicalSize = const Size(800, 3000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
-  await tester.pumpWidget(const XauRadarApp());
+  await tester.pumpWidget(const XauVoteApp());
   await tester.pumpAndSettle();
 }
 

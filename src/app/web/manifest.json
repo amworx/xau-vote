@@ -1,6 +1,6 @@
 {
-    "name": "xau_radar",
-    "short_name": "xau_radar",
+    "name": "XAU-Vote",
+    "short_name": "XV",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

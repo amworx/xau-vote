@@ -1,4 +1,4 @@
-/// Global build flags for the XAU Radar app.
+/// Global build flags for the XV (XAU-Vote) app.
 ///
 /// [mockMode] runs every screen fully offline from local fixtures
 /// ([MockFixtures]) with zero Supabase/Firebase configuration. Flip to

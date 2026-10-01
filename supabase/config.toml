@@ -1,5 +1,5 @@
 [project]
-name = "xau-radar"
+name = "xau-vote"
 
 [functions.collect-ideas]
 enabled = true

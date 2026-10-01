@@ -455,3 +455,18 @@
 - **errors:** (1) Grepping for pip call sites missed the **Sources** screen, which carried a hardcoded `'4,262 - -1600p'` string per desk - a fifth call site the brief did not list. Fixed by adding `DisplaySource.stopPoints` and deriving the figure; desk D quotes a bare level so its `stopPoints` stays null and the row invents nothing. (2) A first layout probe used `actualHeight > preferredLineHeight + 0.5` and reported 100+ false wraps - the laid-out height differs from the preferred line height by ~2px of rounding. A real wrap nearly doubles the height, so the threshold is `1.5x`. (3) The first `_tighten` attempt (`' - '` -> `' -'`) fixed only the cited SHORT row; the 47-char TP3 row and the 51-char no-consensus row still wrapped, which is what drove the stronger rule and the prose trim. (4) `const f = PipConvention.b.pipFactor` fails to compile - extension getters are not constant expressions.
 - **lessons:** a "render-time derived" refactor is only complete once EVERY surface is grepped for the literal, not just the sites the brief names - a preformatted string in a fixture renders exactly like a derived one. Measure a wrap by the ratio of laid-out height to preferred line height, never by an absolute pixel delta, or font rounding drowns the signal. To prove a display-scale refactor is behaviour-preserving, keep a verbatim copy of the OLD function in the test and assert new-default == old for every fixture level; that turns "I think the numbers did not move" into a regression guard.
 - **tags:** pip-convention, D-20260927-003, settings, layout, 390px, wrap, display
+
+---
+
+## EVT-20260929-0032
+
+- **id:** EVT-20260929-0032
+- **timestamp:** 2026-09-29T23:10:00+03:00
+- **mode:** MEMORY / BUILD
+- **action:** Gate G2 first contact + full project rename to XV (XAU-Vote)
+- **summary:** Supabase project provisioned far enough to apply migrations: CLI is not authed against the account, so migrations went over a direct pooler connection. Two self-inflicted errors cost time and are now the durable lesson: (1) the pooler username is `postgres.<project-ref>`, NOT the password — putting the password there produced a misleading `tenant/user not found`; (2) region must be probed, not guessed (`eu-central-1` assumed, project was actually `ap-northeast-1`). Migrations 0001/0002/0003 applied and verified (8 tables over PostgREST, anon insert correctly rejected by RLS). Function deploys/secrets/schedules still blocked on Management API auth. Then renamed the project: folder, Dart package, Android id, labels, titles, in-app wordmark + brand mark (candlestick bars -> cobalt XV monogram), 21 generated launcher/web icons, MIT LICENSE, and all current-facing docs. Historical artifacts left untouched on purpose (applied migrations, memory log, archived mockups, original spec).
+- **result:** success — 29/29 app tests green after rename, analyze clean; migrations live; icon + brand shipped
+- **files:** whole repo (rename), tools/make_icons.py, LICENSE, docs/backend-runbook.md
+- **errors:** Move-Item failed on .git (shell CWD lock) leaving an empty orphan dir; PowerShell Set-Content wrote ANSI and mangled one em-dash in main.dart (caught by diff audit, fixed)
+- **lessons:** (1) Never write source files with PowerShell Set-Content — it defaults to ANSI and silently corrupts Unicode; use [IO.File]::WriteAllText with UTF8Encoding(False) or the edit tool, then audit with git diff. (2) Supabase pooler username is the project ref, not the password. (3) Probe the region, never guess it. (4) Run git commands from OUTSIDE the folder being moved.
+- **tags:** g2, supabase, rename, xv, icons, licensing, encoding

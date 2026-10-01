@@ -1,4 +1,4 @@
-# XAU Radar — Backend Runbook (Gate G2)
+# XV (XAU-Vote) — Backend Runbook (Gate G2)
 
 > Code is written and golden-tested. This runbook is the only remaining path
 > to a live backend. Nothing here runs without explicit user confirmation
@@ -23,6 +23,30 @@
    - `anon` public key → `SUPABASE_PUBLISHABLE_KEY` (Flutter `--dart-define`)
    - `service_role` secret key → server-side only, Edge Function secret.
 3. Send those three values to the orchestrator (chat, never committed).
+
+### Live project (do not commit these)
+
+| Item | Value |
+|---|---|
+| Project ref | `mfrzwmqgwgcyaxehdbqh` |
+| Region | **`ap-northeast-1`** (Tokyo) — discovered 2026-09-29 by probing pooler hosts |
+| Pooler host | `aws-0-ap-northeast-1.pooler.supabase.com:5432` |
+| Pooler user | `postgres.<project-ref>` (NOT the password — that is the common mistake) |
+
+Because the CLI is not authenticated against this account, migrations are
+applied over a **direct pooler connection** instead of `supabase link`:
+
+```powershell
+supabase db push --db-url "postgresql://postgres.<ref>:<password>@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres" --include-all
+```
+
+Status 2026-09-29: `0001_initial.sql`, `0002_rls_policies.sql` and
+`0003_events_news.sql` are **applied and verified** (8 tables reachable over
+PostgREST; anon `insert` correctly rejected by RLS).
+
+Edge Function deploys, secrets and schedules still require Management API
+auth — run `supabase login` once (browser flow, stores a token locally in
+`~/.supabase/access-token`) or enable the Supabase MCP.
 
 ## 2. Apply migrations (orchestrator runs)
 

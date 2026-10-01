@@ -17,7 +17,7 @@ import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 
-/// Brand header: mark + XAU RADAR wordmark + LIVE pill (mockup `.top`).
+/// Brand header: XV mark + wordmark + LIVE pill (mockup `.top`).
 ///
 /// Global chrome shared by all six screens, so it is the one place the brand
 /// row is defined. [subtitle] is optional: the Radar header is the bare brand
@@ -45,7 +45,7 @@ class HarborHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'XAU RADAR',
+                  'XV',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -111,11 +111,12 @@ class HarborHeader extends StatelessWidget {
   }
 }
 
-/// Ink-bordered brand mark (mockup `.mark`): a 27px box with a 2px ink
-/// border, 8px radius and two cobalt bars.
+/// Brand mark for **XV** (XAU-Vote): a 27px box with a 2px ink border, 8px
+/// radius and the letters XV set in cobalt Sora ExtraBold.
 ///
-/// Painted rather than set in an icon font — the mockup draws it with
-/// pseudo-elements, so the geometry is reproduced with a [CustomPainter].
+/// Painted with a [TextPainter] rather than an icon font so the monogram stays
+/// crisp at any size and reuses the already-bundled Sora face — the launcher
+/// icon (see `assets/icons`) uses the same cobalt/radius geometry.
 class BrandMark extends StatelessWidget {
   const BrandMark({super.key, this.size = 27});
 
@@ -125,21 +126,23 @@ class BrandMark extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox.square(
       dimension: size,
-      child: CustomPaint(painter: const _BrandMarkPainter()),
+      child: CustomPaint(painter: _BrandMarkPainter(size)),
     );
   }
 }
 
 class _BrandMarkPainter extends CustomPainter {
-  const _BrandMarkPainter();
+  const _BrandMarkPainter(this.size);
 
-  /// Bar geometry is relative to the 27px box the mockup specifies; the
-  /// stroke is inset by 1px because Flutter centres strokes on the path.
+  final double size;
+
+  /// Geometry is relative to the 27px box; the stroke is inset by 1px because
+  /// Flutter centres strokes on the path.
   @override
-  void paint(Canvas canvas, Size size) {
+  void paint(Canvas canvas, Size _) {
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(1, 1, size.width - 2, size.height - 2),
+        Rect.fromLTWH(1, 1, size - 2, size - 2),
         const Radius.circular(7),
       ),
       Paint()
@@ -147,25 +150,31 @@ class _BrandMarkPainter extends CustomPainter {
         ..strokeWidth = 2
         ..color = harborInk,
     );
-    final bar = Paint()..color = harborCobalt;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        const Rect.fromLTWH(8, 7, 4, 14),
-        const Radius.circular(2),
+
+    // `XV` centred optically: the text box is measured, then shifted up by a
+    // hair because Sora's cap height sits below the em box.
+    final painter = TextPainter(
+      text: TextSpan(
+        text: 'XV',
+        style: TextStyle(
+          fontFamily: 'Sora',
+          fontSize: size * 0.46,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -size * 0.02,
+          color: harborCobalt,
+          height: 1,
+        ),
       ),
-      bar,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        const Rect.fromLTWH(15, 4, 4, 20),
-        const Radius.circular(2),
-      ),
-      bar,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    painter.paint(
+      canvas,
+      Offset((size - painter.width) / 2, (size - painter.height) / 2),
     );
   }
 
   @override
-  bool shouldRepaint(_BrandMarkPainter oldDelegate) => false;
+  bool shouldRepaint(_BrandMarkPainter oldDelegate) => oldDelegate.size != size;
 }
 
 /// Uppercase tracked micro-label (mockup `.eyebrow`).
