@@ -1,15 +1,20 @@
 /// Screen 2 — Signal: full setup detail.
 ///
-/// Levels, per-TP R:R, lifecycle timeline, 1H context badge, 5M
-/// confirmation state, TP selection (spec §10). Strength is an agreement
-/// label only — never rendered as a forecast (spec §7).
+/// Lifecycle timeline (spec §14), the level grid with per-TP R:R, the
+/// deliberately subordinate 1H/5M/position row (product rule 1: 1H is context
+/// and never votes, 5M only confirms) and the target-scope control
+/// (spec §10). Every surface comes from the shared Harbor primitives so the
+/// screen reads as the same product as Radar. Strength is an agreement label
+/// only — never rendered as a forecast (spec §7).
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../data/mock_fixtures.dart';
-import '../icons.dart';
 import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
@@ -27,125 +32,70 @@ class SignalScreen extends StatelessWidget {
             ? MockFixtures.developing
             : MockFixtures.strongLong;
     final show = visibleTps(state.targets);
+    // Points are canonical; every pip readout on this screen derives from them
+    // through the trader's pip convention (D-20260927-003). Read once here so
+    // the whole screen shares one convention per build.
+    final pipFactor = state.pipConvention.pipFactor;
     return ListView(
       key: const PageStorageKey<String>('signal'),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.only(bottom: 20),
       children: [
         HarborHeader(
           subtitle: 'SIGNAL · ${signal.id}',
           statusText: statusLabel(signal.status),
         ),
-        const SizedBox(height: 12),
-        const KickLabel('ACTIVE SETUP · 15M LONG'),
-        const SizedBox(height: 6),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            DirectionMark(direction: signal.direction, size: 27),
-            const SizedBox(width: 10),
-            Text(
-              '${formatPrice(signal.price)} · ${bandLabel(signal.band)} ${signal.strength}',
-              style: const TextStyle(
-                fontFamily: 'Space Mono',
-                fontSize: 11,
-                color: harborDim,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        _lifecycleCard(signal),
-        const SizedBox(height: 12),
-        _levelGrid(signal, show),
-        const SizedBox(height: 10),
-        Row(
-          children: const [
-            Expanded(
-              child: _ContextBadge(
-                title: '1H TREND',
-                value: 'SUPPORTIVE',
-              ),
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: _ContextBadge(
-                title: '5M CONFIRM',
-                value: 'CONFIRMED',
-              ),
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: _ContextBadge(
-                title: 'POSITION',
-                value: '+30 PIPS',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        const TargetSelector(),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          decoration: BoxDecoration(
-            color: harborLongSoft,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'POSITION STATUS',
-                style: TextStyle(
-                  fontFamily: 'Space Mono',
-                  fontSize: 10,
-                  letterSpacing: 1,
-                  color: harborLong,
-                ),
+              HarborEyebrow(
+                'Active setup · 15M ${_directionWord(signal.direction)}',
               ),
-              Text(
-                '● IN-PROFIT +30 PIPS',
-                style: TextStyle(
-                  fontFamily: 'Space Mono',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: harborLong,
-                ),
+              const SizedBox(height: 9),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  DirectionPill(direction: signal.direction, fontSize: 15),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 7),
+                      child: Text(
+                        '${formatPrice(signal.price)} · '
+                        '${bandLabel(signal.band)} ${signal.strength}',
+                        style: const TextStyle(
+                          fontFamily: 'Space Mono',
+                          fontSize: 11,
+                          color: harborDim,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Signal text copied')),
-            );
-          },
-          style: FilledButton.styleFrom(
-            backgroundColor: harborCobalt,
-            foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(56),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            textStyle: const TextStyle(
-              fontFamily: 'Sora',
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.4,
-            ),
-          ),
-          child: const Text('COPY SIGNAL TEXT'),
-        ),
+        const SizedBox(height: 13),
+        _lifecycleCard(signal, pipFactor),
         const SizedBox(height: 10),
+        _levelsCard(signal, show, pipFactor),
+        const SizedBox(height: 10),
+        _contextRow(pipFactor),
+        const SizedBox(height: 11),
+        _targetScope(),
+        const SizedBox(height: 11),
+        _positionStrip(pipFactor),
+        const SizedBox(height: 13),
+        _actions(context, signal, state.targets, pipFactor),
+        const SizedBox(height: 11),
         const Center(
           child: Text(
             'Opened 21:44:03 · expires 22:44',
             style: TextStyle(
               fontFamily: 'Space Mono',
-              fontSize: 10,
+              fontSize: 9,
               letterSpacing: 0.6,
               color: harborFaint,
             ),
@@ -155,106 +105,65 @@ class SignalScreen extends StatelessWidget {
     );
   }
 
-  /// Lifecycle timeline through ACTIVE (spec §14), timestamps mocked.
-  Widget _lifecycleCard(DisplaySignal signal) {
+  /// `LONG` / `SHORT` / `NO SIGNAL` — the only place direction is spelled out
+  /// as a word rather than carried by [DirectionPill].
+  String _directionWord(Direction direction) => switch (direction) {
+        Direction.long => 'LONG',
+        Direction.short => 'SHORT',
+        Direction.neutral => 'NO SIGNAL',
+      };
+
+  /// Lifecycle timeline through ACTIVE (spec §14) plus the still-open target
+  /// step. State timestamps are fixture-pinned until the lifecycle wiring
+  /// (T5.7) supplies real transitions.
+  Widget _lifecycleCard(DisplaySignal signal, int pipFactor) {
     const steps = [
-      ('DEVELOPING', '21:31', DisplayStatus.developing),
-      ('READY', '21:36', DisplayStatus.ready),
-      ('CONFIRMED · 5M', '21:41', DisplayStatus.confirmed),
-      ('ACTIVE', 'SINCE 21:44', DisplayStatus.active),
+      ('DEVELOPING', '21:31'),
+      ('READY', '21:36'),
+      ('CONFIRMED · 5M', '21:41'),
+      ('ACTIVE', 'SINCE 21:44'),
     ];
-    return Card(
-      margin: EdgeInsets.zero,
+    return HarborCard(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < steps.length; i++)
-            Container(
-              decoration: BoxDecoration(
-                color: i == steps.length - 1
-                    ? harborCobalt.withValues(alpha: 0.05)
-                    : null,
-                border: i > 0
-                    ? const Border(top: BorderSide(color: harborLine))
-                    : null,
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: i == steps.length - 1
-                          ? harborCobalt
-                          : harborLong,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    steps[i].$1,
-                    style: TextStyle(
-                      fontFamily: 'Space Mono',
-                      fontSize: 11,
-                      letterSpacing: 0.8,
-                      fontWeight: i == steps.length - 1
-                          ? FontWeight.w700
-                          : FontWeight.w400,
-                      color: i == steps.length - 1 ? harborInk : harborDim,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    steps[i].$2,
-                    style: TextStyle(
-                      fontFamily: 'Space Mono',
-                      fontSize: 10,
-                      color: i == steps.length - 1 ? harborCobalt : harborFaint,
-                    ),
-                  ),
-                ],
-              ),
+          const HarborEyebrow('Lifecycle'),
+          const SizedBox(height: 10),
+          for (var i = 0; i < steps.length; i++) ...[
+            if (i > 0) const HarborDivider(),
+            _lifecycleRow(
+              label: steps[i].$1,
+              timestamp: steps[i].$2,
+              isCurrent: i == steps.length - 1,
             ),
-          Container(
-            decoration: const BoxDecoration(
-              border: Border(
-                top: BorderSide(color: harborLine),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: harborLine, width: 2),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'TP1 ${signal.tp1 == null ? '—' : formatLevel(signal.tp1!)}',
-                  style: const TextStyle(
-                    fontFamily: 'Space Mono',
-                    fontSize: 11,
-                    letterSpacing: 0.8,
-                    color: harborFaint,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '+${pipsTo(signal.tp1 ?? signal.entryMid, signal.entryMid)} PIPS',
-                  style: const TextStyle(
-                    fontFamily: 'Space Mono',
-                    fontSize: 10,
-                    color: harborFaint,
-                  ),
-                ),
-              ],
+          ],
+          const HarborDivider(),
+          _targetRow(signal, pipFactor),
+        ],
+      ),
+    );
+  }
+
+  Widget _lifecycleRow({
+    required String label,
+    required String timestamp,
+    required bool isCurrent,
+  }) {
+    return Container(
+      // Mockup `.life .lrow.now` wash — 5% cobalt marks the live step
+      // without painting a state as if it were a direction.
+      color: isCurrent ? harborCobalt.withValues(alpha: 0.05) : null,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          _LifecyclePill(label, isCurrent: isCurrent),
+          const Spacer(),
+          Text(
+            timestamp,
+            style: const TextStyle(
+              fontFamily: 'Space Mono',
+              fontSize: 9,
+              color: harborFaint,
             ),
           ),
         ],
@@ -262,25 +171,94 @@ class SignalScreen extends StatelessWidget {
     );
   }
 
-  Widget _levelGrid(DisplaySignal signal, List<int> show) {
+  /// The open target step. With no TP1 from the pipeline the level is an
+  /// honest `—` and the pip distance is omitted rather than invented
+  /// (product rule 2: never fabricate).
+  ///
+  /// Label and level share one text span so the row stays a single text
+  /// widget — the level grid above is the only place a bare level appears.
+  Widget _targetRow(DisplaySignal signal, int pipFactor) {
+    final tp = signal.tp1;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE7ECF2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'TP1',
+                      style: TextStyle(
+                        fontFamily: 'Sora',
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.9,
+                        color: harborDim,
+                      ),
+                    ),
+                    TextSpan(
+                      text: ' ${tp == null ? '—' : formatLevel(tp)}',
+                      style: const TextStyle(
+                        fontFamily: 'Space Mono',
+                        fontSize: 11,
+                        color: harborFaint,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (tp != null)
+            Text(
+              '+${pipsTo(tp, signal.entryMid, pipFactor: pipFactor)} PIPS',
+              style: const TextStyle(
+                fontFamily: 'Space Mono',
+                fontSize: 9,
+                color: harborFaint,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _levelsCard(DisplaySignal signal, List<int> show, int pipFactor) {
+    return HarborCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const HarborEyebrow('Levels'),
+          const SizedBox(height: 12),
+          _levelGrid(signal, show, pipFactor),
+        ],
+      ),
+    );
+  }
+
+  /// Entry zone spans the grid, then stop + the selected targets in two
+  /// columns — the Radar level language, with the Signal sub-lines (pip
+  /// distance, per-TP R:R) kept in the cell's sub slot.
+  Widget _levelGrid(DisplaySignal signal, List<int> show, int pipFactor) {
     final tps = {1: signal.tp1, 2: signal.tp2, 3: signal.tp3};
     final cells = <Widget>[
-      LevelCell(
-        icon: HarborIcons.target,
-        title: 'ENTRY ZONE',
-        value:
-            '${formatLevel(signal.entryLow)}-${formatLevel(signal.entryHigh)}',
-        subtitle:
-            '${((signal.entryHigh - signal.entryLow) * 100).round()}-pip zone',
-        valueColor: harborCobalt,
-      ),
-      LevelCell(
-        icon: HarborIcons.shieldCheck,
-        title: 'STOP LOSS',
+      VerdictLevelCell(
+        label: 'Stop loss',
         value: formatLevel(signal.stopLoss),
-        subtitle:
-            '-${pipsTo(signal.entryMid, signal.stopLoss).abs()} pips · risk ${(signal.entryMid - signal.stopLoss).toStringAsFixed(1)} pts',
-        valueColor: harborShort,
+        // The sub-line drops its unit on purpose: a half-grid cell is ~135px
+        // wide at 390px, and `−1600 pips · risk 15.5 pts` overflowed it and
+        // pushed this cell a line taller than its neighbour. The neighbouring
+        // TP cells are already unit-free (`+1700 · 1:1.5`), and the risk
+        // figure reads as points in this layout.
+        sub: '−${pipsTo(signal.stopLoss, signal.entryMid, pipFactor: pipFactor).abs()} pips · '
+            'risk ${(signal.entryMid - signal.stopLoss).toStringAsFixed(1)}',
       ),
     ];
     for (final n in show) {
@@ -292,20 +270,236 @@ class SignalScreen extends StatelessWidget {
         stopLoss: signal.stopLoss,
       );
       cells.add(
-        LevelCell(
-          icon: HarborIcons.flag,
-          title: 'TP$n',
+        VerdictLevelCell(
+          label: 'TP$n',
           value: formatLevel(tp),
-          subtitle:
-              '+${pipsTo(tp, signal.entryMid)} · 1:${rr.toStringAsFixed(1)}',
-          valueColor: harborLong,
+          sub: '+${pipsTo(tp, signal.entryMid, pipFactor: pipFactor)} · '
+              '1:${rr.toStringAsFixed(1)}',
         ),
       );
     }
-    return LevelGrid(cells: cells);
+    return VerdictLevelGrid(
+      entry: VerdictLevelCell(
+        label: 'Entry zone',
+        value: '${formatLevel(signal.entryLow)}-'
+            '${formatLevel(signal.entryHigh)}',
+        sub: '${zonePips(signal.entryLow, signal.entryHigh, pipFactor: pipFactor)}-pip zone',
+        highlighted: true,
+      ),
+      cells: cells,
+    );
+  }
+
+  /// 1H context, 5M confirmation and open P/L. Intentionally the quietest row
+  /// on the screen: soft neutral fill, no border, no accent colour. 1H never
+  /// votes (product rule 1), so it must never read like a directional call —
+  /// green/red stays reserved for direction and agreement.
+  Widget _contextRow(int pipFactor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Row(
+        children: [
+          const Expanded(
+            child: _ContextBadge(title: '1H TREND', value: 'SUPPORTIVE'),
+          ),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: _ContextBadge(title: '5M CONFIRM', value: 'CONFIRMED'),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _ContextBadge(
+              title: 'POSITION',
+              value: '+${pipsFromMove(MockFixtures.openPositionPoints, pipFactor: pipFactor)} PIPS',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _targetScope() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HarborEyebrow('Target scope'),
+          SizedBox(height: 9),
+          TargetSelector(),
+        ],
+      ),
+    );
+  }
+
+  /// Open-position strip. An in-profit position is a direction outcome, so it
+  /// keeps the LONG green language from the mockup `.pstrip`.
+  Widget _positionStrip(int pipFactor) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+      decoration: BoxDecoration(
+        color: harborLongSoft,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          const Expanded(
+            child: HarborEyebrow('Position status', color: harborLong),
+          ),
+          const SizedBox(width: 10),
+          const SizedBox(
+            width: 6,
+            height: 6,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: harborLong,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const SizedBox(width: 7),
+          Text(
+            'IN-PROFIT +${pipsFromMove(MockFixtures.openPositionPoints, pipFactor: pipFactor)} PIPS',
+            style: const TextStyle(
+              fontFamily: 'Space Mono',
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: harborLong,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Copy / share the setup. The MVP has no platform share channel (no extra
+  /// packages), so both paths hand the summary to the clipboard and confirm
+  /// with the same toast the Radar card's action row uses.
+  Widget _actions(
+    BuildContext context,
+    DisplaySignal signal,
+    TargetSelection selection,
+    int pipFactor,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Row(
+        children: [
+          Expanded(
+            child: HarborActionButton(
+              label: 'COPY SIGNAL TEXT',
+              onTap: () => _publish(
+                context,
+                signal,
+                selection,
+                pipFactor,
+                'Signal text copied',
+              ),
+            ),
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: HarborActionButton(
+              label: '↗ SHARE',
+              primary: false,
+              onTap: () => _publish(
+                context,
+                signal,
+                selection,
+                pipFactor,
+                'Signal text copied — paste to share',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _publish(
+    BuildContext context,
+    DisplaySignal signal,
+    TargetSelection selection,
+    int pipFactor,
+    String toast,
+  ) {
+    // Raised synchronously so the feedback never waits on the clipboard.
+    unawaited(
+      Clipboard.setData(
+        ClipboardData(text: _summary(signal, selection, pipFactor)),
+      ),
+    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(toast)));
+  }
+
+  /// Agreement-first setup summary (spec §4) — score reads as the source
+  /// split, never as a probability of profit (rule 4).
+  String _summary(
+    DisplaySignal signal,
+    TargetSelection selection,
+    int pipFactor,
+  ) {
+    final tps = {1: signal.tp1, 2: signal.tp2, 3: signal.tp3};
+    final lines = <String>[
+      'XAUUSD 15M ${_directionWord(signal.direction)} — '
+          '${bandLabel(signal.band)} ${signal.agreeCount}/${signal.totalCount}',
+      'Entry ${formatLevel(signal.entryLow)}-${formatLevel(signal.entryHigh)}'
+          ' (market zone)',
+      'Stop ${formatLevel(signal.stopLoss)} '
+          '(${levelDistance(signal.entryMid, signal.stopLoss)})',
+    ];
+    for (var n = 1; n <= 3; n++) {
+      final tp = tps[n];
+      if (tp == null) continue;
+      lines.add(
+        'TP$n ${formatLevel(tp)} '
+        '(+${pipsTo(tp, signal.entryMid, pipFactor: pipFactor)} pips)',
+      );
+    }
+    lines.add('R:R ${bestRrValue(signal, selection)}');
+    return lines.join('\n');
   }
 }
 
+/// One lifecycle state as a small pill.
+///
+/// A lifecycle step is a state, not a direction, so it never takes the
+/// green/red language — a neutral state is [harborDim] on a neutral fill and
+/// the live step is the only accent. Anything that actually carries direction
+/// stays with [DirectionPill].
+class _LifecyclePill extends StatelessWidget {
+  const _LifecyclePill(this.label, {required this.isCurrent});
+
+  final String label;
+  final bool isCurrent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: isCurrent ? tpActiveBg : const Color(0xFFE7ECF2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Sora',
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.9,
+          color: isCurrent ? harborCobalt : harborDim,
+        ),
+      ),
+    );
+  }
+}
+
+/// 1H / 5M / position badge: the quietest surface on the screen. Soft neutral
+/// fill, no border, no accent — 1H is context only and must not look like a
+/// vote (product rule 1). Values are mono so the pip figure aligns.
 class _ContextBadge extends StatelessWidget {
   const _ContextBadge({required this.title, required this.value});
 
@@ -315,32 +509,34 @@ class _ContextBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: harborLine),
-        borderRadius: BorderRadius.circular(14),
+        color: chipBg,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             title,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontFamily: 'Sora',
               fontSize: 9,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.3,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
               color: harborFaint,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 5),
           Text(
             value,
+            textAlign: TextAlign.center,
             style: const TextStyle(
-              fontFamily: 'Sora',
-              fontSize: 12,
+              fontFamily: 'Space Mono',
+              fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: harborLong,
+              color: harborInk,
             ),
           ),
         ],

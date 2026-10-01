@@ -18,6 +18,10 @@ class AppState extends ChangeNotifier {
   RadarScenario _scenario = RadarScenario.strong;
   TargetSelection _targets = TargetSelection.all;
 
+  // D-20260927-003 — pip size is a display preference. Points stay canonical;
+  // the convention only rescales pip figures (default B = 0.01, FXPro/Vantage).
+  PipConvention _pipConvention = PipConvention.b;
+
   final Map<String, bool> _sourceEnabled = {
     'A': true,
     'B': true,
@@ -44,6 +48,7 @@ class AppState extends ChangeNotifier {
   int get tabIndex => _tabIndex;
   RadarScenario get scenario => _scenario;
   TargetSelection get targets => _targets;
+  PipConvention get pipConvention => _pipConvention;
   Map<String, bool> get sourceEnabled => Map.unmodifiable(_sourceEnabled);
 
   bool get notifyConsensus => _notifyConsensus;
@@ -78,6 +83,14 @@ class AppState extends ChangeNotifier {
   void setTargets(TargetSelection targets) {
     if (targets == _targets) return;
     _targets = targets;
+    notifyListeners();
+  }
+
+  /// Pick the pip size (D-20260927-003). Display-only: no price, level or
+  /// R:R is derived from this, so the choice is safe to change at any time.
+  void setPipConvention(PipConvention convention) {
+    if (convention == _pipConvention) return;
+    _pipConvention = convention;
     notifyListeners();
   }
 

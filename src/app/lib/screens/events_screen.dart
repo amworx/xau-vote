@@ -5,11 +5,18 @@
 /// headlines, title + source + link only). Context and guardrails — never
 /// votes (rule 9): no banner here suggests a trade, and an empty calendar
 /// renders silence, not a signal.
+///
+/// Restyled onto the unified Harbor language: [HarborCard] rows at radius 16,
+/// [HarborPill] tabs and filters, [HarborChip] currency badges, [ImpactPill]
+/// impact, and a guard line that mirrors the Radar [EventGuardrailBar]
+/// surface exactly. Headlines stay title + source + age + link — never full
+/// article text (licensing constraint).
 library;
 
 import 'package:flutter/material.dart';
 
 import '../data/mock_fixtures.dart';
+import '../icons.dart';
 import '../models/display_models.dart';
 import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
@@ -22,318 +29,626 @@ class EventsScreen extends StatefulWidget {
 }
 
 class _EventsScreenState extends State<EventsScreen> {
+  static const _tabs = ['UPCOMING', 'RESULTS', 'NEWS'];
+
+  /// Currencies the guard watches. Every row is filterable, so a currency
+  /// switch can only ever *narrow* what the guard reacts to.
+  static const _currencies = ['USD', 'EUR', 'GBP'];
+
+  /// Impact floor: HIGH only, HIGH+MED (default, matching the stored-window
+  /// rule), or everything including the stored-only LOW rows.
+  static const _impactOptions = [
+    (label: 'HIGH', floor: EventImpact.high),
+    (label: 'HIGH+', floor: EventImpact.medium),
+    (label: 'ALL', floor: EventImpact.low),
+  ];
+
   int _tab = 0;
+  final Set<String> _currenciesOn = {'USD', 'EUR', 'GBP'};
+  EventImpact _minImpact = EventImpact.medium;
+  final Set<String> _muted = <String>{};
+
+  int _rank(EventImpact impact) => switch (impact) {
+    EventImpact.high => 3,
+    EventImpact.medium => 2,
+    EventImpact.low => 1,
+  };
+
+  /// Currency chips start on and a row is hidden only when it falls outside
+  /// both the currency set and the impact floor.
+  bool _visible(DisplayEvent event) =>
+      _currenciesOn.contains(event.currency) &&
+      _rank(event.impact) >= _rank(_minImpact);
+
+  bool _isMuted(String id) => _muted.contains(id);
+
+  List<DisplayEvent> get _visibleEvents =>
+      MockFixtures.upcomingEvents.where(_visible).toList();
+
+  /// The soonest armed USD HIGH event — the only combination that pauses new
+  /// signals. `null` when the trader muted or filtered it out, and the guard
+  /// line then says so rather than borrowing another event's countdown.
+  DisplayEvent? get _nextBlackout {
+    for (final event in _visibleEvents) {
+      if (_isMuted(event.id)) continue;
+      if (event.impact == EventImpact.high && event.currency == 'USD') {
+        return event;
+      }
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       key: const PageStorageKey<String>('events'),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      // Horizontal gutters belong to the shared chrome (header 18px, cards
+      // 18px), so the list itself only owns the trailing space.
+      padding: const EdgeInsets.only(bottom: 18),
       children: [
         const HarborHeader(subtitle: 'MACRO CONTEXT · NEVER VOTES'),
-        const SizedBox(height: 12),
-        SegmentedButton<int>(
-          segments: const [
-            ButtonSegment(value: 0, label: Text('UPCOMING')),
-            ButtonSegment(value: 1, label: Text('RESULTS')),
-            ButtonSegment(value: 2, label: Text('NEWS')),
-          ],
-          selected: {_tab},
-          onSelectionChanged: (selected) =>
-              setState(() => _tab = selected.first),
-          style: const ButtonStyle(
-            textStyle: WidgetStatePropertyAll(
-              TextStyle(
-                fontFamily: 'Space Mono',
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
+        _tabBar(),
+        const SizedBox(height: 11),
+        _filterCard(),
+        const SizedBox(height: 10),
+        _guardLine(),
+        const SizedBox(height: 10),
         switch (_tab) {
-          0 => const _UpcomingTab(),
-          1 => const _ResultsTab(),
-          _ => const _NewsTab(),
+          0 => _upcomingPane(),
+          1 => _resultsPane(),
+          _ => _newsPane(),
         },
       ],
     );
   }
-}
 
-/// Upcoming HIGH/MEDIUM events with countdowns + blackout note.
-class _UpcomingTab extends StatelessWidget {
-  const _UpcomingTab();
+  /// Upcoming / Results / News. [HarborPill] carries the selection, the
+  /// 48px minimum is the mockup's touch target (`.tabs button{min-height:48px}`).
+  Widget _tabBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+      child: Row(
+        children: [
+          for (var i = 0; i < _tabs.length; i++) ...[
+            if (i > 0) const SizedBox(width: 7),
+            Expanded(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: HarborPill(
+                  _tabs[i],
+                  active: _tab == i,
+                  fontSize: 10,
+                  onTap: () => setState(() => _tab = i),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    final events = MockFixtures.upcomingEvents;
-    final next = events.first;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Card(
-          margin: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
+  /// Currency chips + impact floor. Both are guards: they decide which
+  /// releases the guard watches, never which direction is taken.
+  Widget _filterCard() {
+    return HarborCard(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(
+                width: 60,
+                child: HarborEyebrow('CCY', color: harborFaint),
+              ),
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final ccy in _currencies)
+                      HarborPill(
+                        ccy,
+                        fontSize: 10,
+                        active: _currenciesOn.contains(ccy),
+                        onTap: () => setState(() {
+                          _currenciesOn.contains(ccy)
+                              ? _currenciesOn.remove(ccy)
+                              : _currenciesOn.add(ccy);
+                        }),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 11),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(
+                width: 60,
+                child: HarborEyebrow('IMPACT', color: harborFaint),
+              ),
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final option in _impactOptions)
+                      HarborPill(
+                        option.label,
+                        fontSize: 10,
+                        active: _minImpact == option.floor,
+                        onTap: () =>
+                            setState(() => _minImpact = option.floor),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Guard line (mockup `.guard`), rendered with the Radar
+  /// [EventGuardrailBar] language: ink surface, 6px [harborShort] dot and a
+  /// 9px two-line block. It reports what the current filters arm — with no
+  /// blackout window it prints an honest `—` rather than borrowing one.
+  Widget _guardLine() {
+    final visible = _visibleEvents;
+    final armed = visible.where((e) => !_isMuted(e.id)).length;
+    final muted = visible.where((e) => _isMuted(e.id)).length;
+    final next = _nextBlackout;
+    final scope = switch (_minImpact) {
+      EventImpact.high => 'HIGH ONLY',
+      EventImpact.medium => 'HIGH+MED',
+      EventImpact.low => 'ALL',
+    };
+    final summary = StringBuffer('$scope · $armed ARMED');
+    if (muted > 0) summary.write(' · $muted MUTED');
+    summary.write(
+      next == null
+          ? ' · BLACKOUT —'
+          : ' · BLACKOUT ${formatCountdown(next.startsIn)}',
+    );
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: harborInk,
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(
+            width: 6,
+            height: 6,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: harborShort,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'NEXT HIGH-IMPACT',
+                  'EVENT GUARDRAIL',
                   style: TextStyle(
-                    fontFamily: 'Space Mono',
-                    fontSize: 10,
-                    letterSpacing: 2.2,
-                    color: harborFaint,
+                    fontFamily: 'Sora',
+                    fontSize: 9,
+                    height: 1.35,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 6),
                 Text(
-                  next.title,
+                  summary.toString(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: 'Sora',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                EventCountdown(startsIn: next.startsIn),
-                const SizedBox(height: 8),
-                const Text(
-                  'New signals paused from 30 min before until 15 min after release.',
-                  style: TextStyle(
-                    fontFamily: 'Sora',
-                    fontSize: 12,
-                    color: harborDim,
+                    fontSize: 9,
+                    height: 1.35,
+                    color: inkMuted,
                   ),
                 ),
               ],
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  /// Upcoming pane: the next blackout card plus every armed/stored release
+  /// that survived the current filters.
+  Widget _upcomingPane() {
+    final next = _nextBlackout;
+    final events = _visibleEvents;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _nextBlackoutCard(next),
         const SizedBox(height: 10),
-        for (final e in events) _EventRow(event: e),
+        if (events.isEmpty)
+          const _SilenceNote('No events match these filters.')
+        else
+          for (final event in events) ...[
+            _EventRow(
+              event: event,
+              muted: _isMuted(event.id),
+              onToggleMute: () => setState(() {
+                _isMuted(event.id)
+                    ? _muted.remove(event.id)
+                    : _muted.add(event.id);
+              }),
+            ),
+            const SizedBox(height: 10),
+          ],
+      ],
+    );
+  }
+
+  /// The blackout card. With no armed USD HIGH event the countdown is
+  /// replaced by an honest empty state rather than a stale timer (rule 2).
+  Widget _nextBlackoutCard(DisplayEvent? next) {
+    return HarborCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (next == null) ...[
+            const HarborEyebrow('No USD high event armed'),
+            const SizedBox(height: 8),
+            const Text(
+              'Muted or filtered out — no blackout window is active.',
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 12,
+                color: harborDim,
+              ),
+            ),
+          ] else ...[
+            const HarborEyebrow('Next high-impact'),
+            const SizedBox(height: 8),
+            Text(
+              next.title,
+              style: const TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 5),
+            EventCountdown(startsIn: next.startsIn),
+            const SizedBox(height: 8),
+            const Text(
+              'New signals paused from 30 min before until 15 min after release.',
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 12,
+                color: harborDim,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Past events: actual vs forecast with the surprise flag (addendum §3.3).
+  Widget _resultsPane() {
+    final events = MockFixtures.resultEvents;
+    if (events.isEmpty) return const _SilenceNote('No results yet.');
+    return Column(
+      children: [
+        for (final event in events) ...[
+          HarborCard(
+            radius: 16,
+            padding: const EdgeInsets.fromLTRB(14, 12, 12, 13),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    ImpactPill(impact: event.impact),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        event.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'Sora',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const HarborChip('DONE', fontSize: 8),
+                  ],
+                ),
+                const SizedBox(height: 9),
+                Text(
+                  'A ${event.actual ?? '—'} · F ${event.forecast ?? '—'} · '
+                  'P ${event.previous ?? '—'}',
+                  style: const TextStyle(
+                    fontFamily: 'Space Mono',
+                    fontSize: 10,
+                    color: harborDim,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  _surpriseLine(event),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Space Mono',
+                    fontSize: 10,
+                    fontWeight: event.isSurprise ? FontWeight.w700 : null,
+                    color: event.isSurprise ? harborShort : harborDim,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ],
+    );
+  }
+
+  /// A released figure that beat or missed its forecast is volatility
+  /// context. An in-line print is a neutral fact, so it keeps [harborDim] and
+  /// never borrows the direction colours.
+  static String _surpriseLine(DisplayEvent event) {
+    if (!event.isSurprise) return '○ IN LINE — near forecast';
+    return event.surprise == 'hot'
+        ? '▲ SURPRISE — hotter than forecast, expect volatility'
+        : '▼ SURPRISE — cooler than forecast, expect volatility';
+  }
+
+  /// News pane: the macro-backdrop themes (display only) and the collected
+  /// headlines. Headline + source + age + link only — never article text.
+  Widget _newsPane() {
+    final themes = MockFixtures.digestThemes;
+    final headlines = MockFixtures.headlines;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(18, 0, 18, 0),
+          child: HarborEyebrow(
+            'Macro backdrop · display only',
+            color: harborFaint,
+          ),
+        ),
+        const SizedBox(height: 9),
+        for (final theme in themes) ...[
+          HarborCard(
+            radius: 16,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    theme.theme,
+                    style: const TextStyle(
+                      fontFamily: 'Sora',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                PressurePill(pressure: theme.pressure),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        const SizedBox(height: 6),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 18),
+          child: HarborEyebrow('Gold news · headlines only', color: harborFaint),
+        ),
+        const SizedBox(height: 9),
+        if (headlines.isEmpty)
+          const _SilenceNote('No headlines collected.')
+        else
+          for (final headline in headlines) ...[
+            _NewsCard(item: headline),
+            const SizedBox(height: 8),
+          ],
       ],
     );
   }
 }
 
+/// One scheduled release. Impact + title + mute bell on the top line, the
+/// currency badge and the forecast/previous figures below.
+///
+/// A muted row dims to 45% (mockup `.erow.muted`) so the guard's armed count
+/// and the calendar never disagree about what is actually watched.
 class _EventRow extends StatelessWidget {
-  const _EventRow({required this.event});
+  const _EventRow({
+    required this.event,
+    required this.muted,
+    required this.onToggleMute,
+  });
 
   final DisplayEvent event;
+  final bool muted;
+  final VoidCallback onToggleMute;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      // Mockup `.erow` radius is 16px (not the theme default 18px).
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: harborLine),
-      ),
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
+    return Opacity(
+      opacity: muted ? 0.45 : 1,
+      child: HarborCard(
+        radius: 16,
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 13),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+            Row(
+              children: [
+                ImpactPill(impact: event.impact),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
                     event.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontFamily: 'Sora',
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${event.currency} · F ${event.forecast ?? '—'} · P ${event.previous ?? '—'}',
-                    style: const TextStyle(
-                      fontFamily: 'Space Mono',
-                      fontSize: 10,
-                      color: harborDim,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'in ${formatCountdown(event.startsIn)}',
-                    style: const TextStyle(
-                      fontFamily: 'Space Mono',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: harborDim,
-                    ),
-                  ),
-                ],
+                ),
+                const SizedBox(width: 8),
+                _MuteBell(
+                  muted: muted,
+                  label: '${muted ? 'Unmute' : 'Mute'} ${event.title} alerts',
+                  onTap: onToggleMute,
+                ),
+              ],
+            ),
+            const SizedBox(height: 9),
+            Wrap(
+              spacing: 8,
+              runSpacing: 5,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                HarborChip(event.currency, fontSize: 8),
+                _figure('FCAST', event.forecast),
+                _figure('PREV', event.previous),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'in ${formatCountdown(event.startsIn)}',
+              style: const TextStyle(
+                fontFamily: 'Space Mono',
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: harborDim,
               ),
             ),
-            ImpactPill(impact: event.impact),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// `KEY value`, or `KEY —` when the calendar has not published a figure.
+  /// Never a made-up number (rule 2).
+  static Widget _figure(String key, String? value) {
+    return Text(
+      '$key ${value ?? '—'}',
+      style: const TextStyle(
+        fontFamily: 'Space Mono',
+        fontSize: 10,
+        color: harborDim,
+      ),
+    );
+  }
+}
+
+/// Per-event mute (mockup `.bell`): a 44px bordered square holding the
+/// bundled UIcons bell, cobalt while armed and faint once muted.
+class _MuteBell extends StatelessWidget {
+  const _MuteBell({
+    required this.muted,
+    required this.label,
+    required this.onTap,
+  });
+
+  final bool muted;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      checked: !muted,
+      label: label,
+      child: Material(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: const BorderSide(color: harborLine),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Icon(
+              HarborIcons.bell,
+              size: 18,
+              color: muted ? harborFaint : harborCobalt,
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-/// Past events: actual vs forecast with surprise highlights (§3.3).
-class _ResultsTab extends StatelessWidget {
-  const _ResultsTab();
+/// One collected headline. Title + source + age + a cobalt link-out — the
+/// full article is never fetched or shown (licensing constraint), and the
+/// MVP has no `url_launcher`, so the link confirms with a placeholder toast.
+class _NewsCard extends StatelessWidget {
+  const _NewsCard({required this.item});
+
+  final DisplayNewsItem item;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (final e in MockFixtures.resultEvents)
-          Card(
-            // Mockup `.erow` radius is 16px (not the theme default 18px).
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: harborLine),
-            ),
-            margin: const EdgeInsets.only(bottom: 10),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          e.title,
-                          style: const TextStyle(
-                            fontFamily: 'Sora',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'A ${e.actual ?? '—'} · F ${e.forecast ?? '—'} · P ${e.previous ?? '—'}',
-                          style: const TextStyle(
-                            fontFamily: 'Space Mono',
-                            fontSize: 10,
-                            color: harborDim,
-                          ),
-                        ),
-                        if (e.isSurprise) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            e.surprise == 'hot'
-                                ? '▲ SURPRISE — hotter than forecast, expect volatility'
-                                : '▼ SURPRISE — cooler than forecast, expect volatility',
-                            style: const TextStyle(
-                              fontFamily: 'Space Mono',
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: harborShort,
-                            ),
-                          ),
-                        ] else ...[
-                          const SizedBox(height: 6),
-                          const Text(
-                            '○ IN LINE — near forecast',
-                            style: TextStyle(
-                              fontFamily: 'Space Mono',
-                              fontSize: 10,
-                              color: harborDim,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  ImpactPill(impact: e.impact),
-                ],
+    return HarborCard(
+      radius: 16,
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Opens ${item.url}')),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.title,
+                style: const TextStyle(
+                  fontFamily: 'Sora',
+                  fontSize: 13,
+                  height: 1.45,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// Macro backdrop (latest digest) + gold-news headlines (links only).
-class _NewsTab extends StatelessWidget {
-  const _NewsTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const KickLabel('MACRO BACKDROP · DISPLAY ONLY'),
-        const SizedBox(height: 8),
-        for (final t in MockFixtures.digestThemes)
-          Card(
-            // Mockup `.news` radius is 16px (not the theme default 18px).
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: harborLine),
-            ),
-            margin: const EdgeInsets.only(bottom: 8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              child: Row(
+              const SizedBox(height: 7),
+              Row(
                 children: [
                   Expanded(
                     child: Text(
-                      t.theme,
-                      style: const TextStyle(
-                        fontFamily: 'Sora',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  PressurePill(pressure: t.pressure),
-                ],
-              ),
-            ),
-          ),
-        const SizedBox(height: 12),
-        const KickLabel('GOLD NEWS · HEADLINES ONLY'),
-        const SizedBox(height: 8),
-        for (final n in MockFixtures.headlines)
-          Card(
-            // Mockup `.news` radius is 16px (not the theme default 18px).
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: harborLine),
-            ),
-            margin: const EdgeInsets.only(bottom: 8),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Opens ${n.url}')),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      n.title,
-                      style: const TextStyle(
-                        fontFamily: 'Sora',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      '${n.source.toUpperCase()} · ${n.ageText} · OPEN ORIGINAL ↗',
+                      '${item.source.toUpperCase()} · ${item.ageText}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontFamily: 'Space Mono',
                         fontSize: 10,
@@ -341,12 +656,54 @@ class _NewsTab extends StatelessWidget {
                         color: harborFaint,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    HarborIcons.arrowUpRight,
+                    size: 12,
+                    color: harborCobalt,
+                  ),
+                  const SizedBox(width: 5),
+                  const Text(
+                    'OPEN ORIGINAL',
+                    style: TextStyle(
+                      fontFamily: 'Sora',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: harborCobalt,
+                    ),
+                  ),
+                ],
               ),
-            ),
+            ],
           ),
-      ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Empty state for a filtered or not-yet-published slice. Silence, not a
+/// signal — an empty calendar must never read as an instruction (rule 9).
+class _SilenceNote extends StatelessWidget {
+  const _SilenceNote(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontFamily: 'Sora',
+          fontSize: 12,
+          color: harborFaint,
+        ),
+      ),
     );
   }
 }

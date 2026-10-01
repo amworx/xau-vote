@@ -24,3 +24,13 @@
 - **decision:** Pip size is a **user setting** with two options — **A: 1 pip = 0.10** or **B: 1 pip = 0.01** — **defaulting to B** per user (FXPro/Vantage trader). All mockup figures use B-default, computed from the 4,278 entry reference (spec §11 example): SL 4,262 → −1600 pips; TP1 4,295 → +1700; TP2 4,315 → +3700; TP3 4,340 → +6200; entry zone 4,275–80 → 500-pip zone; live P&L at 4,278.30 → IN-PROFIT +30 pips. Switching the setting multiplies all pip displays ×10 or ÷10 from the single point-based source of truth (points never change).
 - **rationale:** User directive; brokers differ and traders think in their own broker's pips. Points (spec §11) remain the canonical internal unit; pips are display-only.
 - **status:** accepted
+
+---
+
+## D-20260929-004 — Single design language across all 6 tabs; no VIEW ANALYSIS CTA
+
+- **date:** 2026-09-29
+- **decision:** (1) The new Radar design system (`docs/mockups/mockup.html`) becomes the app-wide visual language. The other five tabs (Signal, Sources, History, Events, Settings) are restyled from that system now rather than waiting for a second designer pass; the legacy `screen-*.html` styling is retired. (2) The Radar `VIEW ANALYSIS` button is **not** restored. Radar is the glance screen, Signal is the detailed analysis screen, and the six-tab bottom nav provides direct access to Signal; the nav itself carries the affordance rather than an extra prominent CTA.
+- **rationale:** One coherent design language beats a redesigned home screen beside five legacy screens. Adding a second CTA would duplicate navigation the tab bar already provides.
+- **consequence:** The next formal design pass should cover all six screens so navigation and the component system can be validated end-to-end, not Radar alone.
+- **status:** accepted

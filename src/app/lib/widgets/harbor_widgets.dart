@@ -36,32 +36,41 @@ class HarborHeader extends StatelessWidget {
         children: [
           const BrandMark(),
           const SizedBox(width: 9),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'XAU RADAR',
-                style: TextStyle(
-                  fontFamily: 'Sora',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.7,
-                ),
-              ),
-              if (subtitle != null)
-                Text(
-                  subtitle!,
-                  style: const TextStyle(
-                    fontFamily: 'Space Mono',
-                    fontSize: 10,
-                    color: harborFaint,
-                    letterSpacing: 0.8,
+          // `Expanded` + ellipsis: a long section subtitle (the Events
+          // "MACRO CONTEXT · NEVER VOTES" guard banner) must shorten, never
+          // push the LIVE pill off the 390px page.
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'XAU RADAR',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Sora',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.7,
                   ),
                 ),
-            ],
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Space Mono',
+                      fontSize: 10,
+                      color: harborFaint,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+              ],
+            ),
           ),
-          const Spacer(),
+          const SizedBox(width: 9),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
             decoration: BoxDecoration(
@@ -459,22 +468,335 @@ class TimeframeSwitch extends StatelessWidget {
 }
 
 /// White card shell shared by every Radar state card (mockup `.verdict`).
+///
+/// Thin wrapper over [HarborCard] at the Radar section gutter, kept so the
+/// Radar screen's own finders keep resolving to one widget.
 class VerdictCardShell extends StatelessWidget {
   const VerdictCardShell({super.key, required this.child});
 
   final Widget child;
 
   @override
+  Widget build(BuildContext context) => HarborCard(margin: 0, child: child);
+}
+
+// ---------------------------------------------------------------------------
+// Unified Harbor primitives.
+//
+// The Radar screen is the design-system reference, so these are its surfaces
+// factored out for the rest of the app. Every size/radius/colour is
+// transcribed from the inline `<style>` of `docs/mockups/mockup.html` —
+// nothing here derives a new value.
+// ---------------------------------------------------------------------------
+
+/// White surface shell (mockup `.verdict`): 1px [harborLine] border, 15px
+/// padding, 18px radius.
+///
+/// [margin] is the 18px page gutter the Radar sections use — pass 0 when the
+/// caller already pads the list. Dense list rows drop to `radius: 16`.
+/// Wraps its child in a transparent [Material] so an [InkWell] inside an
+/// expandable row still has somewhere to paint its splash.
+class HarborCard extends StatelessWidget {
+  const HarborCard({
+    super.key,
+    required this.child,
+    this.radius = 18,
+    this.padding = const EdgeInsets.all(15),
+    this.margin = 18,
+  });
+
+  final Widget child;
+  final double radius;
+  final EdgeInsets padding;
+  final double margin;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: margin),
+      child: Container(
+        width: double.infinity,
+        padding: padding,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: harborLine),
+          borderRadius: BorderRadius.circular(radius),
+        ),
+        child: Material(type: MaterialType.transparency, child: child),
+      ),
+    );
+  }
+}
+
+/// Neutral chip (mockup `.src`): 8–9px [chipInk] on a [chipBg] pill, with an
+/// optional leading [HarborIcons] glyph. Carries no accent of its own — the
+/// glyph colour is the caller's signal (agreement, direction, …).
+class HarborChip extends StatelessWidget {
+  const HarborChip(
+    this.label, {
+    super.key,
+    this.glyph,
+    this.glyphColor,
+    this.fontSize = 9,
+  });
+
+  final String label;
+  final IconData? glyph;
+  final Color? glyphColor;
+  final double fontSize;
+
+  @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: chipBg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (glyph != null) ...[
+            Icon(glyph, size: fontSize + 2, color: glyphColor ?? chipInk),
+            const SizedBox(width: 3),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Sora',
+              fontSize: fontSize,
+              color: chipInk,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small bordered pill (mockup `.tp button`): 8px radius, 9px Sora w700.
+///
+/// Idle is white on a [harborLine] border; [active] is the cobalt selection
+/// (cobalt border + cobalt ink on [tpActiveBg]). Renders a plain shell when
+/// [onTap] is null so a decorative pill is never painted as disabled.
+class HarborPill extends StatelessWidget {
+  const HarborPill(
+    this.label, {
+    super.key,
+    this.active = false,
+    this.onTap,
+    this.fontSize = 9,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback? onTap;
+  final double fontSize;
+
+  BoxDecoration get _decoration => BoxDecoration(
+        color: active ? tpActiveBg : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: active ? harborCobalt : harborLine),
+      );
+  Widget get _label => Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Sora',
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+          color: active ? harborCobalt : harborDim,
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final shell = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+      child: _label,
+    );
+    if (onTap == null) {
+      return Container(decoration: _decoration, child: shell);
+    }
+    return TextButton(
+      onPressed: onTap,
+      style: ButtonStyle(
+        padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+        minimumSize: const WidgetStatePropertyAll(Size(0, 0)),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        backgroundColor: WidgetStatePropertyAll(
+          active ? tpActiveBg : Colors.white,
+        ),
+        side: WidgetStatePropertyAll(
+          active ? const BorderSide(color: harborCobalt)
+              : const BorderSide(color: harborLine),
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        textStyle: WidgetStatePropertyAll(
+          TextStyle(
+            fontFamily: 'Sora',
+            fontSize: fontSize,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      child: shell,
+    );
+  }
+}
+
+/// Full-bleed action button (mockup `.actions button`): 38px tall, 10px
+/// radius, Sora 11 w800. [primary] is the cobalt CTA; otherwise a white
+/// button with a [harborLine] border and [harborInk] label.
+///
+/// This is the Radar card's Copy/Share button, factored out — callers wrap it
+/// in [Expanded] for the paired action row.
+class HarborActionButton extends StatelessWidget {
+  const HarborActionButton({
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.primary = true,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool primary;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: Material(
+        color: primary ? harborCobalt : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: primary ? harborCobalt : harborLine),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: primary ? Colors.white : harborInk,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Hairline rule (mockup `--divider`, used by `.agree` and the Sources
+/// detail table).
+///
+/// Horizontal by default. Pass [verticalExtent] for the 1px column rule
+/// between table columns — the extent is explicit so the rule never has to
+/// resolve against an unbounded cross-axis.
+class HarborDivider extends StatelessWidget {
+  const HarborDivider({
+    super.key,
+    this.indent = 0,
+    this.verticalExtent,
+    this.color = divider,
+  });
+
+  final double indent;
+  final double? verticalExtent;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    if (verticalExtent != null) {
+      return SizedBox(
+        width: 1,
+        height: verticalExtent,
+        child: ColoredBox(color: color),
+      );
+    }
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: indent),
+      child: SizedBox(height: 1, child: ColoredBox(color: color)),
+    );
+  }
+}
+
+/// Numeral + eyebrow pair for stat headers (the History stat tile), shared so
+/// every screen renders headline figures identically.
+///
+/// The numeral is Space Mono — the unified language sets every figure in the
+/// mono face so columns align.
+class HarborStat extends StatelessWidget {
+  const HarborStat({
+    super.key,
+    required this.value,
+    required this.label,
+    this.valueColor = harborInk,
+    this.fontSize = 20,
+  });
+
+  final String value;
+  final String label;
+  final Color valueColor;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: harborLine),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: child,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Space Mono',
+              fontSize: fontSize,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+              color: valueColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          HarborEyebrow(label),
+        ],
+      ),
+    );
+  }
+}
+
+/// Expand/collapse affordance (mockup `.chev`): the `›` text glyph, rotated
+/// 90° and turned cobalt while the row is open.
+///
+/// A text glyph rather than an icon font — the mockup draws it that way, and
+/// no Material chevron ships the same weight.
+class HarborChevron extends StatelessWidget {
+  const HarborChevron({super.key, required this.open, this.size = 16});
+
+  final bool open;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return RotatedBox(
+      quarterTurns: open ? 1 : 0,
+      child: Text(
+        '›',
+        style: TextStyle(fontSize: size, color: open ? harborCobalt : harborFaint),
+      ),
     );
   }
 }
@@ -739,40 +1061,14 @@ class TargetScopePills extends StatelessWidget {
     required bool isActive,
     required VoidCallback onTap,
   }) {
-    return TextButton(
-      onPressed: onTap,
-      style: ButtonStyle(
-        padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-        ),
-        minimumSize: const WidgetStatePropertyAll(Size(0, 0)),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        backgroundColor: WidgetStatePropertyAll(
-          isActive ? tpActiveBg : Colors.white,
-        ),
-        foregroundColor: WidgetStatePropertyAll(
-          isActive ? harborCobalt : harborDim,
-        ),
-        side: WidgetStatePropertyAll(
-          BorderSide(color: isActive ? harborCobalt : harborLine),
-        ),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        textStyle: const WidgetStatePropertyAll(
-          TextStyle(
-            fontFamily: 'Sora',
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-      child: Text(label),
-    );
+    return HarborPill(label, active: isActive, onTap: onTap);
   }
 }
 
 /// One collected source behind the consensus (mockup `.src`).
+///
+/// The agreement mark is part of the label so the chip's whole text stays one
+/// widget — the glyph-capable [HarborChip] is for rows that lead with an icon.
 class SourceChip extends StatelessWidget {
   const SourceChip({super.key, required this.label, required this.agrees});
 
@@ -781,21 +1077,7 @@ class SourceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      decoration: BoxDecoration(
-        color: chipBg,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        '$label ${agrees ? '✓' : '×'}',
-        style: const TextStyle(
-          fontFamily: 'Sora',
-          fontSize: 8,
-          color: chipInk,
-        ),
-      ),
-    );
+    return HarborChip('$label ${agrees ? '✓' : '×'}', fontSize: 8);
   }
 }
 
@@ -1033,135 +1315,36 @@ class EventGuardrailBar extends StatelessWidget {
   }
 }
 
-/// One level cell (entry / stop / TP) in the 2-column grid.
-class LevelCell extends StatelessWidget {
-  const LevelCell({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.subtitle,
-    required this.valueColor,
-  });
-
-  final IconData icon;
-  final String title;
-  final String value;
-  final String subtitle;
-  final Color valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 15, color: harborFaint),
-                const SizedBox(width: 7),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: 'Sora',
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 2,
-                    color: harborFaint,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 7),
-            Text(
-              value,
-              style: TextStyle(
-                fontFamily: 'Space Mono',
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: valueColor,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontFamily: 'Space Mono',
-                fontSize: 10,
-                color: harborFaint,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// TP target-scope selector (spec §10), shared by Radar + Signal.
+///
+/// Restyled onto [HarborPill] so the Signal screen's control is the same
+/// widget language as the Radar card's TP pills (mockup `.tp`). Selection
+/// behaviour is unchanged: it writes straight to [AppState.targets] and
+/// narrows the visible targets on every screen that reads it.
 class TargetSelector extends StatelessWidget {
   const TargetSelector({super.key});
+
+  static const _options = [
+    (TargetSelection.tp1Only, 'TP1'),
+    (TargetSelection.tp1Tp2, 'TP1 + 2'),
+    (TargetSelection.all, 'TP1 + 2 + 3'),
+  ];
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    return SegmentedButton<TargetSelection>(
-      segments: const [
-        ButtonSegment(value: TargetSelection.tp1Only, label: Text('TP1')),
-        ButtonSegment(value: TargetSelection.tp1Tp2, label: Text('TP1 + 2')),
-        ButtonSegment(
-          value: TargetSelection.all,
-          label: Text('TP1 + 2 + 3'),
-        ),
-      ],
-      selected: {state.targets},
-      onSelectionChanged: (selected) => state.setTargets(selected.first),
-      style: const ButtonStyle(
-        textStyle: WidgetStatePropertyAll(
-          TextStyle(
-            fontFamily: 'Space Mono',
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.6,
+    return Row(
+      children: [
+        for (var i = 0; i < _options.length; i++) ...[
+          if (i > 0) const SizedBox(width: 6),
+          HarborPill(
+            _options[i].$2,
+            active: state.targets == _options[i].$1,
+            onTap: () => state.setTargets(_options[i].$1),
           ),
-        ),
-      ),
+        ],
+      ],
     );
-  }
-}
-
-/// Two-column level grid built from [Row]s (not a nested [GridView]:
-/// shrink-wrapped scrollables inside the screen [ListView] crash the
-/// semantics walk in widget tests).
-class LevelGrid extends StatelessWidget {
-  const LevelGrid({super.key, required this.cells});
-
-  final List<Widget> cells;
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = <Widget>[];
-    for (var i = 0; i < cells.length; i += 2) {
-      final end = (i + 2).clamp(0, cells.length);
-      final pair = cells.sublist(i, end);
-      rows.add(
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var j = 0; j < pair.length; j++) ...[
-              if (j > 0) const SizedBox(width: 10),
-              Expanded(child: pair[j]),
-            ],
-            if (pair.length == 1) const Expanded(child: SizedBox()),
-          ],
-        ),
-      );
-      if (end < cells.length) rows.add(const SizedBox(height: 10));
-    }
-    return Column(children: rows);
   }
 }
 

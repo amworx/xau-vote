@@ -60,7 +60,8 @@ abstract final class MockFixtures {
       direction: Direction.long,
       agrees: true,
       entryText: '4,275-4,280',
-      stopText: '4,262 · −1600p',
+      stopText: '4,262',
+      stopPoints: -16.0,
       targetsText: '4,295 / 4,315',
       freshnessText: '6m AGO',
       reasoning: 'Bounce off the 4275 shelf; momentum turning up on the 15M.',
@@ -75,7 +76,8 @@ abstract final class MockFixtures {
       direction: Direction.long,
       agrees: true,
       entryText: '4,276-4,281',
-      stopText: '4,264 · −1500p',
+      stopText: '4,264',
+      stopPoints: -15.0,
       targetsText: '4,298 / 4,320',
       freshnessText: '11m AGO',
       reasoning: 'Higher low printed; entry on retest of broken intraday high.',
@@ -90,7 +92,8 @@ abstract final class MockFixtures {
       direction: Direction.long,
       agrees: true,
       entryText: '4,274-4,279',
-      stopText: '4,263 · −1600p',
+      stopText: '4,263',
+      stopPoints: -16.0,
       targetsText: '4,296 / 4,318',
       freshnessText: '14m AGO',
       reasoning: 'Cluster of bids 4274-80; invalidation clean below 4263.',
@@ -105,7 +108,8 @@ abstract final class MockFixtures {
       direction: Direction.long,
       agrees: true,
       entryText: '4,275-4,282',
-      stopText: '4,261 · −1800p',
+      stopText: '4,261',
+      stopPoints: -18.0,
       targetsText: '4,294 / 4,316',
       freshnessText: '19m AGO',
       reasoning: 'Asia low holding; long dips toward the zone.',
@@ -132,57 +136,73 @@ abstract final class MockFixtures {
   ];
 
   /// Past signals, newest first, covering every terminal state.
+  ///
+  /// Outcomes are stored in POINTS (canonical, spec A§11); the pip figure a
+  /// row shows is derived from [DisplayHistoryEntry.pipsPoints] through the
+  /// active [PipConvention] (D-20260927-003), never preformatted.
   static const List<DisplayHistoryEntry> history = [
     DisplayHistoryEntry(
       direction: Direction.long,
       whenText: 'TODAY · 14:20',
       detailText: 'IN 4,102-07 · SL 4,088 · TP2 4,138 · STRONG 84',
       status: DisplayStatus.tp2Hit,
-      pipsText: '+3100 PIPS',
+      pipsPoints: 31,
     ),
     DisplayHistoryEntry(
       direction: Direction.short,
       whenText: 'TODAY · 09:05',
       detailText: 'IN 4,150-55 · SL 4,168 · OUT 4,170 · MODERATE 66',
       status: DisplayStatus.invalidated,
-      pipsText: '-1500 PIPS',
+      pipsPoints: -15,
     ),
     DisplayHistoryEntry(
       direction: Direction.long,
       whenText: 'YESTERDAY · 16:40',
       detailText: 'IN 4,090-95 · SL 4,078 · TP1 4,112 · STRONG 81',
       status: DisplayStatus.tp1Hit,
-      pipsText: '+1700 PIPS',
+      pipsPoints: 17,
     ),
     DisplayHistoryEntry(
       direction: null,
       whenText: 'YESTERDAY · 11:15',
-      detailText: '2 LONG · 2 SHORT · 1 NEUTRAL — divided, correctly held',
+      detailText: '2 LONG · 2 SHORT · 1 NEUTRAL — correctly held',
       status: null,
-      pipsText: '0 PIPS',
+      pipsPoints: 0,
     ),
     DisplayHistoryEntry(
       direction: Direction.long,
       whenText: '2 DAYS AGO · 10:30',
       detailText: 'IN 4,060-65 · expired before confirmation',
       status: DisplayStatus.expired,
-      pipsText: '0 PIPS',
+      pipsPoints: 0,
     ),
     DisplayHistoryEntry(
       direction: Direction.short,
       whenText: '3 DAYS AGO · 13:10',
       detailText: 'IN 4,210-15 · SL 4,228 · TP3 4,150 · VERY STRONG 91',
       status: DisplayStatus.tp3Hit,
-      pipsText: '+6200 PIPS',
+      pipsPoints: 62,
     ),
     DisplayHistoryEntry(
       direction: Direction.long,
       whenText: '3 DAYS AGO · 08:45',
       detailText: 'IN 4,180-85 · tracking cancelled at READY',
       status: DisplayStatus.developing,
-      pipsText: '0 PIPS',
+      pipsPoints: 0,
     ),
   ];
+
+  /// Net pips over the whole 7-day window, in points — the History stat
+  /// header aggregates every closed setup in the window, so it is a recorded
+  /// total and not a re-derivation of the seven rows listed above. Scaled by
+  /// [PipConvention] at render time (D-20260927-003): +8400 pips at B.
+  static const double historyNetPipsPoints = 84;
+
+  /// Open-position P/L in points, from the 4,278 mock fill reference at the
+  /// live 4,278.30 quote (D-20260927-003): +30 pips at convention B, +3 at A.
+  /// A point value rather than a literal, so the position readouts rescale
+  /// with the convention like every other pip figure.
+  static const double openPositionPoints = 0.30;
 
   // -------------------------------------------------------------------------
   // TASK-07 — events & news fixtures (MOCK_MODE). Rule 9: context only.

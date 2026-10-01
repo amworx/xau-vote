@@ -174,7 +174,7 @@ class RadarScreen extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _ActionButton(
+                  child: HarborActionButton(
                     label: 'COPY LEVELS',
                     onTap: () => _publish(
                       context,
@@ -186,9 +186,9 @@ class RadarScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 7),
                 Expanded(
-                  child: _ActionButton(
-                    label: '\u2197 SHARE',
-                    outlined: true,
+                  child: HarborActionButton(
+                    label: '↗ SHARE',
+                    primary: false,
                     onTap: () => _publish(
                       context,
                       signal,
@@ -421,48 +421,6 @@ class _NoConsensusCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Full-bleed action button (mockup `.actions button`).
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.label,
-    required this.onTap,
-    this.outlined = false,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final bool outlined;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 38,
-      child: Material(
-        color: outlined ? Colors.white : harborCobalt,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: outlined ? harborLine : harborCobalt),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: outlined ? harborInk : Colors.white,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

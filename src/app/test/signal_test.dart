@@ -7,7 +7,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xau_radar/main.dart';
-import 'package:xau_radar/models/display_models.dart';
+import 'package:xau_radar/widgets/harbor_widgets.dart';
 
 /// Substrings that must never appear in any rendered text (spec §7).
 /// Written as adjacent literals so this file itself contains no banned
@@ -35,7 +35,9 @@ void main() {
     await _openSignal(tester);
 
     expect(find.text('ACTIVE SETUP · 15M LONG'), findsOneWidget);
-    expect(find.text('▲ LONG'), findsOneWidget);
+    // Direction is the HarborPill badge (trend glyph + label), not a text mark.
+    expect(find.text('LONG'), findsOneWidget);
+    expect(find.text('▲ LONG'), findsNothing);
     expect(find.text('4,275-4,280'), findsOneWidget);
     expect(find.text('4,262'), findsOneWidget);
     expect(find.text('4,295'), findsOneWidget);
@@ -70,8 +72,9 @@ void main() {
     expect(find.text('4,340'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('TP1 + 2 + 3'), 300);
     await tester.pumpAndSettle();
+    // The scope control is the shared HarborPill row, not a SegmentedButton.
     final tp1 = find.descendant(
-      of: find.byType(SegmentedButton<TargetSelection>),
+      of: find.byType(TargetSelector),
       matching: find.text('TP1'),
     );
     await tester.ensureVisible(tp1);

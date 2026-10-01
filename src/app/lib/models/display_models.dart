@@ -150,6 +150,7 @@ class DisplaySource {
     required this.tp1HitRate,
     required this.tp2HitRate,
     required this.tp3HitRate,
+    this.stopPoints,
   });
 
   final String id;
@@ -157,7 +158,12 @@ class DisplaySource {
   final Direction direction;
   final bool agrees;
   final String entryText;
+
+  /// The desk's own stop LOSS LEVEL, e.g. `4,262`. Never carries a pip figure
+  /// — the pip distance is derived from [stopPoints] at render time so it
+  /// follows the trader's [PipConvention] (D-20260927-003).
   final String stopText;
+
   final String targetsText;
   final String freshnessText;
   final String reasoning;
@@ -165,6 +171,16 @@ class DisplaySource {
   final int tp1HitRate;
   final int tp2HitRate;
   final int tp3HitRate;
+
+  /// Distance from the desk's own fill to its stop, in POINTS — the canonical
+  /// unit (spec A§11). Signed: negative when the stop sits below the fill.
+  ///
+  /// The quoted `−1600p` a desk publishes is a pip string in the desk's own
+  /// convention, so it is recorded here as the point distance it means and the
+  /// pip figure is re-derived for the trader (D-20260927-003). Null when the
+  /// source quotes a bare level with no distance; the row then shows the level
+  /// alone rather than inventing one (product rule 2 — never fabricate).
+  final double? stopPoints;
 }
 
 /// One closed/past signal row for the History screen.
@@ -174,14 +190,21 @@ class DisplayHistoryEntry {
     required this.whenText,
     required this.detailText,
     required this.status,
-    required this.pipsText,
+    required this.pipsPoints,
   });
 
   final Direction? direction;
   final String whenText;
   final String detailText;
   final DisplayStatus? status;
-  final String pipsText;
+
+  /// Realised distance of the closed setup in POINTS — the canonical unit
+  /// (spec A§11). Deliberately not a preformatted pip string: the pip figure
+  /// is derived from this at render time through [PipConvention]
+  /// (D-20260927-003), so switching the convention rescales the row instead
+  /// of leaving a stale convention behind. Zero for a setup that never closed
+  /// (no consensus, expired, cancelled) rather than an invented result.
+  final double pipsPoints;
 }
 
 /// Target-scope selection (spec §10).
@@ -211,19 +234,89 @@ double riskReward({
   return (target - entryLow) / risk;
 }
 
-/// Pips (×0.01 per D-003) from the zone mid to [target], rounded DOWN to
-/// the nearest hundred to match the mock pipeline's display rounding
-/// (e.g. 17.5 pts → +1700, −15.5 pts → −1600).
-int pipsTo(double target, double entryMid) =>
-    ((target - entryMid)).floor() * 100;
+/// Pip-size convention — accepted decision D-20260927-003.
+///
+/// Points are canonical (spec A§11); **pips are a display-only unit** and
+/// brokers disagree on their size, so the trader picks one of two:
+///
+/// * **A — 1 pip = 0.10 points** (one point = 10 pips)
+/// * **B — 1 pip = 0.01 points** (one point = 100 pips)
+///
+/// **B is the default** (the user trades FXPro/Vantage). Switching rescales
+/// every pip figure ×10 (B) or ÷10 (A) from the same point value: a price, a
+/// level and an R:R are never touched by the convention (D-20260927-003).
+enum PipConvention {
+  /// A — 1 pip = 0.10 points.
+  a,
+
+  /// B — 1 pip = 0.01 points. Default (FXPro/Vantage quoting).
+  b,
+}
+
+/// Display scaling and wording for a [PipConvention].
+extension PipConventionScale on PipConvention {
+  /// Points per pip: A → 10, B → 100. The single multiplier every pip
+  /// readout derives from.
+  int get pipFactor => switch (this) {
+    PipConvention.a => 10,
+    PipConvention.b => 100,
+  };
+
+  /// The pip size itself as the picker and the caption state it — `0.10` /
+  /// `0.01`.
+  String get pipSizeLabel => switch (this) {
+    PipConvention.a => '0.10',
+    PipConvention.b => '0.01',
+  };
+}
+
+/// Pips from the zone mid to [target] at [pipFactor] points per pip
+/// (D-20260927-003), rounded DOWN to a whole pip to match the mock
+/// pipeline's display rounding (e.g. 17.5 pts → +1700, −15.5 pts → −1600 at
+/// convention B).
+///
+/// Truncation runs before scaling and stays sign-asymmetric on purpose: the
+/// documented convention-B figures must not move.
+int pipsTo(double target, double entryMid, {required int pipFactor}) =>
+    (target - entryMid).floor() * pipFactor;
+
+/// Pips for a signed point distance that is not a whole-number level gap
+/// (a closed History outcome). The magnitude is truncated to a whole pip
+/// before scaling, so a sign can never round a truncated value up.
+int pipsFromPoints(double points, {required int pipFactor}) {
+  final magnitude = points.abs().floor() * pipFactor;
+  return points < 0 ? -magnitude : magnitude;
+}
+
+/// Signed History outcome as a display string, e.g. `+3100 PIPS`.
+String pipsLabel(double points, {required int pipFactor}) {
+  final pips = pipsFromPoints(points, pipFactor: pipFactor);
+  final sign = pips > 0 ? '+' : (pips < 0 ? '-' : '');
+  return '$sign${pips.abs()} PIPS';
+}
+
+/// Pips for a LIVE price move (the open position's P/L), which is fractional
+/// where a level distance is whole — rounded to the nearest pip instead of
+/// truncated, so +0.30 pts reads `+30` at convention B and `+3` at A.
+///
+/// Only the open P/L uses this. Entry/stop/target distances keep the
+/// truncating [pipsTo] so the documented convention-B figures cannot move.
+int pipsFromMove(double points, {required int pipFactor}) =>
+    (points * pipFactor).round();
+
+/// Pip width of an entry zone (e.g. 4,275–4,280 → `500 PIPS` at
+/// convention B), rounded to the nearest pip.
+int zonePips(double low, double high, {required int pipFactor}) =>
+    ((high - low) * pipFactor).round();
 
 /// Formats a Gold price with thousands separator and 2 decimals.
 String formatPrice(double value) {
   final parts = value.toStringAsFixed(2).split('.');
   final digits = parts[0].replaceAllMapped(
-    RegExp(r'\B(?=(\d{3})+(?!\d))'),
-    (_) => ',',
-  );
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (_) => ',',
+        );
+
   return '$digits.${parts[1]}';
 }
 
@@ -231,9 +324,9 @@ String formatPrice(double value) {
 String formatLevel(double value) {
   if (value == value.roundToDouble()) {
     return value.toInt().toString().replaceAllMapped(
-          RegExp(r'\B(?=(\d{3})+(?!\d))'),
-          (_) => ',',
-        );
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (_) => ',',
+    );
   }
   return formatPrice(value);
 }
