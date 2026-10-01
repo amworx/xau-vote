@@ -1,5 +1,5 @@
 /**
- * XAU Radar engine port (TypeScript, dependency-free, erasable syntax).
+ * XV (XAU-Vote) engine port (TypeScript, dependency-free, erasable syntax).
  *
  * SOURCE OF TRUTH: the Dart implementation in src/xau_core.
  * This port exists because Supabase Edge Functions run Deno, not Dart
@@ -16,6 +16,27 @@ export type SignalStatus =
   | 'noSetup' | 'developing' | 'ready' | 'confirmed' | 'active'
   | 'tp1Hit' | 'tp2Hit' | 'tp3Hit' | 'invalidated' | 'expired';
 export type Freshness = 'veryFresh' | 'fresh' | 'aging' | 'expired';
+
+/**
+ * Engine `camelCase` status → DB `SCREAMING_CASE` status.
+ *
+ * The `consensus_signals.status` CHECK constraint (migration 0001) stores
+ * `TP1_HIT`, `NO_SETUP`, … while this engine speaks `tp1Hit`, `noSetup`. Every
+ * write must go through this so the CHECK never rejects a row.
+ */
+export function toDbStatus(s: SignalStatus): string {
+  return s.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase();
+}
+
+/** DB `SCREAMING_CASE` status → engine `camelCase` status. Unknown → `expired`. */
+export function toEngineStatus(dbStatus: string): SignalStatus {
+  const normalized = dbStatus.toLowerCase().replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+  const known: SignalStatus[] = [
+    'noSetup', 'developing', 'ready', 'confirmed', 'active',
+    'tp1Hit', 'tp2Hit', 'tp3Hit', 'invalidated', 'expired',
+  ];
+  return (known as string[]).includes(normalized) ? (normalized as SignalStatus) : 'expired';
+}
 
 export interface PriceRange { low: number; high: number; }
 export interface ValueCluster {

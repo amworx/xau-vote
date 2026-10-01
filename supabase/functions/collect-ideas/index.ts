@@ -54,7 +54,7 @@ Deno.serve(async (_req) => {
     const row = {
       source_id: null as string | null,
       symbol: 'XAUUSD',
-      timeframe: 'm15',
+      timeframe: 'M15',
       direction: s.direction,
       entry_low: s.entryLow,
       entry_high: s.entryHigh,

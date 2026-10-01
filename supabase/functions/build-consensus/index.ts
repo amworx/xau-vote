@@ -20,10 +20,12 @@ import {
   clusterTakeProfits,
   strengthBand,
   isBlackout,
+  toDbStatus,
   CONSENSUS_THRESHOLD,
   MIN_DOMINANT_SHARE,
   MIN_INDEPENDENT_SOURCES,
   type Direction,
+  type SignalStatus,
 } from '../_shared/engine.ts';
 
 interface Idea {
@@ -79,7 +81,7 @@ Deno.serve(async (_req) => {
   const { data: ideas, error } = await db.from('trade_ideas')
     .select('*')
     .eq('symbol', 'XAUUSD')
-    .eq('timeframe', 'm15')
+    .eq('timeframe', 'M15')
     .gte('published_at', new Date(now.getTime() - 60 * 60000).toISOString())
     .order('published_at', { ascending: false });
   if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
@@ -87,8 +89,8 @@ Deno.serve(async (_req) => {
 
   const fail = async (reason: string, counts: Record<string, number>) => {
     await db.from('consensus_signals').insert({
-      symbol: 'XAUUSD', timeframe: 'm15', direction: 'neutral', strength: 0,
-      status: 'expired', created_at: now.toISOString(), updated_at: now.toISOString(),
+      symbol: 'XAUUSD', timeframe: 'M15', direction: 'neutral', strength: 0,
+      status: toDbStatus('expired'), created_at: now.toISOString(), updated_at: now.toISOString(),
       expires_at: now.toISOString(),
     });
     return Response.json({ ok: true, consensus: 'NO_CONSENSUS', reason, counts, eventContext });
@@ -99,8 +101,8 @@ Deno.serve(async (_req) => {
     const b = blocker as { id: string; title: string; starts_at: string };
     console.log(`build-consensus: BLACKOUT suppressed by event ${b.id} (${b.title} @ ${b.starts_at})`);
     await db.from('consensus_signals').insert({
-      symbol: 'XAUUSD', timeframe: 'm15', direction: 'neutral', strength: 0,
-      status: 'expired', created_at: now.toISOString(), updated_at: now.toISOString(),
+      symbol: 'XAUUSD', timeframe: 'M15', direction: 'neutral', strength: 0,
+      status: toDbStatus('expired'), created_at: now.toISOString(), updated_at: now.toISOString(),
       expires_at: now.toISOString(),
     });
     return Response.json({
@@ -165,7 +167,7 @@ Deno.serve(async (_req) => {
 
   const { data: signal, error: sigErr } = await db.from('consensus_signals').insert({
     symbol: 'XAUUSD',
-    timeframe: 'm15',
+    timeframe: 'M15',
     direction,
     strength: score,
     entry_low: entry.consensus.low,
@@ -174,7 +176,7 @@ Deno.serve(async (_req) => {
     tp1: tpList[0] ?? null,
     tp2: tpList[1] ?? null,
     tp3: tpList[2] ?? null,
-    status: 'developing',
+    status: toDbStatus('developing'),
     created_at: now.toISOString(),
     updated_at: now.toISOString(),
     expires_at: new Date(now.getTime() + 60 * 60000).toISOString(),

@@ -1,4 +1,4 @@
-# XAU Radar — shared ignores (each Dart/Flutter package also carries its own).
+# XV (XAU-Vote) — shared ignores (each Dart/Flutter package also carries its own).
 # See https://dart.dev/tools/private-files and https://docs.flutter.dev/tools/private-files
 
 # Secrets / environment — NEVER commit these (see AGENTS.md gotcha list pattern)
@@ -13,6 +13,14 @@ phone_ssh.txt
 # Supabase
 supabase/.branches
 supabase/.temp
+
+# Firebase — project-identifying config, never commit
+google-services.json
+GoogleService-Info.plist
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase_options.dart
+.firebase/
 
 # Flutter artifacts (the Flutter app commits pubspec.lock intentionally;
 # engine packages ignore theirs via their own .gitignore)

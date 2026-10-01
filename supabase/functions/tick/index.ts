@@ -15,7 +15,12 @@
  *      GOLD_API_KEY (optional until Gate G3), FCM_PROJECT_ID + FCM_KEY (optional)
  */
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { transition, type SignalStatus } from '../_shared/engine.ts';
+import {
+  transition,
+  toDbStatus,
+  toEngineStatus,
+  type SignalStatus,
+} from '../_shared/engine.ts';
 
 /**
  * Surprise thresholds, mirrored from fetch-events (canonical).
@@ -32,7 +37,14 @@ function surpriseFlag(title: string, actual: number, forecast: number): 'hot' | 
   return d > 0 ? 'hot' : 'cold';
 }
 
-const OPEN = ['developing', 'ready', 'confirmed', 'active', 'tp1Hit', 'tp2Hit'];
+/**
+ * OPEN statuses, in the schema's SCREAMING_CASE.
+ *
+ * The Dart engine (`SignalStatus`) uses camelCase (`tp1Hit`) while the
+ * `consensus_signals.status` CHECK constraint stores SCREAMING_CASE
+ * (`TP1_HIT`) — see migration 0001 line 92. Queries MUST use the DB form.
+ */
+const OPEN = ['DEVELOPING', 'READY', 'CONFIRMED', 'ACTIVE', 'TP1_HIT', 'TP2_HIT'] as const;
 
 interface Signal {
   id: string;
@@ -87,12 +99,16 @@ Deno.serve(async (_req) => {
   });
 
   const { data, error } = await db.from('consensus_signals')
-    .select('*').eq('symbol', 'XAUUSD').in('status', OPEN);
+    .select('*').eq('symbol', 'XAUUSD').in('status', OPEN as unknown as string[]);
   if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
 
   const transitions: { id: string; from: string; to: string }[] = [];
   const notify: { id: string; kind: string; price: number }[] = [];
-  for (const s of (data ?? []) as Signal[]) {
+  for (const row of (data ?? []) as Signal[]) {
+    // Row statuses are SCREAMING_CASE in the DB; the shared engine speaks
+    // camelCase. Translate at the boundary so the lifecycle logic below stays
+    // in the engine's vocabulary and only I/O uses the schema's.
+    const s: Signal = { ...row, status: toEngineStatus(row.status) };
     let next: SignalStatus | null = null;
     if (new Date(s.expires_at).getTime() <= now.getTime() && (s.status === 'ready' || s.status === 'confirmed')) {
       next = 'expired';
@@ -119,7 +135,7 @@ Deno.serve(async (_req) => {
         transition(s.status, next);
       } catch { continue; }
       const { error: upErr } = await db.from('consensus_signals')
-        .update({ status: next, updated_at: now.toISOString() }).eq('id', s.id);
+        .update({ status: toDbStatus(next), updated_at: now.toISOString() }).eq('id', s.id);
       if (!upErr) {
         transitions.push({ id: s.id, from: s.status, to: next });
         if (['confirmed', 'invalidated', 'tp1Hit', 'tp2Hit', 'tp3Hit'].includes(next)) {
@@ -229,7 +245,7 @@ Deno.serve(async (_req) => {
     };
     for (const n of notify) {
       const ok = await sendFcm(
-        titles[n.kind] ?? 'XAU Radar update',
+        titles[n.kind] ?? 'XV update',
         `${n.kind} at ${n.price} · ${now.toISOString()}`,
         { signal_id: n.id, kind: n.kind, price: String(n.price) },
       );

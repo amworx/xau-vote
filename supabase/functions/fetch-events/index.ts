@@ -62,7 +62,8 @@ export class ManualSeed implements EventProvider {
     const m = now.getUTCMonth();
     // NFP: first Friday of this + next month (covers the 7-day window
     // whenever it falls due, plus the next print for the Upcoming list).
-    for (const [yy, mm] of [[y, m], ...(m === 11 ? [[y + 1, 0]] : [[y, m + 1]]] as [number, number][]) {
+    const months: [number, number][] = m === 11 ? [[y, 11], [y + 1, 0]] : [[y, m], [y, m + 1]];
+    for (const [yy, mm] of months) {
       const d = nfpDate(yy, mm);
       out.push({
         externalId: `manual-nfp-${yy}-${String(mm + 1).padStart(2, '0')}`,
