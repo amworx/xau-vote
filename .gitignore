@@ -31,3 +31,6 @@ Thumbs.db
 
 # Logs and scratch
 *.log
+
+# Duplicate of docs/mvp-specification.md - kept on disk, not tracked
+XAU Radar*.md
