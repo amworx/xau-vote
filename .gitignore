@@ -47,3 +47,5 @@ XAU Radar*.md
 src/xau_core/tool_dump.json
 backfill_bars.ndjson
 backfill.log
+warmup*.ndjson
+warmup*.sql
