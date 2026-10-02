@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xauvote/data/mock_fixtures.dart';
+import 'package:xauvote/config.dart' show mockMode;
 import 'package:xauvote/main.dart';
 import 'package:xauvote/models/display_models.dart';
 import 'package:xauvote/state/app_state.dart';
@@ -190,7 +191,8 @@ void main() {
 
   group('Signal + History readouts follow the active convention', () {
     testWidgets('B renders the documented figures and one-line cells',
-        (tester) async {
+        skip: !mockMode,
+      (tester) async {
       await _pumpApp(tester);
       await _openTab(tester, 'SIGNAL');
 
@@ -216,7 +218,8 @@ void main() {
     });
 
     testWidgets('picking A rescales the readouts and nothing else',
-        (tester) async {
+        skip: !mockMode,
+      (tester) async {
       await _pumpApp(tester);
       await _openTab(tester, 'SETTINGS');
       await tester.ensureVisible(find.text('A · 0.10'));
@@ -246,7 +249,8 @@ void main() {
       expect(wrappedTexts(tester), isEmpty);
     });
 
-    testWidgets('a source stop distance is derived, not stored', (tester) async {
+    testWidgets('a source stop distance is derived, not stored', skip: !mockMode,
+      (tester) async {
       await _pumpApp(tester);
       await _openTab(tester, 'SOURCES');
       await tester.tap(find.text('DESK A · GoldPulse'));
@@ -274,7 +278,8 @@ void main() {
 
   group('390px layout', () {
     testWidgets('no tab overflows or wraps a one-line string',
-        (tester) async {
+        skip: !mockMode,
+      (tester) async {
       await _pumpApp(tester);
       for (final tab in [
         'RADAR',

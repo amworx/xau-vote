@@ -165,6 +165,16 @@ Deno.serve(async (_req) => {
   );
   if (score < CONSENSUS_THRESHOLD) return fail('WEAK', counts);
 
+  // XV presents ONE active setup. Without this, every 5-minute run stacked a
+  // fresh DEVELOPING row on top of the previous one and the table accumulated
+  // 11 simultaneously-ACTIVE signals (observed live 2026-10-02). Supersede
+  // the open rows first so the newest consensus is the only live setup and
+  // "N of M agree" resolves to exactly one signal.
+  await db.from('consensus_signals')
+    .update({ status: toDbStatus('expired'), updated_at: now.toISOString() })
+    .eq('symbol', 'XAUUSD')
+    .in('status', ['DEVELOPING', 'READY', 'CONFIRMED', 'ACTIVE', 'TP1_HIT', 'TP2_HIT']);
+
   const { data: signal, error: sigErr } = await db.from('consensus_signals').insert({
     symbol: 'XAUUSD',
     timeframe: 'M15',

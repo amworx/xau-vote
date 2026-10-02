@@ -27,13 +27,45 @@ interface SeedIdea {
   reasoning: string;
 }
 
-// Manual seed only. Replaced by licensed adapters in Phase 7.
-const SEED_IDEAS: SeedIdea[] = [
-  { source: 'manual-seed', author: 'desk-a', direction: 'long', entryLow: 4275, entryHigh: 4280, stopLoss: 4262, takeProfits: [4295, 4315, 4340], publishedMinutesAgo: 6, reasoning: 'Bounce off the 4275 shelf; momentum turning up.' },
-  { source: 'manual-seed', author: 'desk-b', direction: 'long', entryLow: 4276, entryHigh: 4281, stopLoss: 4264, takeProfits: [4298, 4320], publishedMinutesAgo: 11, reasoning: 'Higher low printed; retest of broken high.' },
-  { source: 'manual-seed', author: 'desk-c', direction: 'long', entryLow: 4274, entryHigh: 4279, stopLoss: 4263, takeProfits: [4296, 4318], publishedMinutesAgo: 14, reasoning: 'Bid cluster 4274-80; clean invalidation below.' },
-  { source: 'manual-seed', author: 'desk-d', direction: 'short', entryLow: 4285, entryHigh: 4285, stopLoss: 4300, takeProfits: [4260], publishedMinutesAgo: 22, reasoning: 'Overextended into supply; fade the push.' },
+/**
+ * Manual seed only — replaced by licensed adapters once Gate G4 clears.
+ *
+ * Levels are expressed as OFFSETS FROM THE LIVE PRICE, not absolute numbers.
+ * Hardcoding 4275/4262 worked while the pipeline was fed a mock price of
+ * 4278.30, but the moment gold-api.com supplied a real quote (4178.50, then
+ * 4139.60 the next day) every seeded idea sat above the market and `tick`
+ * correctly invalidated all of them — 215 dead signals in one night.
+ *
+ * Anchoring to the quote keeps the demo pipeline honest against a moving
+ * market: the levels are always near price, so the lifecycle can actually be
+ * observed. They are still clearly labelled seed data, never a real desk view.
+ */
+const SEED_TEMPLATES: Array<
+  Omit<SeedIdea, 'entryLow' | 'entryHigh' | 'stopLoss' | 'takeProfits'> & {
+    entryLowOff: number; entryHighOff: number; stopOff: number; tpOffs: number[];
+  }
+> = [
+  { source: 'manual-seed', author: 'desk-a', direction: 'long', entryLowOff: -3, entryHighOff: 2, stopOff: -13, tpOffs: [7, 15, 24], publishedMinutesAgo: 6, reasoning: 'Bounce off the shelf; momentum turning up.' },
+  { source: 'manual-seed', author: 'desk-b', direction: 'long', entryLowOff: -2, entryHighOff: 3, stopOff: -12, tpOffs: [8, 17], publishedMinutesAgo: 11, reasoning: 'Higher low printed; retest of broken high.' },
+  { source: 'manual-seed', author: 'desk-c', direction: 'long', entryLowOff: -4, entryHighOff: 1, stopOff: -14, tpOffs: [7, 16], publishedMinutesAgo: 14, reasoning: 'Bid cluster just below; clean invalidation beneath.' },
+  { source: 'manual-seed', author: 'desk-d', direction: 'short', entryLowOff: 6, entryHighOff: 6, stopOff: 16, tpOffs: [-14], publishedMinutesAgo: 22, reasoning: 'Overextended into supply; fade the push.' },
 ];
+
+/** Build seed ideas around a reference price (the newest snapshot). */
+function seedIdeas(base: number): SeedIdea[] {
+  const r = (n: number) => Math.round((base + n) * 100) / 100;
+  return SEED_TEMPLATES.map((t) => ({
+    source: t.source,
+    author: t.author,
+    direction: t.direction,
+    entryLow: r(t.entryLowOff),
+    entryHigh: r(t.entryHighOff),
+    stopLoss: r(t.stopOff),
+    takeProfits: t.tpOffs.map(r),
+    publishedMinutesAgo: t.publishedMinutesAgo,
+    reasoning: t.reasoning,
+  }));
+}
 
 const fingerprint = (s: SeedIdea): string =>
   [s.direction, s.entryLow, s.entryHigh, s.stopLoss, s.takeProfits.join(','), s.author].join('|');
@@ -46,7 +78,18 @@ Deno.serve(async (_req) => {
   const stored: string[] = [];
   const rejected: { author: string; reason: string }[] = [];
 
-  for (const s of SEED_IDEAS) {
+  // Anchor the seed to the newest known price. Never invent one: if no
+  // snapshot exists the function declines rather than seeding around a guess.
+  const { data: snap } = await db.from('market_snapshots')
+    .select('price').eq('symbol', 'XAUUSD')
+    .order('timestamp', { ascending: false }).limit(1).maybeSingle();
+  const base = (snap as { price?: unknown } | null)?.price;
+  if (typeof base !== 'number' || !Number.isFinite(base) || base <= 0) {
+    return Response.json({ ok: false, error: 'No market snapshot to anchor seed ideas to.' }, { status: 503 });
+  }
+  const ideas = seedIdeas(base);
+
+  for (const s of ideas) {
     // Spec §4 filter chain: symbol → intraday → 15M → fresh → actionable.
     const fresh = freshnessBand(s.publishedMinutesAgo);
     if (fresh === 'expired') { rejected.push({ author: s.author, reason: 'STALE' }); continue; }
@@ -75,5 +118,5 @@ Deno.serve(async (_req) => {
     if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
     stored.push(s.author);
   }
-  return Response.json({ ok: true, stored, rejected, at: now.toISOString() });
+  return Response.json({ ok: true, anchoredTo: base, stored, rejected, at: now.toISOString() });
 });

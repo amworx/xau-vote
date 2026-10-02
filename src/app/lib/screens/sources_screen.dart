@@ -11,6 +11,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../config.dart';
+import '../data/live_data.dart';
 import '../data/mock_fixtures.dart';
 import '../icons.dart';
 import '../models/display_models.dart';
@@ -19,7 +21,9 @@ import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
 
 /// Independence factor reported by the consensus engine for the active setup
-/// (spec §3). Fixture-pinned in MOCK_MODE; live values arrive with T5.7.
+/// (spec §3). Fixture-pinned offline; the live engine reports it per signal, so
+/// a snapshot without contributing source rows prints `—` rather than a
+/// plausible-looking constant.
 const String _independence = '0.80';
 
 /// Agreement band + score for the active setup. Agreement, not a forecast
@@ -29,23 +33,62 @@ const String _agreement = 'STRONG 82';
 class SourcesScreen extends StatelessWidget {
   const SourcesScreen({super.key});
 
+  /// The polled snapshot for this build, or null in an offline build. See
+  /// [RadarScreen._liveOf] for why this is the single seam between the two.
+  static LiveData? _liveOf(BuildContext context) {
+    try {
+      return context.watch<LiveData>();
+    } on ProviderNotFoundException {
+      // A live build without its poller must fail loudly, never fall back to
+      // fixtures (product rule 2).
+      if (!mockMode) rethrow;
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    final sources = MockFixtures.sources;
+    final live = _liveOf(context);
+    // Offline: fixture desks, and the summary recomputes from the trader's
+    // toggles. Live: the pipeline's agreeing/total counts are the headline —
+    // the snapshot carries no contributing rows yet, so the row list (and the
+    // toggles that filter it) renders its honest empty state.
+    final signal = live != null
+        ? live.signal
+        : mockMode
+            ? MockFixtures.strongLong
+            : null;
+    final sources =
+        live != null ? const <DisplaySource>[] : MockFixtures.sources;
     final enabled = sources.where((s) => state.isSourceEnabled(s.id)).toList();
-    final agreeing = enabled.where((s) => s.agrees).length;
+    final agreeing = live != null
+        ? (signal?.agreeCount ?? 0)
+        : enabled.where((s) => s.agrees).length;
+    final total = live != null ? (signal?.totalCount ?? 0) : enabled.length;
     return ListView(
       key: const PageStorageKey<String>('sources'),
       padding: const EdgeInsets.only(bottom: 18),
       children: [
-        const HarborHeader(subtitle: 'SOURCES · #A482'),
-        _summary(agreeing, enabled.length, enabled),
+        HarborHeader(
+          subtitle: 'SOURCES · ${live != null ? signal?.id ?? 'NO CONSENSUS' : '#A482'}',
+        ),
+        _summary(
+          agreeing,
+          total,
+          enabled,
+          independence: live != null ? '—' : _independence,
+          agreement: live != null
+              ? (signal == null ? '—' : '${bandLabel(signal.band)} ${signal.strength}')
+              : _agreement,
+        ),
         const SizedBox(height: 11),
-        const Center(
+        Center(
           child: Text(
-            'Tap a card for full details · toggle to include',
-            style: TextStyle(
+            sources.isEmpty
+                ? 'Contributing rows arrive with the next pipeline run'
+                : 'Tap a card for full details · toggle to include',
+            style: const TextStyle(
               fontFamily: 'Space Mono',
               fontSize: 10,
               letterSpacing: 0.6,
@@ -56,12 +99,14 @@ class SourcesScreen extends StatelessWidget {
         const SizedBox(height: 5),
         for (final source in sources) _SourceCard(source: source),
         const SizedBox(height: 13),
-        const _IndependenceNote(),
+        _IndependenceNote(live: live != null),
         const SizedBox(height: 9),
-        const Center(
+        Center(
           child: Text(
-            'Fingerprints verified · 21:47:12',
-            style: TextStyle(
+            live != null
+                ? 'Dedup runs in the pipeline · no rows stored yet'
+                : 'Fingerprints verified · 21:47:12',
+            style: const TextStyle(
               fontFamily: 'Space Mono',
               fontSize: 10,
               color: harborFaint,
@@ -77,8 +122,16 @@ class SourcesScreen extends StatelessWidget {
   ///
   /// Only the enabled sources are listed, so flipping a toggle is visible in
   /// both the headline split and the chip row — the consensus recomputes on
-  /// every toggle, it is never a stale figure.
-  Widget _summary(int agreeing, int total, List<DisplaySource> enabled) {
+  /// every toggle, it is never a stale figure. That stays a local preference
+  /// (there is no preferences table): in a live build the headline comes from
+  /// the signal the pipeline published.
+  Widget _summary(
+    int agreeing,
+    int total,
+    List<DisplaySource> enabled, {
+    required String independence,
+    required String agreement,
+  }) {
     return Column(
       children: [
         Container(
@@ -144,13 +197,13 @@ class SourcesScreen extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18),
           child: Row(
-            children: const [
+            children: [
               Expanded(
-                child: HarborStat(value: _independence, label: 'Independence'),
+                child: HarborStat(value: independence, label: 'Independence'),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
-                child: HarborStat(value: _agreement, label: 'Agreement'),
+                child: HarborStat(value: agreement, label: 'Agreement'),
               ),
             ],
           ),
@@ -443,8 +496,15 @@ class _SourceCardState extends State<_SourceCard> {
 /// Independence explainer — a trust note, not a call to action, so it stays
 /// the quietest block on the screen: no border, no accent, no button. It
 /// explains how many independent votes the cluster is worth (rule 3).
+///
+/// Offline it describes the fixture cluster. Live it reports only what is
+/// true without stored rows: the engine decides the factor, and there is
+/// nothing yet to deduplicate — the fixture cluster's "counted as 3.2
+/// independent votes" would be a claim about rows that do not exist.
 class _IndependenceNote extends StatelessWidget {
-  const _IndependenceNote();
+  const _IndependenceNote({required this.live});
+
+  final bool live;
 
   @override
   Widget build(BuildContext context) {
@@ -461,10 +521,14 @@ class _IndependenceNote extends StatelessWidget {
           const HarborEyebrow('Independence check'),
           const SizedBox(height: 7),
           Text(
-            'A/B/C/E cluster tightly on levels but differ in author, wording '
-            'and timing → counted as 3.2 independent votes. '
-            'No copy-paste detected.',
-            style: TextStyle(
+            live
+                ? 'Independence is decided by the consensus engine. No '
+                    'contributing rows are stored for the active setup yet, '
+                    'so there is nothing to deduplicate.'
+                : 'A/B/C/E cluster tightly on levels but differ in author, '
+                    'wording and timing → counted as 3.2 independent votes. '
+                    'No copy-paste detected.',
+            style: const TextStyle(
               fontFamily: 'Space Mono',
               fontSize: 9.5,
               height: 1.7,

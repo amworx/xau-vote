@@ -11,11 +11,19 @@
 /// (D-20260927-003) — never from a stored pip string — so switching the
 /// convention rescales the log and the net total together. The sign is a
 /// recorded outcome, not a forecast, and is never presented as one.
+///
+/// LIVE MODE
+/// Rows and the stat tiles come from the polled [LiveData] snapshot, and the
+/// tiles are derived from exactly those rows — an offline build has no poller
+/// and keeps the recorded window totals. An empty live log renders the honest
+/// "no closed setups yet" state rather than the fixture log.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../config.dart';
+import '../data/live_data.dart';
 import '../data/mock_fixtures.dart';
 import '../models/display_models.dart';
 import '../state/app_state.dart';
@@ -25,11 +33,28 @@ import '../widgets/harbor_widgets.dart';
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
+  /// The polled snapshot for this build, or null in an offline build. See
+  /// [RadarScreen._liveOf] for why this is the single seam between the two.
+  static LiveData? _liveOf(BuildContext context) {
+    try {
+      return context.watch<LiveData>();
+    } on ProviderNotFoundException {
+      // A live build without its poller must fail loudly, never fall back to
+      // fixtures (product rule 2).
+      if (!mockMode) rethrow;
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Watched so a convention change in Settings rescales the log in place.
     final convention = context.watch<AppState>().pipConvention;
     final pipFactor = convention.pipFactor;
+    final live = _liveOf(context);
+    // Live rows come from the pipeline; an empty log is a real answer and
+    // renders the empty state below rather than fixture history.
+    final entries = live != null ? live.history : MockFixtures.history;
     return ListView(
       key: const PageStorageKey<String>('history'),
       // Horizontal gutters belong to the shared chrome (header 18px, cards
@@ -42,12 +67,15 @@ class HistoryScreen extends StatelessWidget {
           child: HarborEyebrow('Signal log · 7 days'),
         ),
         const SizedBox(height: 11),
-        _StatHeader(pipFactor: pipFactor),
+        _StatHeader(pipFactor: pipFactor, entries: entries, live: live != null),
         const SizedBox(height: 11),
-        for (final entry in MockFixtures.history) ...[
-          _HistoryRow(entry: entry, pipFactor: pipFactor),
-          const SizedBox(height: 9),
-        ],
+        if (entries.isEmpty)
+          const _EmptyNote('No closed setups yet.')
+        else
+          for (final entry in entries) ...[
+            _HistoryRow(entry: entry, pipFactor: pipFactor),
+            const SizedBox(height: 9),
+          ],
         const SizedBox(height: 2),
         Center(
           child: Text(
@@ -72,17 +100,45 @@ class HistoryScreen extends StatelessWidget {
 /// overflow silently, a Flutter `Row` would either wrap the label or clip it.
 /// One uniform scale keeps all four tiles the same height and the labels on
 /// a single line.
+///
+/// Offline the tiles are the recorded window totals (fixtures). Live there is
+/// no recorded total to show, so every figure is derived from the rows the
+/// poller actually returned — including the net, which is the sum of their
+/// closed outcomes.
 class _StatHeader extends StatelessWidget {
-  const _StatHeader({required this.pipFactor});
+  const _StatHeader({
+    required this.pipFactor,
+    required this.entries,
+    required this.live,
+  });
 
   /// Points per pip for the active [PipConvention]; the tiles scale with the
   /// log rows.
   final int pipFactor;
 
+  final List<DisplayHistoryEntry> entries;
+
+  final bool live;
+
+  /// Statuses that count as a target hit (spec §14).
+  static const _hits = {
+    DisplayStatus.tp1Hit,
+    DisplayStatus.tp2Hit,
+    DisplayStatus.tp3Hit,
+  };
+
+  int _count(Set<DisplayStatus> statuses) =>
+      entries.where((e) => statuses.contains(e.status)).length;
+
   @override
   Widget build(BuildContext context) {
+    final tpHits = _count(_hits);
+    final invalidated = _count({DisplayStatus.invalidated});
+    final expired = _count({DisplayStatus.expired});
     final net = pipsFromPoints(
-      MockFixtures.historyNetPipsPoints,
+      live
+          ? entries.fold<double>(0, (sum, e) => sum + e.pipsPoints)
+          : MockFixtures.historyNetPipsPoints,
       pipFactor: pipFactor,
     );
     return Padding(
@@ -93,18 +149,52 @@ class _StatHeader extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const HarborStat(value: '9', label: 'TP HIT', valueColor: harborLong),
+            HarborStat(
+              value: live ? '$tpHits' : '9',
+              label: 'TP HIT',
+              valueColor: harborLong,
+            ),
             const SizedBox(width: 8),
-            const HarborStat(
-              value: '3',
+            HarborStat(
+              value: live ? '$invalidated' : '3',
               label: 'INVALIDATED',
               valueColor: harborShort,
             ),
             const SizedBox(width: 8),
-            const HarborStat(value: '2', label: 'EXPIRED', valueColor: harborCobalt),
+            HarborStat(
+              value: live ? '$expired' : '2',
+              label: 'EXPIRED',
+              valueColor: harborCobalt,
+            ),
             const SizedBox(width: 8),
             HarborStat(value: '+$net', label: 'NET PIPS'),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Honest empty state for a live log with no closed setups yet. Silence, not a
+/// signal — an empty history must never read as a result (product rule 2).
+class _EmptyNote extends StatelessWidget {
+  const _EmptyNote(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      child: Center(
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontFamily: 'Sora',
+            fontSize: 12,
+            color: harborFaint,
+          ),
         ),
       ),
     );

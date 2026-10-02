@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:xauvote/config.dart' show mockMode;
 import 'package:xauvote/main.dart';
 import 'package:xauvote/widgets/harbor_widgets.dart';
 
@@ -30,6 +31,7 @@ Future<void> _openSignal(WidgetTester tester) async {
 
 void main() {
   testWidgets('Signal shows levels, timeline, context and TP control',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
     await _openSignal(tester);
@@ -65,6 +67,7 @@ void main() {
   });
 
   testWidgets('Signal TP selector narrows the visible targets',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
     await _openSignal(tester);
@@ -86,6 +89,7 @@ void main() {
   });
 
   testWidgets('No rendered text frames agreement as a forecast',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
     for (final label in ['SIGNAL', 'SOURCES', 'HISTORY', 'SETTINGS']) {

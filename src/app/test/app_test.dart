@@ -4,6 +4,7 @@ library;
 import 'dart:ui' show Size;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:xauvote/config.dart' show mockMode;
 import 'package:xauvote/main.dart';
 
 Future<void> _pumpApp(WidgetTester tester) async {
@@ -17,6 +18,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
 
 void main() {
   testWidgets('Sources lists all desks with View Original placeholder',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
     await tester.tap(find.text('SOURCES'));
@@ -41,6 +43,7 @@ void main() {
   });
 
   testWidgets('History shows every terminal state, newest first',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
     await tester.tap(find.text('HISTORY'));
@@ -56,6 +59,7 @@ void main() {
   });
 
   testWidgets('Settings shows spec §24 controls with working toggles',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
     await tester.tap(find.text('SETTINGS'));

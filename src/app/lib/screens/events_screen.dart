@@ -11,10 +11,21 @@
 /// impact, and a guard line that mirrors the Radar [EventGuardrailBar]
 /// surface exactly. Headlines stay title + source + age + link — never full
 /// article text (licensing constraint).
+///
+/// LIVE MODE
+/// The calendar, the blackout card and the digest themes come from the polled
+/// [LiveData] snapshot; an offline build mounts no poller and keeps the
+/// fixtures. The snapshot carries scheduled releases and digest themes only,
+/// so a live build reports no released rows and no headlines and says so —
+/// an upcoming release is never restyled as a result, and an empty calendar
+/// stays silence rather than borrowing a fixture row.
 library;
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../config.dart';
+import '../data/live_data.dart';
 import '../data/mock_fixtures.dart';
 import '../icons.dart';
 import '../models/display_models.dart';
@@ -48,6 +59,19 @@ class _EventsScreenState extends State<EventsScreen> {
   EventImpact _minImpact = EventImpact.medium;
   final Set<String> _muted = <String>{};
 
+  /// The polled snapshot for this build, or null in an offline build. See
+  /// [RadarScreen._liveOf] for why this is the single seam between the two.
+  LiveData? get _live {
+    try {
+      return context.watch<LiveData>();
+    } on ProviderNotFoundException {
+      // A live build without its poller must fail loudly, never fall back to
+      // fixtures (product rule 2).
+      if (!mockMode) rethrow;
+      return null;
+    }
+  }
+
   int _rank(EventImpact impact) => switch (impact) {
     EventImpact.high => 3,
     EventImpact.medium => 2,
@@ -62,8 +86,36 @@ class _EventsScreenState extends State<EventsScreen> {
 
   bool _isMuted(String id) => _muted.contains(id);
 
-  List<DisplayEvent> get _visibleEvents =>
-      MockFixtures.upcomingEvents.where(_visible).toList();
+  /// Scheduled releases the guard can see: the polled calendar in a live
+  /// build, the fixture calendar offline.
+  List<DisplayEvent> get _allEvents {
+    final live = _live;
+    return live != null ? live.events : MockFixtures.upcomingEvents;
+  }
+
+  List<DisplayEvent> get _visibleEvents => _allEvents.where(_visible).toList();
+
+  /// Released events with an actual. The live calendar read is scheduled-only,
+  /// so there is no released row to show and the tab renders its honest empty
+  /// state — it never reuses an upcoming release as a result.
+  List<DisplayEvent> get _resultEvents {
+    final live = _live;
+    return live != null ? const <DisplayEvent>[] : MockFixtures.resultEvents;
+  }
+
+  /// Latest macro digest: the polled themes in a live build, the fixture
+  /// themes offline.
+  List<DisplayDigestTheme> get _digestThemes {
+    final live = _live;
+    return live != null ? live.digest : MockFixtures.digestThemes;
+  }
+
+  /// Collected headlines. The snapshot carries the digest themes only, so a
+  /// live build reports no headlines rather than the fixture set.
+  List<DisplayNewsItem> get _headlines {
+    final live = _live;
+    return live != null ? const <DisplayNewsItem>[] : MockFixtures.headlines;
+  }
 
   /// The soonest armed USD HIGH event — the only combination that pauses new
   /// signals. `null` when the trader muted or filtered it out, and the guard
@@ -347,7 +399,7 @@ class _EventsScreenState extends State<EventsScreen> {
 
   /// Past events: actual vs forecast with the surprise flag (addendum §3.3).
   Widget _resultsPane() {
-    final events = MockFixtures.resultEvents;
+    final events = _resultEvents;
     if (events.isEmpty) return const _SilenceNote('No results yet.');
     return Column(
       children: [
@@ -422,8 +474,8 @@ class _EventsScreenState extends State<EventsScreen> {
   /// News pane: the macro-backdrop themes (display only) and the collected
   /// headlines. Headline + source + age + link only — never article text.
   Widget _newsPane() {
-    final themes = MockFixtures.digestThemes;
-    final headlines = MockFixtures.headlines;
+    final themes = _digestThemes;
+    final headlines = _headlines;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -435,28 +487,31 @@ class _EventsScreenState extends State<EventsScreen> {
           ),
         ),
         const SizedBox(height: 9),
-        for (final theme in themes) ...[
-          HarborCard(
-            radius: 16,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    theme.theme,
-                    style: const TextStyle(
-                      fontFamily: 'Sora',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+        if (themes.isEmpty)
+          const _SilenceNote('No digest published yet.')
+        else
+          for (final theme in themes) ...[
+            HarborCard(
+              radius: 16,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      theme.theme,
+                      style: const TextStyle(
+                        fontFamily: 'Sora',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-                PressurePill(pressure: theme.pressure),
-              ],
+                  PressurePill(pressure: theme.pressure),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-        ],
+            const SizedBox(height: 8),
+          ],
         const SizedBox(height: 6),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 18),

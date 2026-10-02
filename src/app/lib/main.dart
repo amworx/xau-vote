@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'config.dart';
+import 'data/live_data.dart';
 import 'icons.dart';
 import 'screens/events_screen.dart';
 import 'screens/history_screen.dart';
@@ -29,17 +30,101 @@ Future<void> main() async {
 
 /// Root widget. Owns the [AppState] provider so the widget tree (and widget
 /// tests pumping [XauVoteApp] directly) always has state available.
-/// Asserts MOCK_MODE so release builds never silently ship fixtures as
-/// live data (flip the flag deliberately for T5.7).
+///
+/// In live mode the widget tree additionally receives a [LiveData] provider so
+/// screens can read the real backend; in offline mode it is absent and the
+/// screens fall back to [MockFixtures].
 class XauVoteApp extends StatelessWidget {
   const XauVoteApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    assert(mockMode == true, 'Live mode is not wired yet (T5.7).');
-    return ChangeNotifierProvider(
+    final app = ChangeNotifierProvider(
       create: (_) => AppState(),
       child: const _Shell(),
+    );
+
+    // Live builds need Supabase initialised before any repository read. Guard
+    // on `isReady` so a failed/absent init surfaces its own error screen
+    // instead of throwing inside a widget build.
+    if (!mockMode) {
+      if (!BackendService.isReady) {
+        return _StartupErrorScreen(
+          message: BackendService.error ??
+              'Live mode requested but Supabase did not initialise.',
+        );
+      }
+      return ChangeNotifierProvider<LiveData>(
+        create: (_) => LiveData()..startPolling(),
+        child: app,
+      );
+    }
+    return app;
+  }
+}
+
+/// Shown when a live build cannot reach its backend. Never falls back to
+/// fixtures: a trader must not mistake demo data for live data.
+class _StartupErrorScreen extends StatelessWidget {
+  const _StartupErrorScreen({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: harborTheme(),
+      home: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    HarborIcons.cross,
+                    size: 28,
+                    color: harborShort,
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'LIVE DATA UNAVAILABLE',
+                    style: TextStyle(
+                      fontFamily: 'Sora',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Space Mono',
+                      fontSize: 12,
+                      height: 1.5,
+                      color: harborDim,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'XV will not show demo data in place of live prices.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Sora',
+                      fontSize: 12,
+                      color: harborFaint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

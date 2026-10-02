@@ -13,6 +13,7 @@ library;
 import 'dart:ui' show Size;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:xauvote/config.dart' show mockMode;
 import 'package:xauvote/main.dart';
 
 /// Substrings that must never appear in any rendered text (spec §7 + rule 9).
@@ -36,6 +37,7 @@ Future<void> _openEvents(WidgetTester tester) async {
 
 void main() {
   testWidgets('Radar shows MEDIUM caution line + macro backdrop strip',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
 
@@ -47,6 +49,7 @@ void main() {
   });
 
   testWidgets('EVENT preview shows the guardrail bar, never a signal',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
 
@@ -63,6 +66,7 @@ void main() {
   });
 
   testWidgets('Events Upcoming lists countdowns + blackout note',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
     await _openEvents(tester);
@@ -89,6 +93,7 @@ void main() {
   });
 
   testWidgets('Events Results flags surprises vs in-line prints',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
     await _openEvents(tester);
@@ -104,6 +109,7 @@ void main() {
   });
 
   testWidgets('Events News shows backdrop themes + headlines with links',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
     await _openEvents(tester);
@@ -129,6 +135,7 @@ void main() {
   });
 
   testWidgets('Settings shows the Events group (addendum §5.3)',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
     await tester.tap(find.text('SETTINGS'));

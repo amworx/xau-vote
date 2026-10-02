@@ -8,8 +8,6 @@
 /// until `mockMode` is flipped to false.
 library;
 
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -22,34 +20,54 @@ abstract final class BackendService {
   /// True once live backends initialized (always false in MOCK_MODE).
   static bool get isReady => _ready;
 
-  /// Initializes Supabase + Firebase. No-op while [mockMode] is true.
+  /// Last init failure, surfaced so a half-configured live build explains
+  /// itself instead of appearing to show (fixture) data.
+  static String? _error;
+  static String? get error => _error;
+
+  /// Initializes Supabase. No-op while [mockMode] is true.
+  ///
+  /// Firebase/FCM is intentionally NOT initialized here: push delivery needs
+  /// the FCM server key on the Edge Function side and a real device
+  /// subscription, neither of which exists yet. Initializing it would throw on
+  /// platforms without Firebase config and take the whole app down for a
+  /// feature that is not switched on.
   static Future<void> init() async {
     if (mockMode) {
       debugPrint('BackendService: MOCK_MODE — backends idle.');
       return;
     }
-    // LIVE (T5.7 stub): requires SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY via
-    // --dart-define and a provisioned Firebase project before enabling.
-    await Firebase.initializeApp();
-    await Supabase.initialize(
-      url: const String.fromEnvironment('SUPABASE_URL'),
-      publishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
-    );
-    await registerPushToken();
-    _ready = true;
+    if (!liveConfigured) {
+      _error = 'LIVE mode requires SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY '
+          'via --dart-define.';
+      debugPrint('BackendService: $_error');
+      return;
+    }
+    try {
+      await Supabase.initialize(
+        url: supabaseUrl,
+        publishableKey: supabasePublishableKey,
+      );
+      _ready = true;
+      _error = null;
+      debugPrint('BackendService: Supabase live.');
+    } catch (e) {
+      _error = 'Supabase init failed: $e';
+      debugPrint('BackendService: $_error');
+    }
   }
 
-  /// Registers the FCM token for signal notifications. No-op in MOCK_MODE.
-  static Future<void> registerPushToken() async {
-    if (mockMode) return;
-    final messaging = FirebaseMessaging.instance;
-    await messaging.requestPermission();
-    final token = await messaging.getToken();
-    if (token == null || token.isEmpty) return;
-    await Supabase.instance.client.from('push_tokens').upsert({
-      'token': token,
-      'platform': defaultTargetPlatform.name,
-    });
+  /// Registers the FCM token for signal notifications.
+  ///
+  /// Disabled until an FCM server key is configured on the Edge Function side;
+  /// calling it is safe and simply reports false.
+  static Future<bool> registerPushToken() async {
+    // FCM is not wired yet: the tick Edge Function only dispatches when a
+    // server key is present, and there is no push_tokens table. Returning
+    // false keeps the door open without pretending the feature works.
+    if (mockMode) return false;
+    debugPrint('BackendService: FCM not configured — push registration skipped.');
+    return false;
   }
 
   /// Subscribes to the active consensus row. Throws in MOCK_MODE by

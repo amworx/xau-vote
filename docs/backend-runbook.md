@@ -40,22 +40,45 @@ applied over a **direct pooler connection** instead of `supabase link`:
 supabase db push --db-url "postgresql://postgres.<ref>:<password>@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres" --include-all
 ```
 
-Status 2026-09-29: `0001_initial.sql`, `0002_rls_policies.sql` and
-`0003_events_news.sql` are **applied and verified** (8 tables reachable over
-PostgREST; anon `insert` correctly rejected by RLS).
+Status 2026-10-02: migrations applied AND all **7 Edge Functions deployed and
+running on a schedule**. Verified live against the real provider:
+`collect-ideas` → `build-consensus` → `tick` produces
+`developing → ready → confirmed → active → tp1Hit` with real gold-api.com quotes.
 
-Edge Function deploys, secrets and schedules still require Management API
-auth — run `supabase login` once (browser flow, stores a token locally in
-`~/.supabase/access-token`) or enable the Supabase MCP.
+| Job | Cron | Function |
+|---|---|---|
+| `xv-tick` | `* * * * *` | tick (price + lifecycle) |
+| `xv-build-consensus` | `2-59/5 * * * *` | build-consensus |
+| `xv-collect-ideas` | `*/15 * * * *` | collect-ideas |
+| `xv-news-collect` | `*/30 * * * *` | news-collect |
+| `xv-fetch-events` | `7 * * * *` | fetch-events |
+| `xv-news-digest` | `13 * * * *` | news-digest |
+| `xv-keepalive` | `17 4 * * *` | keepalive (anti-pause) |
 
-## 2. Apply migrations (orchestrator runs)
+`build-consensus` runs at `2-59/5` rather than `*/5` on purpose: at `*/5` it
+fired on the same second as `collect-ideas` and read the table mid-upsert,
+producing a false `SINGLE_SOURCE`. pg_cron does not retry, so that minute was
+silently wrong.
+
+### Dispatch is rotation-safe
+
+Schedules call `xv_invoke_function('<name>')`, which reads the service_role key
+from Vault (`xv_service_role_key`) at call time. The key is therefore NOT in
+`cron.job.command`, and **rotating the service_role key is a single Vault
+update** — no schedule edits required.
+
+To rotate:
+```sql
+UPDATE vault.secrets SET secret = '<new-key>'
+ WHERE name = 'xv_service_role_key';
+```
+Then confirm a job fired: `SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 5;`
+
+## 2. Apply migrations
 
 ```powershell
-supabase link --project-ref <ref-from-dashboard-URL>
-supabase db push
+supabase db push --db-url "postgresql://postgres.<ref>:<password>@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres" --include-all
 ```
-
-This applies `0001_initial.sql` + `0002_rls_policies.sql`.
 
 ## 3. Secrets + deploy (orchestrator runs)
 

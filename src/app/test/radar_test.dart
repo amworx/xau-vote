@@ -8,6 +8,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:xauvote/config.dart' show mockMode;
 import 'package:xauvote/main.dart';
 import 'package:xauvote/widgets/harbor_widgets.dart';
 
@@ -22,6 +23,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
 
 void main() {
   testWidgets('Radar renders the mockup header, quote, day bar and switcher',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
 
@@ -56,6 +58,7 @@ void main() {
   });
 
   testWidgets('Radar verdict card shows levels, targets and agreement',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
 
@@ -90,7 +93,8 @@ void main() {
     expect(find.text('↗ SHARE'), findsOneWidget);
   });
 
-  testWidgets('Target scope narrows the visible targets', (tester) async {
+  testWidgets('Target scope narrows the visible targets', skip: !mockMode,
+      (tester) async {
     await _pumpApp(tester);
 
     expect(find.text('4,340'), findsOneWidget);
@@ -112,7 +116,8 @@ void main() {
     expect(find.text('1:1.5'), findsOneWidget);
   });
 
-  testWidgets('COPY LEVELS copies the setup to the clipboard', (tester) async {
+  testWidgets('COPY LEVELS copies the setup to the clipboard', skip: !mockMode,
+      (tester) async {
     await _pumpApp(tester);
 
     final copy = find.widgetWithText(InkWell, 'COPY LEVELS');
@@ -125,6 +130,7 @@ void main() {
   });
 
   testWidgets('Radar divided preview shows NO CONSENSUS, never a signal',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
 
@@ -142,6 +148,7 @@ void main() {
   });
 
   testWidgets('Event preview shows the guardrail bar and routes to Events',
+      skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
 
@@ -157,7 +164,8 @@ void main() {
     expect(find.text('MACRO CONTEXT · NEVER VOTES'), findsOneWidget);
   });
 
-  testWidgets('DEVELOPING preview keeps the same card language', (tester) async {
+  testWidgets('DEVELOPING preview keeps the same card language', skip: !mockMode,
+      (tester) async {
     await _pumpApp(tester);
 
     await tester.tap(find.widgetWithText(TextButton, 'DEVELOPING'));
@@ -175,7 +183,8 @@ void main() {
     expect(find.text('COPY LEVELS'), findsOneWidget);
   });
 
-  testWidgets('Bottom nav routes from Radar to the Signal tab', (tester) async {
+  testWidgets('Bottom nav routes from Radar to the Signal tab', skip: !mockMode,
+      (tester) async {
     await _pumpApp(tester);
 
     await tester.tap(find.text('SIGNAL'));

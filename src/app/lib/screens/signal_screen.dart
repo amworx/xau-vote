@@ -6,6 +6,14 @@
 /// (spec §10). Every surface comes from the shared Harbor primitives so the
 /// screen reads as the same product as Radar. Strength is an agreement label
 /// only — never rendered as a forecast (spec §7).
+///
+/// LIVE MODE
+/// Direction, strength, levels and lifecycle come from the polled [LiveData]
+/// snapshot. What the pipeline has not published is shown as `—`, never filled
+/// from a fixture: the lifecycle has state but no transition timestamps, and
+/// there is no 5M confirmation, 1H read or open position in the snapshot — so
+/// no consensus renders the honest empty state and copy/share stay available
+/// whenever there is a real setup to copy.
 library;
 
 import 'dart:async';
@@ -14,6 +22,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../config.dart';
+import '../data/live_data.dart';
 import '../data/mock_fixtures.dart';
 import '../models/display_models.dart';
 import '../state/app_state.dart';
@@ -23,84 +33,116 @@ import '../widgets/harbor_widgets.dart';
 class SignalScreen extends StatelessWidget {
   const SignalScreen({super.key});
 
+  /// The polled snapshot for this build, or null in an offline build. See
+  /// [RadarScreen._liveOf] for why this is the single seam between the two.
+  static LiveData? _liveOf(BuildContext context) {
+    try {
+      return context.watch<LiveData>();
+    } on ProviderNotFoundException {
+      // A live build without its poller must fail loudly, never fall back to
+      // fixtures (product rule 2).
+      if (!mockMode) rethrow;
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    final signal = state.scenario == RadarScenario.noConsensus
-        ? MockFixtures.developing
-        : state.scenario == RadarScenario.developing
+    final live = _liveOf(context);
+    final signal = live != null
+        ? live.signal
+        : state.scenario == RadarScenario.noConsensus
             ? MockFixtures.developing
-            : MockFixtures.strongLong;
+            : state.scenario == RadarScenario.developing
+                ? MockFixtures.developing
+                : MockFixtures.strongLong;
     final show = visibleTps(state.targets);
     // Points are canonical; every pip readout on this screen derives from them
     // through the trader's pip convention (D-20260927-003). Read once here so
     // the whole screen shares one convention per build.
     final pipFactor = state.pipConvention.pipFactor;
+    // `DisplaySignal.price` carries a fixture default; live the quote comes
+    // from the poller, so an absent tick prints `—`.
+    final quote = live == null
+        ? formatPrice(signal!.price)
+        : live.price == null
+            ? '—'
+            : formatPrice(live.price!);
     return ListView(
       key: const PageStorageKey<String>('signal'),
       padding: const EdgeInsets.only(bottom: 20),
       children: [
         HarborHeader(
-          subtitle: 'SIGNAL · ${signal.id}',
-          statusText: statusLabel(signal.status),
+          subtitle: 'SIGNAL · ${signal?.id ?? 'NO CONSENSUS'}',
+          statusText: signal == null
+              ? 'NO CONSENSUS'
+              : statusLabel(signal.status),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              HarborEyebrow(
-                'Active setup · 15M ${_directionWord(signal.direction)}',
-              ),
-              const SizedBox(height: 9),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  DirectionPill(direction: signal.direction, fontSize: 15),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 7),
-                      child: Text(
-                        '${formatPrice(signal.price)} · '
-                        '${bandLabel(signal.band)} ${signal.strength}',
-                        style: const TextStyle(
-                          fontFamily: 'Space Mono',
-                          fontSize: 11,
-                          color: harborDim,
+        if (signal == null) const _NoSetupCard() else ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HarborEyebrow(
+                  'Active setup · 15M ${_directionWord(signal.direction)}',
+                ),
+                const SizedBox(height: 9),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    DirectionPill(direction: signal.direction, fontSize: 15),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 7),
+                        child: Text(
+                          '$quote · '
+                          '${bandLabel(signal.band)} ${signal.strength}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Space Mono',
+                            fontSize: 11,
+                            color: harborDim,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 13),
-        _lifecycleCard(signal, pipFactor),
-        const SizedBox(height: 10),
-        _levelsCard(signal, show, pipFactor),
-        const SizedBox(height: 10),
-        _contextRow(pipFactor),
-        const SizedBox(height: 11),
-        _targetScope(),
-        const SizedBox(height: 11),
-        _positionStrip(pipFactor),
-        const SizedBox(height: 13),
-        _actions(context, signal, state.targets, pipFactor),
-        const SizedBox(height: 11),
-        const Center(
-          child: Text(
-            'Opened 21:44:03 · expires 22:44',
-            style: TextStyle(
-              fontFamily: 'Space Mono',
-              fontSize: 9,
-              letterSpacing: 0.6,
-              color: harborFaint,
+                  ],
+                ),
+              ],
             ),
           ),
-        ),
+          const SizedBox(height: 13),
+          _lifecycleCard(signal, pipFactor, live: live != null),
+          const SizedBox(height: 10),
+          _levelsCard(signal, show, pipFactor),
+          const SizedBox(height: 10),
+          _contextRow(pipFactor, live: live != null),
+          const SizedBox(height: 11),
+          _targetScope(),
+          const SizedBox(height: 11),
+          _positionStrip(pipFactor, live: live != null),
+          const SizedBox(height: 13),
+          _actions(context, signal, state.targets, pipFactor),
+          const SizedBox(height: 11),
+          // The open/expiry stamps are fixture-pinned; the snapshot carries
+          // neither, so the line is dropped rather than dated falsely.
+          if (live == null)
+            const Center(
+              child: Text(
+                'Opened 21:44:03 · expires 22:44',
+                style: TextStyle(
+                  fontFamily: 'Space Mono',
+                  fontSize: 9,
+                  letterSpacing: 0.6,
+                  color: harborFaint,
+                ),
+              ),
+            ),
+        ],
       ],
     );
   }
@@ -113,16 +155,42 @@ class SignalScreen extends StatelessWidget {
         Direction.neutral => 'NO SIGNAL',
       };
 
+  /// Which lifecycle step the reported status sits on, or -1 for a state the
+  /// walk-through does not cover. Used to mark the live current step without
+  /// inventing transition timestamps.
+  static int _lifecycleStep(DisplayStatus status) => switch (status) {
+        DisplayStatus.developing => 0,
+        DisplayStatus.ready => 1,
+        DisplayStatus.confirmed => 2,
+        DisplayStatus.active ||
+        DisplayStatus.tp1Hit ||
+        DisplayStatus.tp2Hit ||
+        DisplayStatus.tp3Hit =>
+          3,
+        DisplayStatus.noSetup ||
+        DisplayStatus.invalidated ||
+        DisplayStatus.expired =>
+          -1,
+      };
+
   /// Lifecycle timeline through ACTIVE (spec §14) plus the still-open target
-  /// step. State timestamps are fixture-pinned until the lifecycle wiring
-  /// (T5.7) supplies real transitions.
-  Widget _lifecycleCard(DisplaySignal signal, int pipFactor) {
+  /// step.
+  ///
+  /// Offline the state timestamps are fixture-pinned. Live the current step is
+  /// derived from the status the pipeline reported and every timestamp prints
+  /// `—`, because the snapshot records the state, not the moments it changed.
+  Widget _lifecycleCard(
+    DisplaySignal signal,
+    int pipFactor, {
+    required bool live,
+  }) {
     const steps = [
       ('DEVELOPING', '21:31'),
       ('READY', '21:36'),
       ('CONFIRMED · 5M', '21:41'),
       ('ACTIVE', 'SINCE 21:44'),
     ];
+    final current = live ? _lifecycleStep(signal.status) : steps.length - 1;
     return HarborCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,8 +201,8 @@ class SignalScreen extends StatelessWidget {
             if (i > 0) const HarborDivider(),
             _lifecycleRow(
               label: steps[i].$1,
-              timestamp: steps[i].$2,
-              isCurrent: i == steps.length - 1,
+              timestamp: live ? '—' : steps[i].$2,
+              isCurrent: i == current,
             ),
           ],
           const HarborDivider(),
@@ -173,7 +241,7 @@ class SignalScreen extends StatelessWidget {
 
   /// The open target step. With no TP1 from the pipeline the level is an
   /// honest `—` and the pip distance is omitted rather than invented
-  /// (product rule 2: never fabricate).
+  /// (product rule 2).
   ///
   /// Label and level share one text span so the row stays a single text
   /// widget — the level grid above is the only place a bare level appears.
@@ -294,23 +362,35 @@ class SignalScreen extends StatelessWidget {
   /// on the screen: soft neutral fill, no border, no accent colour. 1H never
   /// votes (product rule 1), so it must never read like a directional call —
   /// green/red stays reserved for direction and agreement.
-  Widget _contextRow(int pipFactor) {
+  ///
+  /// Live all three print `—`: the snapshot carries no 1H read, no 5M
+  /// confirmation and no position, and the offline words are claims the live
+  /// pipeline has not made.
+  Widget _contextRow(int pipFactor, {required bool live}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Row(
         children: [
-          const Expanded(
-            child: _ContextBadge(title: '1H TREND', value: 'SUPPORTIVE'),
+          Expanded(
+            child: _ContextBadge(
+              title: '1H TREND',
+              value: live ? '—' : 'SUPPORTIVE',
+            ),
           ),
           const SizedBox(width: 8),
-          const Expanded(
-            child: _ContextBadge(title: '5M CONFIRM', value: 'CONFIRMED'),
+          Expanded(
+            child: _ContextBadge(
+              title: '5M CONFIRM',
+              value: live ? '—' : 'CONFIRMED',
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: _ContextBadge(
               title: 'POSITION',
-              value: '+${pipsFromMove(MockFixtures.openPositionPoints, pipFactor: pipFactor)} PIPS',
+              value: live
+                  ? '—'
+                  : '+${pipsFromMove(MockFixtures.openPositionPoints, pipFactor: pipFactor)} PIPS',
             ),
           ),
         ],
@@ -334,38 +414,47 @@ class SignalScreen extends StatelessWidget {
 
   /// Open-position strip. An in-profit position is a direction outcome, so it
   /// keeps the LONG green language from the mockup `.pstrip`.
-  Widget _positionStrip(int pipFactor) {
+  ///
+  /// Live there is no position to report — XV does not place trades and the
+  /// snapshot carries no fill — so the strip drops the green language and says
+  /// so neutrally instead of claiming a profit that was never made.
+  Widget _positionStrip(int pipFactor, {required bool live}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 18),
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
       decoration: BoxDecoration(
-        color: harborLongSoft,
+        color: live ? chipBg : harborLongSoft,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          const Expanded(
-            child: HarborEyebrow('Position status', color: harborLong),
+          Expanded(
+            child: HarborEyebrow(
+              'Position status',
+              color: live ? harborDim : harborLong,
+            ),
           ),
           const SizedBox(width: 10),
-          const SizedBox(
+          SizedBox(
             width: 6,
             height: 6,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: harborLong,
+                color: live ? harborLine : harborLong,
                 shape: BoxShape.circle,
               ),
             ),
           ),
           const SizedBox(width: 7),
           Text(
-            'IN-PROFIT +${pipsFromMove(MockFixtures.openPositionPoints, pipFactor: pipFactor)} PIPS',
-            style: const TextStyle(
+            live
+                ? 'NO OPEN POSITION'
+                : 'IN-PROFIT +${pipsFromMove(MockFixtures.openPositionPoints, pipFactor: pipFactor)} PIPS',
+            style: TextStyle(
               fontFamily: 'Space Mono',
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: harborLong,
+              color: live ? harborDim : harborLong,
             ),
           ),
         ],
@@ -460,6 +549,59 @@ class SignalScreen extends StatelessWidget {
     }
     lines.add('R:R ${bestRrValue(signal, selection)}');
     return lines.join('\n');
+  }
+}
+
+/// No active setup (product rule 2: insufficient agreement is a real answer).
+///
+/// The offline preview states the same thing through the Radar card, so the
+/// copy matches: the room has not agreed, and XV waits. There is nothing to
+/// copy here, so the copy/share actions are absent rather than pointing at a
+/// signal that does not exist.
+class _NoSetupCard extends StatelessWidget {
+  const _NoSetupCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
+      child: HarborCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const HarborEyebrow('No active setup'),
+            const SizedBox(height: 8),
+            const Text(
+              'NO CONSENSUS',
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'No 15M setup has cleared consensus right now.',
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 12,
+                color: harborDim,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Waiting for stronger agreement.',
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 12,
+                color: harborDim,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
