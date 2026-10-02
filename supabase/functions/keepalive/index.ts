@@ -43,7 +43,7 @@ Deno.serve(async (_req) => {
 
   // Pruning failures are never fatal: the heartbeat already succeeded, which
   // is the entire purpose of this job.
-  const prunes = ['prune_ops_heartbeat', 'prune_market_snapshots'];
+  const prunes = ['prune_ops_heartbeat', 'prune_market_snapshots', 'prune_market_bars'];
   for (const fn of prunes) {
     const { error: pruneErr } = await db.rpc(fn);
     if (pruneErr) console.log(`keepalive: ${fn} skipped (${pruneErr.message})`);

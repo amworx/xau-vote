@@ -89,6 +89,29 @@ Use the mirror for convenient historical backtesting, but compare a sample again
 
 Free public broker web pages can display delayed or broker-specific CFD prices. Do not mix a delayed public CFD quote with a live execution feed and assume they are identical. The signal engine should use the same broker/venue price feed that will be used for execution whenever possible.
 
+### True bid/ask spread availability — explicit data gap
+
+A genuine XAUUSD spread means the contemporaneous execution venue's **ask minus bid**. Public no-login sources used by this methodology do not provide a sufficiently reliable, unrestricted, venue-specific live bid/ask stream for the signal engine.
+
+Therefore:
+
+- **Do not fabricate a spread** from two independent spot-price sources.
+- In particular, do **not** treat `gold-api` price vs `xaus.com` price, or any similar cross-source price difference, as bid/ask spread.
+- The two spread-dependent vetoes in this document remain **UNEVALUATED** when true bid/ask data are unavailable.
+- The bot must surface this explicitly as a data-quality field such as:
+
+```text
+spread_status: UNAVAILABLE
+spread_veto_status: UNEVALUATED
+spread_source: NONE
+```
+
+- `UNAVAILABLE` does not mean the spread is zero or normal. It means the system has no trustworthy measurement.
+- A broker/execution adapter that has genuine bid/ask data may populate these fields and activate the spread vetoes.
+- Until then, the absence of spread data is a **known limitation/data-quality note**, not a license to substitute a proxy.
+
+This preserves the distinction between a measured execution cost and a cross-provider price discrepancy.
+
 ### Market-data normalized schema
 
 ```text
@@ -689,7 +712,8 @@ T + 30 minutes after press conference ends -> re-enable scanning
 If the bot detects a credible unscheduled event and any of the following occur:
 
 - 5m ATR > 95th percentile
-- spread > 2x its 20-bar median
+- **true bid/ask spread > 2x its 20-bar median, if genuine spread data are available**
+- if genuine spread data are unavailable, record `spread_veto_status=UNEVALUATED` and continue to evaluate the remaining emergency conditions
 - single 5m candle range > 2 x ATR14
 - price gaps through a predefined structure level
 
@@ -1031,7 +1055,7 @@ Do not enter merely because a candle touches a level.
 1. Update price data
 2. Validate candles
 3. Check economic-calendar lock
-4. Check spread/volatility lock
+4. Check volatility lock and evaluate spread status
 5. Update macro regime
 6. Update positioning/sentiment regime
 7. Classify 1H trend
@@ -1140,7 +1164,11 @@ Even perfect technical alignment does not override the lock.
 
 ## Rule 2 — Extreme volatility beats normal technical signals
 
-If ATR percentile > 95 or spread > 2x normal:
+If ATR percentile > 95:
+
+    NO TRADE
+
+If genuine bid/ask spread data exist and spread > 2x its rolling median:
 
 ```text
 NO TRADE
@@ -1190,7 +1218,8 @@ technical_score >= 8
 final_score >= 9
 news_lock = FALSE
 volatility_lock = FALSE
-spread_ok = TRUE
+spread_veto = PASSED if genuine spread data are available and within limits
+               UNEVALUATED if genuine spread data are unavailable
 nearest_major_resistance - entry >= 1.5R
 ```
 
@@ -1222,7 +1251,11 @@ SL = swing_low - buffer
 where:
 
 ```text
-buffer = max(0.20*ATR5m, spread*2)
+buffer = 0.20*ATR5m
+
+# If genuine bid/ask spread data are available, execution policy may instead use:
+# buffer = max(0.20*ATR5m, spread*2)
+# Never substitute a cross-source price difference for `spread`.
 ```
 
 Also enforce:
@@ -1397,7 +1430,7 @@ The bot must refuse an order if:
 - SL is missing;
 - risk exceeds account policy;
 - broker's minimum/maximum size is violated;
-- spread exceeds the configured maximum.
+- genuine bid/ask spread exceeds the configured maximum, **when genuine spread data are available**; if unavailable, surface `spread_veto_status=UNEVALUATED` rather than inventing a value.
 
 ---
 
@@ -1408,7 +1441,7 @@ Return `NO TRADE` when any of these are true:
 1. High-impact event lock active.
 2. Emergency-news lock active.
 3. ATR percentile > 95.
-4. Spread > 2x rolling median.
+4. True bid/ask spread > 2x rolling median **when genuine spread data are available**. If unavailable, do not apply this veto; record the data-quality gap.
 5. 1H direction is neutral and 30m is conflicting.
 6. Technical score < 8/12.
 7. Final score < 9.
@@ -1661,6 +1694,8 @@ The bot should emit machine-readable output like:
   "confidence": "HIGH",
   "news_lock": false,
   "volatility_regime": "NORMAL",
+  "spread_status": "UNAVAILABLE",
+  "spread_veto_status": "UNEVALUATED",
   "reason_codes": [
     "H1_BEARISH",
     "M30_STRUCTURE_CONFIRM",
@@ -1696,8 +1731,12 @@ def generate_signal(market, macro, sentiment, calendar, account):
     # -----------------------------------------
     # 3. Market-condition gate
     # -----------------------------------------
-    if market.spread_ratio_to_median() > 2.0:
-        return no_trade("NO_TRADE_SPREAD_EXTREME")
+    if market.true_spread_available():
+        if market.spread_ratio_to_median() > 2.0:
+            return no_trade("NO_TRADE_SPREAD_EXTREME")
+    else:
+        market.data_quality.add("SPREAD_UNAVAILABLE")
+        market.veto_status["spread"] = "UNEVALUATED"
 
     if market.atr_percentile("5m") > 95:
         return no_trade("NO_TRADE_VOLATILITY_EXTREME")
@@ -1838,7 +1877,8 @@ COT: +0.5
 WGC: +1
 News: CLEAR
 ATR5: 72nd percentile
-Spread: 1.1x median
+Spread: UNAVAILABLE
+Spread Veto: UNEVALUATED
 Technical Score: 7/12
 Final State: NO_TRADE_LOW_CONFLUENCE
 ```
@@ -2093,6 +2133,7 @@ Before enabling live signals, verify that the bot can answer “yes” to every 
 ```text
 [ ] XAUUSD feed is synchronized to UTC.
 [ ] 5m/15m/30m/1H bars are complete and validated.
+[ ] The market/execution layer explicitly reports whether genuine bid/ask spread data are available.
 [ ] EMA20/50/200 are calculated from close.
 [ ] RSI14 is calculated from close.
 [ ] MACD12/26/9 is calculated from close.
@@ -2112,7 +2153,8 @@ Before enabling live signals, verify that the bot can answer “yes” to every 
 [ ] Consecutive-loss limit is enforced.
 [ ] Every signal has SL + TP1 + TP2 + TP3.
 [ ] Every NO TRADE has a reason code.
-[ ] Data quality failures force NO TRADE.
+[ ] Critical data-quality failures force NO TRADE.
+[ ] Genuine bid/ask spread status is explicitly reported; when unavailable, spread vetoes are marked UNEVALUATED rather than replaced with a proxy.
 [ ] Backtest and walk-forward validation completed.
 [ ] Paper trading completed before live deployment.
 ```
