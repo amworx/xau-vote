@@ -348,8 +348,28 @@ void main() {
     });
 
     test('reason codes are unique', () {
-      final r = engine.evaluate(build(macro: const MacroState(alignment: -1)));
-      expect(r.reasonCodes.toSet().length, r.reasonCodes.length);
+      // Regression: the confluence floors both mapped to v12LowConfluence and
+      // were pushed independently, so a weak setup rendered the code twice.
+      for (final input in [
+        build(),
+        build(macro: const MacroState(alignment: -1)),
+        build(blackout: true),
+        build(stopAtr: 0.2),
+        build(tp2R: 0.5),
+        build(atrPctOverride: 99),
+      ]) {
+        final r = engine.evaluate(input);
+        expect(
+          r.reasonCodes.toSet().length,
+          r.reasonCodes.length,
+          reason: 'duplicate codes in ${r.reasonCodes}',
+        );
+      }
+    });
+
+    test('a weak setup reports low confluence exactly once', () {
+      final r = engine.evaluate(build(m5: bull(atrPct: 99), m15: pullbackLong(), h1: bull()));
+      expect(r.vetoed.where((c) => c == ReasonCode.v12LowConfluence).length, lessThanOrEqualTo(1));
     });
 
     test('a published signal reports the spread gap as context, not a veto', () {

@@ -39,6 +39,12 @@ dependencies:
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
 
+  # XV's pure-Dart engines. The package is the SOURCE OF TRUTH for consensus,
+  # lifecycle, indicators, confluence and the multi-timeframe scanner, so the
+  # app depends on it directly rather than reimplementing analysis logic.
+  xau_core:
+    path: ../xau_core
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

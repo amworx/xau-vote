@@ -14,6 +14,7 @@
 library;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:xau_core/xau_core.dart' hide Direction;
 
 import '../models/display_models.dart';
 
@@ -336,5 +337,159 @@ class LiveRepository {
     if (v is num) return v.toInt();
     if (v is String) return int.tryParse(v);
     return null;
+  }
+
+  // ------------------------------------------------------------- analysis
+
+  /// Closed OHLC bars per timeframe for the technical engine.
+  ///
+  /// Reads `market_bars` and returns validated, closed bars in ascending time
+  /// order. In-progress bars are excluded here (and again by the engine) so an
+  /// unfinished candle can never influence a published level.
+  Future<Map<Tf, TimeframeBars>> analysisBars({int maxPerTimeframe = 600}) async {
+    final r = await _client
+        .from('market_bars')
+        .select('timeframe,open_time,open,high,low,close,volume,quality')
+        .eq('symbol', 'XAUUSD')
+        .eq('is_closed', true)
+        .order('open_time', ascending: true);
+
+    if (r.isEmpty) return const {};
+
+    final grouped = <Tf, List<Candle>>{};
+    final degraded = <Tf, bool>{};
+
+    for (final row in r) {
+      final tf = _toTf(row['timeframe']);
+      if (tf == null) continue;
+      final o = _toDouble(row['open']);
+      final h = _toDouble(row['high']);
+      final l = _toDouble(row['low']);
+      final c = _toDouble(row['close']);
+      if (o == null || h == null || l == null || c == null) continue;
+      final at = DateTime.tryParse('${row['open_time']}')?.toUtc();
+      if (at == null) continue;
+
+      final isDegraded = '${row['quality']}' == 'degraded';
+      (grouped[tf] ??= []).add(Candle(
+        openTime: at,
+        open: o,
+        high: h,
+        low: l,
+        close: c,
+        volume: _toDouble(row['volume']),
+        source: 'supabase',
+        quality: isDegraded ? CandleQuality.degraded : CandleQuality.primary,
+      ));
+      // Sticky: a timeframe counts as degraded only if EVERY bar is degraded,
+      // so one primary bar is enough to make the series level-eligible.
+      degraded[tf] = (degraded[tf] ?? true) && isDegraded;
+    }
+
+    final out = <Tf, TimeframeBars>{};
+    for (final tf in Tf.values) {
+      final bars = grouped[tf] ?? const <Candle>[];
+      if (bars.isEmpty) continue;
+      final interval = switch (tf) {
+        Tf.m5 => const Duration(minutes: 5),
+        Tf.m15 => const Duration(minutes: 15),
+        Tf.m30 => const Duration(minutes: 30),
+        Tf.h1 => const Duration(hours: 1),
+      };
+      final v = validateCandles(bars, interval);
+      // Keep only the most recent window: the engine needs a long series for
+      // EMA200 but not unbounded history.
+      final accepted = v.accepted;
+      final windowed =
+          accepted.length > maxPerTimeframe ? accepted.sublist(accepted.length - maxPerTimeframe) : accepted;
+      out[tf] = TimeframeBars(
+        timeframe: tf,
+        bars: windowed,
+        allDegraded: degraded[tf] ?? false,
+      );
+    }
+    return out;
+  }
+
+  /// Newest genuine venue spread, or an explicit UNAVAILABLE state.
+  ///
+  /// Ratified option (a): a spread is only ever the execution venue's
+  /// Ask − Bid. A missing or stale row yields [VenueSpread.unavailable], never
+  /// a difference between two price sources.
+  Future<({VenueSpread spread, double ageSeconds})> venueSpread({
+    Duration maxAge = const Duration(minutes: 5),
+  }) async {
+    final r = await _client
+        .from('market_snapshots')
+        .select('bid,ask,source,timestamp')
+        .eq('symbol', 'XAUUSD')
+        .not('bid', 'is', null)
+        .not('ask', 'is', null)
+        .order('timestamp', ascending: false)
+        .limit(1);
+
+    if (r.isEmpty) {
+      return (spread: const VenueSpread.unavailable(), ageSeconds: double.infinity);
+    }
+    final row = r.first;
+    final bid = _toDouble(row['bid']);
+    final ask = _toDouble(row['ask']);
+    final at = DateTime.tryParse('${row['timestamp']}')?.toUtc();
+    final age = at == null ? double.infinity : DateTime.now().toUtc().difference(at).inMilliseconds / 1000.0;
+
+    // A stale measurement is not a current spread. Reporting it as available
+    // would be as misleading as reporting nothing.
+    if (bid == null || ask == null || age > maxAge.inSeconds) {
+      return (spread: const VenueSpread.unavailable(), ageSeconds: age);
+    }
+    return (
+      spread: VenueSpread.available(bid: bid, ask: ask, source: '${row['source'] ?? 'unknown'}'),
+      ageSeconds: age,
+    );
+  }
+
+  /// Calendar events for the event gate, mapped to the analysis tier model.
+  Future<List<EconomicEvent>> analysisEvents({int hoursAhead = 24}) async {
+    final now = DateTime.now().toUtc();
+    final r = await _client
+        .from('economic_events')
+        .select('title,currency,impact,starts_at,actual,forecast,previous')
+        .gte('starts_at', now.subtract(const Duration(hours: 2)).toIso8601String())
+        .lte('starts_at', now.add(Duration(hours: hoursAhead)).toIso8601String());
+
+    if (r.isEmpty) return const [];
+    final out = <EconomicEvent>[];
+    for (final row in r) {
+      final at = DateTime.tryParse('${row['starts_at']}')?.toUtc();
+      // An event with no parseable time cannot be scheduled, and guessing a
+      // time would put a blackout window in the wrong place. Skip it.
+      if (at == null) continue;
+      out.add(EconomicEvent(
+        name: '${row['title'] ?? 'Event'}',
+        currency: '${row['currency'] ?? 'USD'}',
+        tier: tierFromImpact('${row['impact'] ?? 'LOW'}'),
+        releaseTime: at,
+        actual: _toDouble(row['actual']),
+        forecast: _toDouble(row['forecast']),
+        previous: _toDouble(row['previous']),
+        source: 'supabase',
+      ));
+    }
+    return out;
+  }
+
+  static Tf? _toTf(Object? v) {
+    switch ('$v') {
+      case '5m':
+        return Tf.m5;
+      case '15m':
+        return Tf.m15;
+      case '30m':
+        return Tf.m30;
+      case '1h':
+        return Tf.h1;
+      default:
+        return null;
+    }
   }
 }

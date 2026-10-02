@@ -502,11 +502,14 @@ class ConfluenceEngine {
 
     final finalScore = technical + 2.0 * (macro ?? 0) + (sentiment ?? 0) - conflictPenalty;
 
-    // ---- 14. Technical floor (V12) --------------------------------------
-    if (technical < thresholds.minTechnical) veto(ReasonCode.v12LowConfluence);
-
-    // ---- 15. Final score floor ------------------------------------------
-    if (finalScore < thresholds.minFinal) veto(ReasonCode.v12LowConfluence);
+    // ---- 14/15. Confluence floors (V12) ---------------------------------
+    // The technical floor and the final-score floor express one idea, so the
+    // code is recorded once. Evaluating them independently pushed
+    // v12LowConfluence twice whenever both failed, which rendered a duplicate
+    // chip in the UI and read like a defect rather than a single verdict.
+    if (technical < thresholds.minTechnical || finalScore < thresholds.minFinal) {
+      veto(ReasonCode.v12LowConfluence);
+    }
 
     // ---- Verdict ---------------------------------------------------------
     final noTrade = vetoes.isNotEmpty;

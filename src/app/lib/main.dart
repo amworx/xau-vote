@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'config.dart';
+import 'data/analysis_service.dart';
 import 'data/live_data.dart';
 import 'icons.dart';
 import 'screens/events_screen.dart';
@@ -54,8 +55,19 @@ class XauVoteApp extends StatelessWidget {
               'Live mode requested but Supabase did not initialise.',
         );
       }
-      return ChangeNotifierProvider<LiveData>(
-        create: (_) => LiveData()..startPolling(),
+      // Two independent pollers: LiveData carries the consensus/price snapshot
+      // the screens already render, while AnalysisService runs the
+      // multi-timeframe technical scan. They are kept separate so a slow or
+      // failing analysis never stalls the price ticker.
+      return MultiProvider(
+        providers: [
+          ChangeNotifierProvider<LiveData>(
+            create: (_) => LiveData()..startPolling(),
+          ),
+          ChangeNotifierProvider<AnalysisService>(
+            create: (_) => AnalysisService()..startPolling(),
+          ),
+        ],
         child: app,
       );
     }

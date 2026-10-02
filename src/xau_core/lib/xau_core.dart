@@ -7,6 +7,7 @@ library;
 export 'analysis/calendar_lock.dart';
 export 'analysis/confluence.dart';
 export 'analysis/indicators.dart';
+export 'analysis/scanner.dart';
 export 'analysis/stop_plan.dart';
 export 'consensus/consensus.dart';
 export 'models/candle.dart';

@@ -27,6 +27,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:xau_core/xau_core.dart' hide Direction;
 import 'package:xauvote/data/live_data.dart';
 import 'package:xauvote/data/live_repository.dart';
 import 'package:xauvote/data/mock_fixtures.dart';
@@ -117,9 +118,35 @@ class _StubRepository implements LiveRepository {
   }
 
   @override
-  Future<List<DisplayDigestTheme>> latestDigest() async {
+Future<List<DisplayDigestTheme>> latestDigest() async {
     _guard();
     return digest;
+  }
+
+  // ---------------------------------------------------------------- analysis
+  //
+  // The stub returns empty rather than fabricating bars. The scanner treats a
+  // missing series as insufficient history and reports NO TRADE, which is the
+  // behaviour these tests want: a stub must not manufacture a setup.
+
+  @override
+  Future<Map<Tf, TimeframeBars>> analysisBars({int maxPerTimeframe = 600}) async {
+    _guard();
+    return const {};
+  }
+
+  @override
+  Future<({VenueSpread spread, double ageSeconds})> venueSpread({
+    Duration maxAge = const Duration(minutes: 5),
+  }) async {
+    _guard();
+    return (spread: const VenueSpread.unavailable(), ageSeconds: double.infinity);
+  }
+
+  @override
+  Future<List<EconomicEvent>> analysisEvents({int hoursAhead = 24}) async {
+    _guard();
+    return const [];
   }
 }
 

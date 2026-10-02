@@ -27,12 +27,14 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../config.dart';
+import '../data/analysis_service.dart';
 import '../data/live_data.dart';
 import '../data/mock_fixtures.dart';
 import '../icons.dart';
 import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/analysis_verdict_card.dart';
 import '../widgets/harbor_widgets.dart';
 
 class RadarScreen extends StatelessWidget {
@@ -74,10 +76,24 @@ class RadarScreen extends StatelessWidget {
     return 'updated ${(s / 3600).floor()}h ago';
   }
 
+  /// The analysis service, or null in an offline build.
+  ///
+  /// Like the live snapshot, this resolves in a live build and is absent
+  /// offline. A missing service must not be treated as "no analysis": the
+  /// card renders its own honest waiting state instead.
+  static AnalysisService? _analysisOf(BuildContext context) {
+    try {
+      return context.watch<AnalysisService>();
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final live = _liveOf(context);
+    final analysis = _analysisOf(context);
     // Offline build: the demo switcher drives the scenario. Live build: the
     // pipeline supplies the state, so its own signal is the only verdict there
     // can be — null is a real answer (NO CONSENSUS), never a fixture.
@@ -127,6 +143,11 @@ class RadarScreen extends StatelessWidget {
               ),
           },
         ScenarioStrip(pills: _scenarioPills(signal, live)),
+        // Multi-timeframe analysis: the expert methodology's own verdict,
+        // shown separately from consensus because it answers a different
+        // question. Consensus asks what independent sources agree on; this
+        // asks whether the technicals, gates and vetoes permit a setup at all.
+        AnalysisVerdictCard(scan: analysis?.result, onRefresh: analysis?.refresh),
         // The switcher demos states the live pipeline owns, so it must not
         // appear next to real rows.
         if (mockMode && live == null) const DemoStateRow(),

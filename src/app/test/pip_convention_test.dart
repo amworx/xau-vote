@@ -97,6 +97,11 @@ List<String> wrappedTexts(WidgetTester tester, {Set<String> skip = const {}}) {
 const _prose = {
   'A/B/C/E cluster tightly',
   'New signals paused from',
+  // Sentences, not figures. These are allowed to wrap at 390px because they are
+  // explanatory copy; every numeric/label string must still stay on one line.
+  'The scan runs on closed bars only. Waiting for enough history to evaluate '
+      'the 1H regime.',
+  'XV does not execute trades.',
 };
 
 void main() {
