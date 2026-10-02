@@ -82,6 +82,41 @@ The updated methodology is explicit and this integration adopts it verbatim:
 This is why `market_snapshots.bid` / `.ask` stay `NULL` in XV: populating them
 from a derived difference would violate the rule both experts now encode.
 
+## 1b. Sources — taken from the instruction files, not re-researched
+
+Both expert documents enumerate concrete sources with IDs. They are
+authoritative for XV, so no independent source search is needed.
+
+| Group | IDs | Role |
+|---|---|---|
+| Price | **P1** OANDA fxTrade Practice (alt **P1b** MT5) · **P2** Binance PAXG (cross-check only) · **P3** Yahoo · **P4** Twelve Data (fallback) · **P5** Dukascopy (backtest) | P1 is the signal feed |
+| Calendar | **C1** ForexFactory weekly JSON (convenience: impact + consensus, **no actuals**) · **C2** BLS · **C3** BEA · **C4** Federal Reserve · **C5** FRED · **C6** official actuals | C1 for convenience; **C2–C5 are the authority for dates/times** |
+| Macro | **M-FRED** `DFII10`/`DGS10`/`DGS2`/`T10YIE`/`DFF`/`DTWEXBGS`/`VIXCLS` · **M-UST** Treasury yield curves · **M-INTRA** Yahoo · **M-FED** CME FedWatch (manual, do not scrape) | daily regime only, never intraday |
+| Positioning | **F-COT** CFTC disaggregated COMEX gold `088691` · **F-ETF** GLD · **F-ETF2** IAU | slow: confidence only |
+| Structural | **O-WGC** · **O-IMF** · **O-PBOC** · **O-FED** RSS · ECB/BoE/BoJ | slow structural bias |
+
+Rights guidance (MGC §3): show **derived outputs** — signals, scores,
+calculated indicator values, event times — rather than republishing raw
+third-party quote streams or article text.
+
+### Two findings that change the implementation
+
+1. **P1 publishes genuine bid/ask.** That is exactly the condition the ratified
+   option (a) rule named for activating the spread vetoes. It is a *demo*
+   venue, so it qualifies as an execution-venue spread only in demo terms and
+   must be labelled as such rather than implying a live execution spread.
+2. **P2/P3 are proxies, never level sources.** Binance PAXG carries a small
+   basis versus spot. MGC §3.1 permits it for "sanity and volatility, not
+   exact levels", so PAXG bars may warm an indicator but must never publish
+   entry/SL/TP levels unless basis-corrected and labelled degraded.
+
+### Hard floor currently unmet
+
+§3.1: *"Minimum history to load: 500 bars per timeframe (EMA200 and
+baselines)."* XV had ~50 five-minute bars, so EMA200 on 1H cannot compute and
+the engine would return `NO_TRADE / v3DataStale` indefinitely. Warming this
+history is the critical path to any scored signal.
+
 ## 2. Data prerequisites that do NOT exist yet
 
 Both experts require OHLCV candles. XV currently stores **single price ticks
