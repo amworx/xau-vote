@@ -49,3 +49,6 @@ backfill_bars.ndjson
 backfill.log
 warmup*.ndjson
 warmup*.sql
+
+# transient test/analysis scratch
+src/app/o.txt
