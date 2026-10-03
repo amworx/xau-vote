@@ -56,11 +56,12 @@ class _StubRepository implements LiveRepository {
     this.signal,
     this.historyRows = const [],
     this.events = const [],
-this.digest = const [],
+    this.digest = const [],
     this.failWith,
     this.agreement = (distinctIdeas: 0, distinctSources: 0),
     this.enabledSources = 1,
     this.provenance = const [],
+    this.contributors = const [],
   });
 
   // Defaults are unused by the populated fixture, which supplies both
@@ -76,6 +77,10 @@ this.digest = const [],
   /// Provenance fixture. Empty by default: a stub must not fabricate
   /// independence that the backend did not report.
   final List<IdeaProvenance> provenance;
+
+  /// Rows for the Sources screen. Empty by default: a stub must not invent
+  /// contributing sources the backend did not report.
+  final List<DisplaySource> contributors;
 
   final double? price;
   final double? low;
@@ -116,7 +121,7 @@ this.digest = const [],
     return signal;
   }
 
-@override
+  @override
   Future<List<DisplayHistoryEntry>> history({int limit = 50}) async {
     _guard();
     return historyRows;
@@ -129,7 +134,7 @@ this.digest = const [],
   }
 
   @override
-Future<List<DisplayDigestTheme>> latestDigest() async {
+  Future<List<DisplayDigestTheme>> latestDigest() async {
     _guard();
     return digest;
   }
@@ -147,7 +152,9 @@ Future<List<DisplayDigestTheme>> latestDigest() async {
   }
 
   @override
-  Future<({int distinctIdeas, int distinctSources})> agreementCount(String signalId) async {
+  Future<({int distinctIdeas, int distinctSources})> agreementCount(
+    String signalId,
+  ) async {
     _guard();
     return agreement;
   }
@@ -156,6 +163,12 @@ Future<List<DisplayDigestTheme>> latestDigest() async {
   Future<int> enabledSourceCount() async {
     _guard();
     return enabledSources;
+  }
+
+  @override
+  Future<List<DisplaySource>> contributingSources(String signalId) async {
+    _guard();
+    return contributors;
   }
 
   @override
@@ -230,13 +243,30 @@ const _liveHistory = [
 ];
 
 /// A fully populated snapshot — price, range, setup, log, calendar, digest.
+/// A publisher that genuinely contributed, for the Sources screen.
+const DisplaySource _liveContributor = DisplaySource(
+  id: 'desk-a',
+  name: 'Desk A',
+  direction: Direction.long,
+  agrees: true,
+  entryText: '4,138.16-4,143.16',
+  stopText: '4,128.16',
+  targetsText: '4,148.66',
+  freshnessText: '12m',
+  reasoning: 'Upstream dataset: MANUAL-SEED',
+  sourceUrl: '',
+  tp1HitRate: 0,
+  tp2HitRate: 0,
+  tp3HitRate: 0,
+);
+
 LiveData _populated() {
   final live = LiveData(
     repository: _StubRepository(
       price: 4312.45,
       low: 4300.10,
       high: 4320.90,
-signal: _liveSignal,
+      signal: _liveSignal,
       historyRows: _liveHistory,
       events: const [_liveEvent],
       digest: const [_liveDigest],
@@ -246,6 +276,7 @@ signal: _liveSignal,
       // tautology that produced the old "11 of 11".
       agreement: (distinctIdeas: 9, distinctSources: 4),
       enabledSources: 6,
+      contributors: const [_liveContributor],
       // Provenance for the four agreeing external publishers. Without it the
       // scorer reports zero sources and the UI renders "No external sources yet",
       // which is correct but is not what this fixture is demonstrating.
@@ -282,13 +313,19 @@ LiveData _empty() {
 /// The nav order `main.dart` uses.
 const _tabs = ['RADAR', 'SIGNAL', 'SOURCES', 'HISTORY', 'EVENTS', 'SETTINGS'];
 
-const _screens = <Widget>[
-  RadarScreen(),
-  SignalScreen(),
-  SourcesScreen(),
-  HistoryScreen(),
-  EventsScreen(),
-  SettingsScreen(),
+/// The screens under test, with the session pinned open.
+///
+/// Without this the suite silently changes meaning across the week: the Radar
+/// and Signal screens withhold a setup while the market is shut, so a run at
+/// the weekend would fail every level assertion for the right reason and the
+/// wrong cause.
+final _screens = <Widget>[
+  const RadarScreen(sessionOpenOverride: true),
+  const SignalScreen(sessionOpenOverride: true),
+  const SourcesScreen(),
+  const HistoryScreen(),
+  const EventsScreen(),
+  const SettingsScreen(),
 ];
 
 /// The document width every layout assertion below is made at.
@@ -371,15 +408,19 @@ void main() {
   // that has to be proven here.
 
   group('Radar reads the snapshot', () {
-    testWidgets('price, range, levels and agreement come from the poller',
-        (tester) async {
+    testWidgets('price, range, levels and agreement come from the poller', (
+      tester,
+    ) async {
       await _pumpLive(tester, _populated());
 
       // Price hero.
       expect(find.text('XAUUSD · SPOT GOLD'), findsOneWidget);
       expect(find.text('4,312.45'), findsOneWidget);
-      expect(find.text('4,278.30'), findsNothing,
-          reason: 'the fixture price must never reach a live screen');
+      expect(
+        find.text('4,278.30'),
+        findsNothing,
+        reason: 'the fixture price must never reach a live screen',
+      );
       expect(
         find.text('+0.29%'),
         findsNothing,
@@ -399,14 +440,16 @@ void main() {
       expect(inLevels('4,310-4,315'), findsOneWidget);
       expect(inLevels('STOP'), findsOneWidget);
       expect(inLevels('4,295'), findsOneWidget);
+      // TP1 is the default target scope, so TP2 and TP3 are withheld. This
+      // asserts the user's requested default rather than the old "show all".
       expect(inLevels('4,330'), findsOneWidget);
-      expect(inLevels('4,350'), findsOneWidget);
-      expect(inLevels('4,370'), findsOneWidget);
+      expect(inLevels('4,350'), findsNothing);
+      expect(inLevels('4,370'), findsNothing);
       expect(inLevels('4,275-4,280'), findsNothing);
 
       // Agreement is a split, and the offline source chips do not exist here.
       expect(find.text('15M Consensus Setup'), findsOneWidget);
-expect(find.text('STRONG · 4 / 6'), findsOneWidget);
+      expect(find.text('STRONG · 4 / 6'), findsOneWidget);
       // 4 independent sources out of 6 that could have voted. The numerator is
       // a distinct source count, not an idea count, so one prolific source can
       // never look like broad agreement.
@@ -414,8 +457,11 @@ expect(find.text('STRONG · 4 / 6'), findsOneWidget);
       expect(find.text('4 of 4 sources agree'), findsNothing);
       expect(find.text('Source A ✓'), findsNothing);
       expect(find.text('LONG'), findsOneWidget);
-      expect(find.text('—'), findsWidgets,
-          reason: 'alternate direction and 5M confirmation are unreported');
+      expect(
+        find.text('—'),
+        findsWidgets,
+        reason: 'alternate direction and 5M confirmation are unreported',
+      );
 
       // Copy/share stay available in both modes.
       expect(find.text('COPY LEVELS'), findsOneWidget);
@@ -430,19 +476,19 @@ expect(find.text('STRONG · 4 / 6'), findsOneWidget);
 
       expect(find.text('DEMO STATE'), findsNothing);
       for (final state in ['STRONG', 'DEVELOPING', 'DIVIDED']) {
-        expect(find.widgetWithText(TextButton, state), findsNothing,
-            reason: 'the pipeline owns the state, not a demo switcher');
+        expect(
+          find.widgetWithText(TextButton, state),
+          findsNothing,
+          reason: 'the pipeline owns the state, not a demo switcher',
+        );
       }
     });
 
-    testWidgets('a null signal renders NO CONSENSUS, never fixture levels',
-        (tester) async {
+    testWidgets('a null signal renders NO CONSENSUS, never fixture levels', (
+      tester,
+    ) async {
       final live = LiveData(
-        repository: _StubRepository(
-          price: 4312.45,
-          low: 4300.10,
-          high: 4320.90,
-        ),
+        repository: _StubRepository(price: 4312.45, low: 4300.10, high: 4320.90),
       );
       addTearDown(live.dispose);
       await _pumpLive(tester, live);
@@ -464,8 +510,7 @@ expect(find.text('STRONG · 4 / 6'), findsOneWidget);
       expect(find.text('NEUTRAL'), findsNothing);
     });
 
-    testWidgets('a null price renders the waiting state, never a number',
-        (tester) async {
+    testWidgets('a null price renders the waiting state, never a number', (tester) async {
       final live = LiveData(repository: _StubRepository(signal: _liveSignal));
       addTearDown(live.dispose);
       await _pumpLive(tester, live);
@@ -484,17 +529,15 @@ expect(find.text('STRONG · 4 / 6'), findsOneWidget);
       expect(find.text('4,310-4,315'), findsOneWidget);
     });
 
-    testWidgets('events annotate the card but never vote (rule 9)',
-        (tester) async {
+    testWidgets('events annotate the card but never vote (rule 9)', (tester) async {
       await _pumpLive(tester, _populated());
 
-      expect(find.text('Caution: CPI y/y in 00:12:41'), findsOneWidget);
+      expect(find.text('Caution: CPI y/y in 12:41'), findsOneWidget);
       expect(find.text('Caution: Retail Sales in 42m'), findsNothing);
       expect(find.text('Hawkish Fed repricing'), findsOneWidget);
     });
 
-    testWidgets('a failed poll keeps the last good values and says so',
-        (tester) async {
+    testWidgets('a failed poll keeps the last good values and says so', (tester) async {
       final repo = _StubRepository(
         price: 4312.45,
         low: 4300.10,
@@ -518,8 +561,7 @@ expect(find.text('STRONG · 4 / 6'), findsOneWidget);
   });
 
   group('Signal reads the snapshot', () {
-    testWidgets('direction, strength, levels and lifecycle come from it',
-        (tester) async {
+    testWidgets('direction, strength, levels and lifecycle come from it', (tester) async {
       await _pumpLive(tester, _populated());
       await _openTab(tester, 'SIGNAL');
 
@@ -553,20 +595,21 @@ expect(find.text('STRONG · 4 / 6'), findsOneWidget);
       expect(find.text('Signal text copied'), findsOneWidget);
     });
 
-    testWidgets('no live signal renders the empty state, not a fixture setup',
-        (tester) async {
-      final live = LiveData(
-        repository: _StubRepository(price: 4312.45),
-      );
+    testWidgets('no live signal renders the empty state, not a fixture setup', (
+      tester,
+    ) async {
+      final live = LiveData(repository: _StubRepository(price: 4312.45));
       addTearDown(live.dispose);
       await _pumpLive(tester, live);
       await _openTab(tester, 'SIGNAL');
 
       expect(find.text('SIGNAL · NO CONSENSUS'), findsOneWidget);
-      expect(find.text('NO CONSENSUS'), findsNWidgets(2),
-          reason: 'header status + card headline');
-      expect(find.text('No 15M setup has cleared consensus right now.'),
-          findsOneWidget);
+      expect(
+        find.text('NO CONSENSUS'),
+        findsNWidgets(2),
+        reason: 'header status + card headline',
+      );
+      expect(find.text('No 15M setup has cleared consensus right now.'), findsOneWidget);
       expect(find.text('Waiting for stronger agreement.'), findsOneWidget);
       expect(find.text('4,275-4,280'), findsNothing);
       expect(find.text('ACTIVE SETUP · 15M LONG'), findsNothing);
@@ -577,22 +620,25 @@ expect(find.text('STRONG · 4 / 6'), findsOneWidget);
   });
 
   group('Sources reads the snapshot', () {
-    testWidgets('agreement comes from the signal, rows from the pipeline',
-        (tester) async {
+    testWidgets('agreement comes from the signal, rows from the pipeline', (
+      tester,
+    ) async {
       await _pumpLive(tester, _populated());
       await _openTab(tester, 'SOURCES');
 
-expect(find.text('SOURCES · live-1'), findsOneWidget);
+      expect(find.text('SOURCES · live-1'), findsOneWidget);
       // 4 independent sources of 6 that could have voted.
       expect(find.text('4 / 6'), findsOneWidget);
       expect(find.text('agree'), findsOneWidget);
       // Agreement label, not a probability, and derived from the signal.
       expect(find.text('STRONG 88'), findsOneWidget);
-      // No contributing rows stored yet: no fixture desks, no toggles to lie
-      // about, and independence is reported rather than invented.
-      expect(find.text('DESK A · GoldPulse'), findsNothing);
-      expect(find.text('Contributing rows arrive with the next pipeline run'),
-          findsOneWidget);
+      // The linked publisher is now listed: the Sources screen reads the rows
+      // behind the signal instead of hardcoding an empty list.
+      expect(find.text('Desk A'), findsOneWidget);
+      expect(
+        find.text('1 contributing source'),
+        findsOneWidget,
+      );
       expect(find.text('INDEPENDENCE CHECK'), findsOneWidget);
       expect(
         find.textContaining('Independence is decided by the consensus engine'),
@@ -605,12 +651,11 @@ expect(find.text('SOURCES · live-1'), findsOneWidget);
   });
 
   group('History reads the snapshot', () {
-    testWidgets('rows render and the stat tiles are derived from them',
-        (tester) async {
+    testWidgets('rows render and the stat tiles are derived from them', (tester) async {
       await _pumpLive(tester, _populated());
       await _openTab(tester, 'HISTORY');
 
-// The row tightens the separator around its level values, so the
+      // The row tightens the separator around its level values, so the
       // rendered detail line is the shortened form.
       expect(find.text('IN 4,300-4,310·SL 4,285'), findsOneWidget);
       expect(find.text('TODAY · 14:20'), findsOneWidget);
@@ -621,10 +666,7 @@ expect(find.text('SOURCES · live-1'), findsOneWidget);
       expect(find.text('+1000'), findsOneWidget);
       expect(find.text('+8400'), findsNothing);
       // The fixture log is gone.
-      expect(
-        find.text('IN 4,102-07 · SL 4,088 · TP2 4,138 · STRONG 84'),
-        findsNothing,
-      );
+      expect(find.text('IN 4,102-07 · SL 4,088 · TP2 4,138 · STRONG 84'), findsNothing);
       expect(find.text('NO CONSENSUS'), findsNothing);
     });
 
@@ -639,14 +681,15 @@ expect(find.text('SOURCES · live-1'), findsOneWidget);
   });
 
   group('Events reads the snapshot', () {
-    testWidgets('the calendar, guard line and digest come from the poller',
-        (tester) async {
+    testWidgets('the calendar, guard line and digest come from the poller', (
+      tester,
+    ) async {
       await _pumpLive(tester, _populated());
       await _openTab(tester, 'EVENTS');
 
       expect(find.text('MACRO CONTEXT · NEVER VOTES'), findsOneWidget);
       expect(find.text('CPI y/y'), findsWidgets);
-      expect(find.text('HIGH+MED · 1 ARMED · BLACKOUT 00:12:41'), findsOneWidget);
+      expect(find.text('HIGH+MED · 1 ARMED · BLACKOUT 12:41'), findsOneWidget);
       expect(find.text('NEXT HIGH-IMPACT'), findsOneWidget);
       // No fixture releases borrow in.
       expect(find.text('NFP — Non-Farm Payrolls'), findsNothing);
@@ -658,12 +701,10 @@ expect(find.text('SOURCES · live-1'), findsOneWidget);
       await _openTab(tester, 'NEWS');
       expect(find.text('Hawkish Fed repricing'), findsOneWidget);
       expect(find.text('No headlines collected.'), findsOneWidget);
-      expect(find.text('Gold holds range ahead of US payrolls data'),
-          findsNothing);
+      expect(find.text('Gold holds range ahead of US payrolls data'), findsNothing);
     });
 
-    testWidgets('an empty calendar renders silence, not a fixture event',
-        (tester) async {
+    testWidgets('an empty calendar renders silence, not a fixture event', (tester) async {
       await _pumpLive(tester, _empty());
       await _openTab(tester, 'EVENTS');
 
@@ -683,15 +724,17 @@ expect(find.text('SOURCES · live-1'), findsOneWidget);
   });
 
   group('Settings holds no pipeline data', () {
-    testWidgets('renders identically live, with no LIVE/MOCK banner',
-        (tester) async {
+    testWidgets('renders identically live, with no LIVE/MOCK banner', (tester) async {
       await _pumpLive(tester, _empty());
       await _openTab(tester, 'SETTINGS');
 
-      expect(find.text('SETTINGS'), findsNWidgets(2),
-          reason: 'header subtitle + nav label');
+      expect(
+        find.text('SETTINGS'),
+        findsNWidgets(2),
+        reason: 'header subtitle + nav label',
+      );
       expect(find.text('15M / 5M / 1H'), findsOneWidget);
-expect(find.text('Consensus forming'), findsOneWidget);
+      expect(find.text('Consensus forming'), findsOneWidget);
       expect(find.text('MOCK'), findsNothing);
       // No bare "LIVE" label: the pill names the real session phase, so this
       // stays true whether the market is open or shut.
@@ -719,11 +762,8 @@ expect(find.text('Consensus forming'), findsOneWidget);
       await sweep(tester, _empty());
     });
 
-    testWidgets('a failed poll with no prior data never overflows',
-        (tester) async {
-      final live = LiveData(
-        repository: _StubRepository(failWith: StateError('offline')),
-      );
+    testWidgets('a failed poll with no prior data never overflows', (tester) async {
+      final live = LiveData(repository: _StubRepository(failWith: StateError('offline')));
       addTearDown(live.dispose);
       await sweep(tester, live);
     });
@@ -757,14 +797,8 @@ expect(find.text('Consensus forming'), findsOneWidget);
     test('pips stay derived from the live levels, at both conventions', () {
       // The Signal/History figures must rescale with the trader's convention
       // rather than being stored — the live levels are no exception.
-      expect(
-        pipsTo(_liveSignal.tp1!, _liveSignal.entryMid, pipFactor: 100),
-        1700,
-      );
-      expect(
-        pipsTo(_liveSignal.tp1!, _liveSignal.entryMid, pipFactor: 10),
-        170,
-      );
+      expect(pipsTo(_liveSignal.tp1!, _liveSignal.entryMid, pipFactor: 100), 1700);
+      expect(pipsTo(_liveSignal.tp1!, _liveSignal.entryMid, pipFactor: 10), 170);
       expect(
         riskReward(
           target: _liveSignal.tp3!,

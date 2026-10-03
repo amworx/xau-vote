@@ -26,6 +26,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:xau_core/analysis/independence.dart';
+// Session calendar only; the barrel also exports a Direction enum that collides
+// with the app's display models.
+import 'package:xau_core/analysis/session.dart';
 
 import '../config.dart';
 import '../data/analysis_service.dart';
@@ -39,11 +42,42 @@ import '../widgets/analysis_verdict_card.dart';
 import '../widgets/independence_line.dart';
 import '../widgets/harbor_widgets.dart';
 
-class RadarScreen extends StatelessWidget {
-  const RadarScreen({super.key});
+class RadarScreen extends StatefulWidget {
+  const RadarScreen({super.key, this.sessionOpenOverride});
+
+  /// Pins the session state instead of reading the clock.
+  ///
+  /// The screen must know whether the market is trading, and a test that
+  /// depends on the real calendar would pass on a Tuesday and fail at the
+  /// weekend. Only tests pass this; production always reads the clock.
+  @visibleForTesting
+  final bool? sessionOpenOverride;
 
   /// Bottom-nav index of the Events screen.
   static const int eventsTab = 4;
+
+  @override
+  State<RadarScreen> createState() => _RadarScreenState();
+}
+
+class _RadarScreenState extends State<RadarScreen> {
+  /// Bottom-nav index of the Events screen.
+  static const int eventsTab = 4;
+
+  /// Which timeframe the user is inspecting. 15M is the only one that can carry
+  /// a consensus setup; 5M and 1H are context (product rule 1), so switching
+  /// changes which view of the market is shown and never the published signal.
+  String _timeframe = '15M';
+
+/// Whether the market is treated as trading.
+  ///
+  /// The offline build is a UI preview over fixtures: it makes no market-status
+  /// claim (the header hides the pill), and there is no real order to protect,
+  /// so gating its preview on the real calendar would only blank the design at
+  /// the weekend. A live build always reads the clock.
+  bool _sessionOpenAt(DateTime now) =>
+      widget.sessionOpenOverride ??
+      (mockMode ? true : isSessionOpen(now.toUtc()));
 
   /// Market snapshot (offline build only). Scenario switching changes the
   /// signal, never the quote, so this is always the offline live one.
@@ -102,26 +136,34 @@ class RadarScreen extends StatelessWidget {
     final signal = live != null
         ? live.signal
         : state.scenario == RadarScenario.developing
-            ? MockFixtures.developing
-            : quote;
+        ? MockFixtures.developing
+        : quote;
     final caution = _caution(live, state.scenario);
     final macroStrip = _macroStrip(live, context);
+
+    // A published setup cannot be acted on while the market is shut, so it is
+    // not offered. The levels stay in the database and reappear when the
+    // session opens; showing them over a closed market invites a trader to act
+    // on a price that will not move.
+    final sessionOpen = _sessionOpenAt(DateTime.now());
     return ListView(
       key: const PageStorageKey<String>('radar'),
       padding: EdgeInsets.zero,
       children: [
-        const HarborHeader(),
+        HarborHeader(sessionOpen: sessionOpen),
         if (live != null && live.error != null) _ErrorLine(live.error!),
         if (live != null)
           _LiveQuoteHero(live: live)
         else
           const SpotPriceBlock(signal: quote),
-        if (live != null)
-          _LiveDayBar(live: live)
-        else
-          const DayMoveBar(signal: quote),
-        const TimeframeSwitch(),
-        if (live != null)
+        if (live != null) _LiveDayBar(live: live) else const DayMoveBar(signal: quote),
+        TimeframeSwitch(
+          active: _timeframe,
+          onChanged: (tf) => setState(() => _timeframe = tf),
+        ),
+        if (!sessionOpen)
+          const _MarketClosedCard()
+        else if (live != null)
           signal == null
               ? const _NoConsensusCard(live: true)
               : _verdictCard(
@@ -135,15 +177,15 @@ class RadarScreen extends StatelessWidget {
           switch (state.scenario) {
             RadarScenario.strong => _verdictCard(context, signal!),
             RadarScenario.developing => _verdictCard(
-                context,
-                signal!,
-                stateLabel: statusLabel(signal.status),
-              ),
+              context,
+              signal!,
+              stateLabel: statusLabel(signal.status),
+            ),
             RadarScenario.noConsensus => const _NoConsensusCard(),
             RadarScenario.blackout => EventGuardrailBar(
-                event: MockFixtures.upcomingEvents.first,
-                onTap: () => context.read<AppState>().setTab(eventsTab),
-              ),
+              event: MockFixtures.upcomingEvents.first,
+              onTap: () => context.read<AppState>().setTab(eventsTab),
+            ),
           },
         ScenarioStrip(pills: _scenarioPills(signal, live)),
         // Multi-timeframe analysis: the expert methodology's own verdict,
@@ -191,8 +233,7 @@ class RadarScreen extends StatelessWidget {
         text = 'Caution: ${event.title} in ${formatCountdown(event.startsIn)}';
         break;
       }
-    } else if (scenario == RadarScenario.strong ||
-        scenario == RadarScenario.developing) {
+    } else if (scenario == RadarScenario.strong || scenario == RadarScenario.developing) {
       text = 'Caution: Retail Sales in 42m';
     }
     if (text == null) return null;
@@ -235,7 +276,7 @@ class RadarScreen extends StatelessWidget {
         value: live != null
             ? 'SHORT —'
             : 'SHORT ${MockFixtures.dividedVotes[Direction.short] ?? 0}/'
-                '${signal?.totalCount ?? 0}',
+                  '${signal?.totalCount ?? 0}',
       ),
       (label: 'Watch', value: signal == null ? '—' : formatLevel(signal.stopLoss)),
       (label: '5M', value: live != null ? '—' : 'CONFIRMING'),
@@ -316,12 +357,8 @@ class RadarScreen extends StatelessWidget {
                 Expanded(
                   child: HarborActionButton(
                     label: 'COPY LEVELS',
-                    onTap: () => _publish(
-                      context,
-                      signal,
-                      state.targets,
-                      'Levels copied',
-                    ),
+                    onTap: () =>
+                        _publish(context, signal, state.targets, 'Levels copied'),
                   ),
                 ),
                 const SizedBox(width: 7),
@@ -368,7 +405,8 @@ class RadarScreen extends StatelessWidget {
     return VerdictLevelGrid(
       entry: VerdictLevelCell(
         label: 'Entry',
-        value: '${formatLevel(signal.entryLow)}-'
+        value:
+            '${formatLevel(signal.entryLow)}-'
             '${formatLevel(signal.entryHigh)}',
         sub: 'market zone',
         highlighted: true,
@@ -409,10 +447,7 @@ class RadarScreen extends StatelessWidget {
                   runSpacing: 4,
                   children: [
                     for (final source in sources)
-                      SourceChip(
-                        label: 'Source ${source.id}',
-                        agrees: source.agrees,
-                      ),
+                      SourceChip(label: 'Source ${source.id}', agrees: source.agrees),
                   ],
                 ),
               ],
@@ -424,11 +459,7 @@ class RadarScreen extends StatelessWidget {
             children: [
               const Text(
                 'R:R',
-                style: TextStyle(
-                  fontFamily: 'Sora',
-                  fontSize: 9,
-                  color: harborDim,
-                ),
+                style: TextStyle(fontFamily: 'Sora', fontSize: 9, color: harborDim),
               ),
               const SizedBox(width: 4),
               Text(
@@ -457,11 +488,8 @@ class RadarScreen extends StatelessWidget {
     TargetSelection selection,
     String toast,
   ) {
-    unawaited(
-      Clipboard.setData(ClipboardData(text: _summary(signal, selection))),
-    );
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(toast)));
+    unawaited(Clipboard.setData(ClipboardData(text: _summary(signal, selection))));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(toast)));
   }
 
   String _summary(DisplaySignal signal, TargetSelection selection) {
@@ -478,9 +506,7 @@ class RadarScreen extends StatelessWidget {
     for (final n in visibleTps(selection)) {
       final tp = tps[n];
       if (tp == null) continue;
-      lines.add(
-        'TP$n ${formatLevel(tp)} (${levelDistance(signal.entryMid, tp)})',
-      );
+      lines.add('TP$n ${formatLevel(tp)} (${levelDistance(signal.entryMid, tp)})');
     }
     lines.add('R:R ${bestRrValue(signal, selection)}');
     return lines.join('\n');
@@ -538,11 +564,7 @@ class _LiveQuoteHero extends StatelessWidget {
             price == null
                 ? 'No market snapshot stored yet — the first tick appears here.'
                 : 'Latest stored snapshot for XAUUSD.',
-            style: const TextStyle(
-              fontFamily: 'Sora',
-              fontSize: 11,
-              color: harborFaint,
-            ),
+            style: const TextStyle(fontFamily: 'Sora', fontSize: 11, color: harborFaint),
           ),
           const SizedBox(height: 8),
           Text.rich(
@@ -550,11 +572,7 @@ class _LiveQuoteHero extends StatelessWidget {
               children: [
                 const TextSpan(
                   text: 'Updated ',
-                  style: TextStyle(
-                    fontFamily: 'Sora',
-                    fontSize: 10,
-                    color: harborDim,
-                  ),
+                  style: TextStyle(fontFamily: 'Sora', fontSize: 10, color: harborDim),
                 ),
                 TextSpan(
                   text: clockLabel(),
@@ -677,6 +695,72 @@ class _ErrorLine extends StatelessWidget {
 /// reported. Live the snapshot carries no vote counts at all, so those rows are
 /// dropped rather than filled from [MockFixtures.dividedVotes] — "sources have
 /// not agreed" is the honest statement, the counts are the invented part.
+/// Shown in place of a setup when the spot market is closed.
+///
+/// This is deliberately a *withheld* state, not "no trade": a setup may well
+/// exist, it just cannot be entered because nothing will move. Saying "no trade"
+/// would misdescribe the situation and could read as a verdict on the
+/// analysis; the honest answer is that the market is not trading.
+class _MarketClosedCard extends StatelessWidget {
+  const _MarketClosedCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final reopens = nextOpenUtc(DateTime.now().toUtc());
+    final wait = reopens?.difference(DateTime.now().toUtc());
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: VerdictCardShell(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const HarborEyebrow('Market status', color: harborWarn),
+            const SizedBox(height: 6),
+            const Text(
+              'MARKET CLOSED',
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Gold spot is closed for the weekend. Levels are withheld until '
+              'the session reopens — a setup here could not be entered.',
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 12,
+                height: 1.45,
+                color: harborDim,
+              ),
+            ),
+            if (wait != null && !wait.isNegative) ...[
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  const HarborEyebrow('Reopens in', color: harborFaint),
+                  const SizedBox(width: 9),
+                  Text(
+                    formatCountdown(wait),
+                    style: const TextStyle(
+                      fontFamily: 'Space Mono',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: harborWarn,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _NoConsensusCard extends StatelessWidget {
   const _NoConsensusCard({this.live = false});
 
@@ -709,11 +793,7 @@ class _NoConsensusCard extends StatelessWidget {
               live
                   ? 'Sources have not reached agreement.'
                   : 'Sources are currently divided.',
-              style: const TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 12,
-                color: harborDim,
-              ),
+              style: const TextStyle(fontFamily: 'Sora', fontSize: 12, color: harborDim),
             ),
             const SizedBox(height: 14),
             for (final entry in const [
@@ -725,11 +805,7 @@ class _NoConsensusCard extends StatelessWidget {
             const SizedBox(height: 14),
             const Text(
               'Waiting for stronger agreement.',
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 12,
-                color: harborDim,
-              ),
+              style: TextStyle(fontFamily: 'Sora', fontSize: 12, color: harborDim),
             ),
           ],
         ),

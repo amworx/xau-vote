@@ -21,6 +21,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+// Session calendar only; the barrel also exports a Direction enum that collides
+// with the app's display models.
+import 'package:xau_core/analysis/session.dart';
 
 import '../config.dart';
 import '../data/live_data.dart';
@@ -31,7 +34,13 @@ import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
 
 class SignalScreen extends StatelessWidget {
-  const SignalScreen({super.key});
+  const SignalScreen({super.key, this.sessionOpenOverride});
+
+  /// Pins the session state instead of reading the clock. Only tests pass this;
+  /// a test that depended on the real calendar would pass midweek and fail at
+  /// the weekend.
+  @visibleForTesting
+  final bool? sessionOpenOverride;
 
   /// The polled snapshot for this build, or null in an offline build. See
   /// [RadarScreen._liveOf] for why this is the single seam between the two.
@@ -53,41 +62,49 @@ class SignalScreen extends StatelessWidget {
     final signal = live != null
         ? live.signal
         : state.scenario == RadarScenario.noConsensus
-            ? MockFixtures.developing
-            : state.scenario == RadarScenario.developing
-                ? MockFixtures.developing
-                : MockFixtures.strongLong;
+        ? MockFixtures.developing
+        : state.scenario == RadarScenario.developing
+        ? MockFixtures.developing
+        : MockFixtures.strongLong;
     final show = visibleTps(state.targets);
     // Points are canonical; every pip readout on this screen derives from them
     // through the trader's pip convention (D-20260927-003). Read once here so
     // the whole screen shares one convention per build.
     final pipFactor = state.pipConvention.pipFactor;
+    // A closed market cannot be entered, so a setup is not offered as one. The
+    // record stays in the log; only the actionable framing is withheld.
+    // The offline build previews fixtures and makes no market claim (its header
+    // hides the pill), so gating the preview on the real calendar would only
+    // blank the design at the weekend. A live build always reads the clock.
+    final sessionOpen = sessionOpenOverride ??
+        (mockMode ? true : isSessionOpen(DateTime.now().toUtc()));
     // `DisplaySignal.price` carries a fixture default; live the quote comes
     // from the poller, so an absent tick prints `—`.
     final quote = live == null
         ? formatPrice(signal!.price)
         : live.price == null
-            ? '—'
-            : formatPrice(live.price!);
+        ? '—'
+        : formatPrice(live.price!);
     return ListView(
       key: const PageStorageKey<String>('signal'),
       padding: const EdgeInsets.only(bottom: 20),
       children: [
         HarborHeader(
           subtitle: 'SIGNAL · ${signal?.id ?? 'NO CONSENSUS'}',
-          statusText: signal == null
-              ? 'NO CONSENSUS'
-              : statusLabel(signal.status),
+          sessionOpen: sessionOpen,
+          statusText: signal == null ? 'NO CONSENSUS' : statusLabel(signal.status),
         ),
-        if (signal == null) const _NoSetupCard() else ...[
+        if (!sessionOpen)
+          const _MarketClosedNotice()
+        else if (signal == null)
+          const _NoSetupCard()
+        else ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                HarborEyebrow(
-                  'Active setup · 15M ${_directionWord(signal.direction)}',
-                ),
+                HarborEyebrow('Active setup · 15M ${_directionWord(signal.direction)}'),
                 const SizedBox(height: 9),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -150,28 +167,24 @@ class SignalScreen extends StatelessWidget {
   /// `LONG` / `SHORT` / `NO SIGNAL` — the only place direction is spelled out
   /// as a word rather than carried by [DirectionPill].
   String _directionWord(Direction direction) => switch (direction) {
-        Direction.long => 'LONG',
-        Direction.short => 'SHORT',
-        Direction.neutral => 'NO SIGNAL',
-      };
+    Direction.long => 'LONG',
+    Direction.short => 'SHORT',
+    Direction.neutral => 'NO SIGNAL',
+  };
 
   /// Which lifecycle step the reported status sits on, or -1 for a state the
   /// walk-through does not cover. Used to mark the live current step without
   /// inventing transition timestamps.
   static int _lifecycleStep(DisplayStatus status) => switch (status) {
-        DisplayStatus.developing => 0,
-        DisplayStatus.ready => 1,
-        DisplayStatus.confirmed => 2,
-        DisplayStatus.active ||
-        DisplayStatus.tp1Hit ||
-        DisplayStatus.tp2Hit ||
-        DisplayStatus.tp3Hit =>
-          3,
-        DisplayStatus.noSetup ||
-        DisplayStatus.invalidated ||
-        DisplayStatus.expired =>
-          -1,
-      };
+    DisplayStatus.developing => 0,
+    DisplayStatus.ready => 1,
+    DisplayStatus.confirmed => 2,
+    DisplayStatus.active ||
+    DisplayStatus.tp1Hit ||
+    DisplayStatus.tp2Hit ||
+    DisplayStatus.tp3Hit => 3,
+    DisplayStatus.noSetup || DisplayStatus.invalidated || DisplayStatus.expired => -1,
+  };
 
   /// Lifecycle timeline through ACTIVE (spec §14) plus the still-open target
   /// step.
@@ -179,11 +192,7 @@ class SignalScreen extends StatelessWidget {
   /// Offline the state timestamps are fixture-pinned. Live the current step is
   /// derived from the status the pipeline reported and every timestamp prints
   /// `—`, because the snapshot records the state, not the moments it changed.
-  Widget _lifecycleCard(
-    DisplaySignal signal,
-    int pipFactor, {
-    required bool live,
-  }) {
+  Widget _lifecycleCard(DisplaySignal signal, int pipFactor, {required bool live}) {
     const steps = [
       ('DEVELOPING', '21:31'),
       ('READY', '21:36'),
@@ -325,7 +334,8 @@ class SignalScreen extends StatelessWidget {
         // pushed this cell a line taller than its neighbour. The neighbouring
         // TP cells are already unit-free (`+1700 · 1:1.5`), and the risk
         // figure reads as points in this layout.
-        sub: '−${pipsTo(signal.stopLoss, signal.entryMid, pipFactor: pipFactor).abs()} pips · '
+        sub:
+            '−${pipsTo(signal.stopLoss, signal.entryMid, pipFactor: pipFactor).abs()} pips · '
             'risk ${(signal.entryMid - signal.stopLoss).toStringAsFixed(1)}',
       ),
     ];
@@ -341,7 +351,8 @@ class SignalScreen extends StatelessWidget {
         VerdictLevelCell(
           label: 'TP$n',
           value: formatLevel(tp),
-          sub: '+${pipsTo(tp, signal.entryMid, pipFactor: pipFactor)} · '
+          sub:
+              '+${pipsTo(tp, signal.entryMid, pipFactor: pipFactor)} · '
               '1:${rr.toStringAsFixed(1)}',
         ),
       );
@@ -349,9 +360,11 @@ class SignalScreen extends StatelessWidget {
     return VerdictLevelGrid(
       entry: VerdictLevelCell(
         label: 'Entry zone',
-        value: '${formatLevel(signal.entryLow)}-'
+        value:
+            '${formatLevel(signal.entryLow)}-'
             '${formatLevel(signal.entryHigh)}',
-        sub: '${zonePips(signal.entryLow, signal.entryHigh, pipFactor: pipFactor)}-pip zone',
+        sub:
+            '${zonePips(signal.entryLow, signal.entryHigh, pipFactor: pipFactor)}-pip zone',
         highlighted: true,
       ),
       cells: cells,
@@ -372,17 +385,11 @@ class SignalScreen extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: _ContextBadge(
-              title: '1H TREND',
-              value: live ? '—' : 'SUPPORTIVE',
-            ),
+            child: _ContextBadge(title: '1H TREND', value: live ? '—' : 'SUPPORTIVE'),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _ContextBadge(
-              title: '5M CONFIRM',
-              value: live ? '—' : 'CONFIRMED',
-            ),
+            child: _ContextBadge(title: '5M CONFIRM', value: live ? '—' : 'CONFIRMED'),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -403,11 +410,7 @@ class SignalScreen extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          HarborEyebrow('Target scope'),
-          SizedBox(height: 9),
-          TargetSelector(),
-        ],
+        children: [HarborEyebrow('Target scope'), SizedBox(height: 9), TargetSelector()],
       ),
     );
   }
@@ -429,10 +432,7 @@ class SignalScreen extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: HarborEyebrow(
-              'Position status',
-              color: live ? harborDim : harborLong,
-            ),
+            child: HarborEyebrow('Position status', color: live ? harborDim : harborLong),
           ),
           const SizedBox(width: 10),
           SizedBox(
@@ -478,13 +478,8 @@ class SignalScreen extends StatelessWidget {
           Expanded(
             child: HarborActionButton(
               label: 'COPY SIGNAL TEXT',
-              onTap: () => _publish(
-                context,
-                signal,
-                selection,
-                pipFactor,
-                'Signal text copied',
-              ),
+              onTap: () =>
+                  _publish(context, signal, selection, pipFactor, 'Signal text copied'),
             ),
           ),
           const SizedBox(width: 7),
@@ -515,21 +510,14 @@ class SignalScreen extends StatelessWidget {
   ) {
     // Raised synchronously so the feedback never waits on the clipboard.
     unawaited(
-      Clipboard.setData(
-        ClipboardData(text: _summary(signal, selection, pipFactor)),
-      ),
+      Clipboard.setData(ClipboardData(text: _summary(signal, selection, pipFactor))),
     );
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(toast)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(toast)));
   }
 
   /// Agreement-first setup summary (spec §4) — score reads as the source
   /// split, never as a probability of profit (rule 4).
-  String _summary(
-    DisplaySignal signal,
-    TargetSelection selection,
-    int pipFactor,
-  ) {
+  String _summary(DisplaySignal signal, TargetSelection selection, int pipFactor) {
     final tps = {1: signal.tp1, 2: signal.tp2, 3: signal.tp3};
     final lines = <String>[
       'XAUUSD 15M ${_directionWord(signal.direction)} — '
@@ -554,6 +542,71 @@ class SignalScreen extends StatelessWidget {
 
 /// No active setup (product rule 2: insufficient agreement is a real answer).
 ///
+/// Stand-in for the setup card while the spot market is closed.
+///
+/// Withholding the levels is the point: an entry, stop and target presented
+/// over a shut market read as actionable, and the trader cannot act on any of
+/// them. The setup is not deleted, it simply is not offered as a trade.
+class _MarketClosedNotice extends StatelessWidget {
+  const _MarketClosedNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final reopens = nextOpenUtc(DateTime.now().toUtc());
+    final wait = reopens?.difference(DateTime.now().toUtc());
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
+      child: HarborCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const HarborEyebrow('Market status', color: harborWarn),
+            const SizedBox(height: 8),
+            const Text(
+              'MARKET CLOSED',
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Gold spot is closed for the weekend. Entry, stop and targets '
+              'are withheld until the session reopens.',
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 12,
+                height: 1.45,
+                color: harborDim,
+              ),
+            ),
+            if (wait != null && !wait.isNegative) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const HarborEyebrow('Reopens in', color: harborFaint),
+                  const SizedBox(width: 9),
+                  Text(
+                    formatCountdown(wait),
+                    style: const TextStyle(
+                      fontFamily: 'Space Mono',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: harborWarn,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// The offline preview states the same thing through the Radar card, so the
 /// copy matches: the room has not agreed, and XV waits. There is nothing to
 /// copy here, so the copy/share actions are absent rather than pointing at a
@@ -583,20 +636,12 @@ class _NoSetupCard extends StatelessWidget {
             const SizedBox(height: 8),
             const Text(
               'No 15M setup has cleared consensus right now.',
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 12,
-                color: harborDim,
-              ),
+              style: TextStyle(fontFamily: 'Sora', fontSize: 12, color: harborDim),
             ),
             const SizedBox(height: 6),
             const Text(
               'Waiting for stronger agreement.',
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 12,
-                color: harborDim,
-              ),
+              style: TextStyle(fontFamily: 'Sora', fontSize: 12, color: harborDim),
             ),
           ],
         ),
@@ -652,10 +697,7 @@ class _ContextBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 6),
-      decoration: BoxDecoration(
-        color: chipBg,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: chipBg, borderRadius: BorderRadius.circular(12)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -24,7 +24,7 @@ import '../models/display_models.dart';
 /// Snapshot of everything the screens read in live mode.
 class LiveData extends ChangeNotifier {
   LiveData({SupabaseClient? client, LiveRepository? repository})
-      : _repo = repository ?? LiveRepository(client);
+    : _repo = repository ?? LiveRepository(client);
 
   final LiveRepository _repo;
   Timer? _timer;
@@ -48,6 +48,9 @@ class LiveData extends ChangeNotifier {
   List<DisplayEvent> _events = const [];
   List<DisplayDigestTheme> _digest = const [];
 
+  /// Publishers behind the active signal's ideas.
+  List<DisplaySource> _contributors = const [];
+
   // ------------------------------------------------------------------ state
 
   bool get loading => _loading;
@@ -64,6 +67,12 @@ class LiveData extends ChangeNotifier {
   bool get hasSignal => _signal != null;
 
   List<DisplayHistoryEntry> get history => _history;
+
+  /// Sources that contributed to the active signal, for the Sources screen.
+  ///
+  /// Empty is a real answer: a signal with no linked idea rows explains
+  /// nothing, and showing fixture desks next to live levels would be a lie.
+  List<DisplaySource> get contributors => _contributors;
   List<DisplayEvent> get events => _events;
   List<DisplayDigestTheme> get digest => _digest;
 
@@ -107,6 +116,7 @@ class LiveData extends ChangeNotifier {
       _signal = signal;
       if (signal != null) {
         final eligible = await _repo.enabledSourceCount();
+        _contributors = await _repo.contributingSources(signal.id);
 
         // Independence is scored from provenance, never from row counts. The
         // three metrics stay separate and are never merged: a derived reader
@@ -140,6 +150,7 @@ class LiveData extends ChangeNotifier {
         );
       } else {
         _independence = null;
+        _contributors = const [];
       }
 
       _history = await _repo.history();

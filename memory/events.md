@@ -470,3 +470,18 @@
 - **errors:** Move-Item failed on .git (shell CWD lock) leaving an empty orphan dir; PowerShell Set-Content wrote ANSI and mangled one em-dash in main.dart (caught by diff audit, fixed)
 - **lessons:** (1) Never write source files with PowerShell Set-Content — it defaults to ANSI and silently corrupts Unicode; use [IO.File]::WriteAllText with UTF8Encoding(False) or the edit tool, then audit with git diff. (2) Supabase pooler username is the project ref, not the password. (3) Probe the region, never guess it. (4) Run git commands from OUTSIDE the folder being moved.
 - **tags:** g2, supabase, rename, xv, icons, licensing, encoding
+
+---
+
+## EVT-20261004-0033
+
+- **id:** EVT-20261004-0033
+- **timestamp:** 2026-10-04T00:20:00+03:00
+- **mode:** MEMORY / BUILD
+- **action:** Phone-reported bug batch, part 1 of 2 (paused by user)
+- **summary:** User tested the release APK on device RFCWA0BJT9F and reported 7 UI bugs plus an icon-quality request and a TP1-only default. Fixed 5 of them: the timeframe switcher was inert *by design* (no tap handler at all) and is now stateful; a trade setup is now withheld while the market is shut; the Sources page hardcoded an empty list in live mode and now reads real contributing rows; the countdown rendered a 6-day release as 141:33:44 and now scales MM:SS / HH:MM:SS / 6d 03:20 with a drift-free tick; the status pill is now the Uiverse pulse (Yaya12085, MIT). Also set the target scope default to TP1.
+- **result:** partial success - analyze clean on both packages, 251 core tests green, 102/110 app tests green, 8 tests deliberately left red
+- **files:** src/app/lib/models/display_models.dart, src/app/lib/widgets/harbor_widgets.dart, src/app/lib/screens/{radar,sources,signal}_screen.dart, src/app/lib/data/{live_data,live_repository}.dart, src/app/lib/state/app_state.dart, src/app/test/*.dart, plans/2026-10-03_phone-bugfix-handoff.md
+- **errors:** (1) Wrote test files with PowerShell Set-Content despite EVT-20260929-0032 explicitly forbidding it; it re-added duplicate imports and broke pip_convention_test.dart, forcing a revert. (2) PulseDot used a late final AnimationController, so dispose() could construct it and throw "Looking up a deactivated widget's ancestor is unsafe". (3) Offline tests started failing at the weekend because the session gate read the real calendar. (4) A PowerShell -replace over a whole test file silently rewrote unrelated strings.
+- **lessons:** (1) Set-Content corrupts Dart source; use the edit tool or [IO.File]::WriteAllText with UTF8Encoding(False). This was already recorded and was still violated - treat it as a hard rule. (2) A late final field initialiser is lazy: if the field is only read in dispose(), it constructs there, when the element is deactivated and Ticker creation throws. Make it nullable and eager. (3) Any widget that reads the wall clock makes its tests calendar-dependent; give it an explicit @visibleForTesting override instead of letting the suite pass midweek and fail at the weekend. (4) Offline/fixture builds should not gate UI on real-world state, or a preview is silently blanked on weekends.
+- **tags:** ui, radar, sources, events, countdown, session-gate, uiverse, pulse, targets, testing, encoding

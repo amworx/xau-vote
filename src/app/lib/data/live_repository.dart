@@ -23,8 +23,7 @@ typedef Row = Map<String, dynamic>;
 
 /// XV live data, read-only from the app's perspective.
 class LiveRepository {
-  LiveRepository([SupabaseClient? client])
-      : _client = client ?? Supabase.instance.client;
+  LiveRepository([SupabaseClient? client]) : _client = client ?? Supabase.instance.client;
 
   final SupabaseClient _client;
 
@@ -75,8 +74,14 @@ class LiveRepository {
         .from('consensus_signals')
         .select('*')
         .eq('symbol', 'XAUUSD')
-        .inFilter('status',
-            ['DEVELOPING', 'READY', 'CONFIRMED', 'ACTIVE', 'TP1_HIT', 'TP2_HIT'])
+        .inFilter('status', [
+          'DEVELOPING',
+          'READY',
+          'CONFIRMED',
+          'ACTIVE',
+          'TP1_HIT',
+          'TP2_HIT',
+        ])
         .order('created_at', ascending: false)
         .limit(1)
         .maybeSingle();
@@ -97,15 +102,143 @@ class LiveRepository {
   /// different levels, so idea count alone made a single source look like broad
   /// agreement: the app once displayed "11 of 11 sources" for one source.
   /// How many sources could have voted: the enabled ones.
-///
-/// This is the denominator for "N of M". Using the agreement count as its own
-/// denominator made the figure a tautology, so a lone source could never be
-/// distinguished from broad consensus.
+  ///
+  /// The sources that actually contributed to [signalId], for the Sources
+  /// screen's row list.
+  ///
+  /// Reads through `signal_sources` rather than counting rows, so the list and
+  /// the agreement headline describe the same set. Each idea is attributed to
+  /// its publisher via `source_id`; an idea with no publisher is attributed to
+  /// its methodology, because "no source" must stay visible rather than being
+  /// silently dropped from the list that explains the count.
+  Future<List<DisplaySource>> contributingSources(String signalId) async {
+    final links = await _client
+        .from('signal_sources')
+        .select('trade_idea_id')
+        .eq('signal_id', signalId);
+    if (links.isEmpty) return const [];
+
+    final ids = (links as List)
+        .map((row) => '${(row as Row)['trade_idea_id']}')
+        .where((s) => s.isNotEmpty && s != 'null')
+        .toSet()
+        .toList();
+    if (ids.isEmpty) return const [];
+
+    final ideas = await _client
+        .from('trade_ideas')
+        .select(
+          'id,source_id,direction,entry_low,entry_high,stop_loss,'
+          'target_1,target_2,target_3,methodology_id,upstream_dataset_id,'
+          'published_at,fingerprint,author_ref',
+        )
+        .inFilter('id', ids);
+    if (ideas.isEmpty) return const [];
+
+    final sourceIds = (ideas as List)
+        .map((r) => '${(r as Row)['source_id']}')
+        .where((s) => s.isNotEmpty && s != 'null')
+        .toSet()
+        .toList();
+
+    // Publisher names and licence standing, keyed by source id. Levels are not
+    // taken from here: several ideas can share one publisher, and the first
+    // idea's levels would then be attributed to all of them. Levels are taken
+    // per idea below.
+    final publisherNames = <String, String>{};
+    final publisherLicensed = <String, bool>{};
+    if (sourceIds.isNotEmpty) {
+      final src = await _client
+          .from('sources')
+          .select('id,name,commercial_use_allowed')
+          .inFilter('id', sourceIds);
+      for (final s in (src as List)) {
+        final row = s as Row;
+        final id = '${row['id']}';
+        publisherNames[id] = '${row['name'] ?? id}';
+        publisherLicensed[id] = '${row['commercial_use_allowed']}' == 'true';
+      }
+    }
+
+    return (ideas as List).map((r) {
+      final row = r as Row;
+      final srcId = '${row['source_id']}';
+      final hasPublisher = srcId.isNotEmpty && srcId != 'null';
+      final method = '${row['methodology_id']}';
+      final dataset = '${row['upstream_dataset_id']}';
+      return DisplaySource(
+        id: hasPublisher ? srcId : 'no-publisher',
+        name: hasPublisher
+            ? (publisherNames[srcId] ?? srcId)
+            // No publisher: name the row after its own provenance so it is not
+            // blank, and say plainly that it is unattributed.
+            : (method.isEmpty || method == 'null' ? 'Unattributed idea' : method),
+        direction: directionOf('${row['direction']}'),
+        agrees: true,
+        entryText: _zone(row, 'entry_low', 'entry_high'),
+        stopText: _level(row['stop_loss']),
+        targetsText: _targets(row),
+        freshnessText: _age(row['published_at']),
+        // Never invent a rationale: the row states what it can prove and shows
+        // a dash where the pipeline has nothing.
+        reasoning: dataset.isEmpty || dataset == 'null'
+            ? 'No upstream dataset recorded'
+            : 'Upstream dataset: $dataset',
+        sourceUrl: '',
+        tp1HitRate: 0,
+        tp2HitRate: 0,
+        tp3HitRate: 0,
+      );
+    }).toList();
+  }
+
+/// DB direction text → the display enum, defaulting to neutral.
+  ///
+  /// Neutral is the safe default rather than a guess: an unrecognised value
+  /// means the pipeline stored something this build does not understand, and
+  /// claiming a side would be inventing one.
+  static Direction directionOf(String? raw) =>
+      _direction(raw) ?? Direction.neutral;
+
+  /// `4,138.16-4,143.16` from a low/high pair; `-` when either is absent.
+  static String _zone(Row row, String lowKey, String highKey) {
+    final low = _toDouble(row[lowKey]);
+    final high = _toDouble(row[highKey]);
+    if (low == null || high == null) return '-';
+    return '${formatLevel(low)}-${formatLevel(high)}';
+  }
+
+  static String _level(Object? v) {
+    final d = _toDouble(v);
+    return d == null ? '-' : formatLevel(d);
+  }
+
+  /// The targets the idea actually published, in order, skipping absent levels.
+  static String _targets(Row row) {
+    final parts = [
+      'target_1',
+      'target_2',
+      'target_3',
+    ].map((k) => _toDouble(row[k])).whereType<double>().map(formatLevel).toList();
+    return parts.isEmpty ? '-' : parts.join(' · ');
+  }
+
+  /// Relative age of an idea, e.g. `12m`. Absent → `-`, never a guess.
+  static String _age(Object? publishedAt) {
+    final at = DateTime.tryParse('${publishedAt ?? ''}');
+    if (at == null) return '-';
+    final s = DateTime.now().difference(at.toLocal()).inSeconds;
+    if (s < 0) return 'now';
+    if (s < 3600) return '${(s / 60).floor()}m';
+    if (s < 86400) return '${(s / 3600).floor()}h';
+    return '${(s / 86400).floor()}d';
+  }
+
   /// Eligible publishers: sources whose license permits commercial use.
   ///
-  /// This is the denominator for "N of M". Using the agreement count as its
-  /// own denominator made the figure a tautology, so a lone source could never
-  /// be distinguished from broad consensus.
+  /// This is the denominator for "N of M". Using the agreement count as its own
+  /// denominator made the figure a tautology, so a lone source could never be
+  /// distinguished from broad consensus.
   Future<int> enabledSourceCount() async {
     final r = await _client
         .from('eligible_external_sources')
@@ -133,8 +266,9 @@ class LiveRepository {
     final rows = await _client
         .from('trade_ideas')
         .select(
-            'id,direction,model_owner,source_id,author_ref,upstream_dataset_id,'
-            'methodology_id,event_window,published_at,fingerprint')
+          'id,direction,model_owner,source_id,author_ref,upstream_dataset_id,'
+          'methodology_id,event_window,published_at,fingerprint',
+        )
         .inFilter('id', ids);
     if (rows.isEmpty) return const [];
 
@@ -184,14 +318,14 @@ class LiveRepository {
     return (s.isEmpty || s == 'null') ? null : s;
   }
 
-  Future<({int distinctIdeas, int distinctSources})> agreementCount(String signalId) async {
+  Future<({int distinctIdeas, int distinctSources})> agreementCount(
+    String signalId,
+  ) async {
     final r = await _client
         .from('signal_sources')
         .select('trade_idea_id')
         .eq('signal_id', signalId);
-    final ids = (r as List)
-        .map((row) => '${(row as Row)['trade_idea_id']}')
-        .toSet();
+    final ids = (r as List).map((row) => '${(row as Row)['trade_idea_id']}').toSet();
     if (ids.isEmpty) return (distinctIdeas: 0, distinctSources: 0);
 
     // Distinct INDEPENDENT sources, not distinct ideas. Product rule 3: a
@@ -202,9 +336,7 @@ class LiveRepository {
         .from('trade_ideas')
         .select('source_id')
         .inFilter('id', ids.toList());
-    final sources = (ideas as List)
-        .map((row) => '${(row as Row)['source_id']}')
-        .toSet();
+    final sources = (ideas as List).map((row) => '${(row as Row)['source_id']}').toSet();
     return (distinctIdeas: ids.length, distinctSources: sources.length);
   }
 
@@ -213,13 +345,10 @@ class LiveRepository {
     final r = await _client
         .from('consensus_signals')
         .select('*')
-        .inFilter(
-            'status', ['TP1_HIT', 'TP2_HIT', 'TP3_HIT', 'INVALIDATED', 'EXPIRED'])
+        .inFilter('status', ['TP1_HIT', 'TP2_HIT', 'TP3_HIT', 'INVALIDATED', 'EXPIRED'])
         .order('created_at', ascending: false)
         .limit(limit);
-    return (r as List)
-        .map((row) => _toHistoryEntry(row as Row))
-        .toList();
+    return (r as List).map((row) => _toHistoryEntry(row as Row)).toList();
   }
 
   // ----------------------------------------------------------------- events
@@ -250,8 +379,9 @@ class LiveRepository {
       return DisplayDigestTheme(
         theme: '${t['theme'] ?? 'Unknown'}',
         pressure: _pressure('${t['pressure'] ?? 'UNCLEAR'}'),
-        evidenceCount:
-            (t['evidence_urls'] is List) ? (t['evidence_urls'] as List).length : 0,
+        evidenceCount: (t['evidence_urls'] is List)
+            ? (t['evidence_urls'] as List).length
+            : 0,
       );
     }).toList();
   }
@@ -363,12 +493,10 @@ class LiveRepository {
 
     return DisplayHistoryEntry(
       direction: dir,
-      whenText: at == null
-          ? '-'
-          : '${_hhmm(at)} · ${_relativeDay(at)}',
+      whenText: at == null ? '-' : '${_hhmm(at)} · ${_relativeDay(at)}',
       detailText: (entryLow != null && entryHigh != null && stop != null)
           ? 'IN ${formatLevel(entryLow)}-${formatLevel(entryHigh)}'
-              ' · SL ${formatLevel(stop)}'
+                ' · SL ${formatLevel(stop)}'
           : 'Levels unavailable',
       status: status,
       pipsPoints: outcome,
@@ -402,9 +530,7 @@ class LiveRepository {
   static String? _numText(Object? v) {
     final d = _toDouble(v);
     if (d == null) return null;
-    return d == d.roundToDouble()
-        ? d.toInt().toString()
-        : d.toStringAsFixed(2);
+    return d == d.roundToDouble() ? d.toInt().toString() : d.toStringAsFixed(2);
   }
 
   static String _hhmm(DateTime t) =>
@@ -412,9 +538,11 @@ class LiveRepository {
 
   static String _relativeDay(DateTime t) {
     final now = DateTime.now();
-    final days = DateTime(now.year, now.month, now.day)
-        .difference(DateTime(t.year, t.month, t.day))
-        .inDays;
+    final days = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).difference(DateTime(t.year, t.month, t.day)).inDays;
     if (days == 0) return 'TODAY';
     if (days == 1) return 'YESTERDAY';
     if (days < 7) return '$days DAYS AGO';
@@ -479,16 +607,18 @@ class LiveRepository {
       if (at == null) continue;
 
       final isDegraded = '${row['quality']}' == 'degraded';
-      (grouped[tf] ??= []).add(Candle(
-        openTime: at,
-        open: o,
-        high: h,
-        low: l,
-        close: c,
-        volume: _toDouble(row['volume']),
-        source: 'supabase',
-        quality: isDegraded ? CandleQuality.degraded : CandleQuality.primary,
-      ));
+      (grouped[tf] ??= []).add(
+        Candle(
+          openTime: at,
+          open: o,
+          high: h,
+          low: l,
+          close: c,
+          volume: _toDouble(row['volume']),
+          source: 'supabase',
+          quality: isDegraded ? CandleQuality.degraded : CandleQuality.primary,
+        ),
+      );
       // Sticky: a timeframe counts as degraded only if EVERY bar is degraded,
       // so one primary bar is enough to make the series level-eligible.
       degraded[tf] = (degraded[tf] ?? true) && isDegraded;
@@ -508,8 +638,9 @@ class LiveRepository {
       // Keep only the most recent window: the engine needs a long series for
       // EMA200 but not unbounded history.
       final accepted = v.accepted;
-      final windowed =
-          accepted.length > maxPerTimeframe ? accepted.sublist(accepted.length - maxPerTimeframe) : accepted;
+      final windowed = accepted.length > maxPerTimeframe
+          ? accepted.sublist(accepted.length - maxPerTimeframe)
+          : accepted;
       out[tf] = TimeframeBars(
         timeframe: tf,
         bars: windowed,
@@ -543,7 +674,9 @@ class LiveRepository {
     final bid = _toDouble(row['bid']);
     final ask = _toDouble(row['ask']);
     final at = DateTime.tryParse('${row['timestamp']}')?.toUtc();
-    final age = at == null ? double.infinity : DateTime.now().toUtc().difference(at).inMilliseconds / 1000.0;
+    final age = at == null
+        ? double.infinity
+        : DateTime.now().toUtc().difference(at).inMilliseconds / 1000.0;
 
     // A stale measurement is not a current spread. Reporting it as available
     // would be as misleading as reporting nothing.
@@ -551,7 +684,11 @@ class LiveRepository {
       return (spread: const VenueSpread.unavailable(), ageSeconds: age);
     }
     return (
-      spread: VenueSpread.available(bid: bid, ask: ask, source: '${row['source'] ?? 'unknown'}'),
+      spread: VenueSpread.available(
+        bid: bid,
+        ask: ask,
+        source: '${row['source'] ?? 'unknown'}',
+      ),
       ageSeconds: age,
     );
   }
@@ -572,16 +709,18 @@ class LiveRepository {
       // An event with no parseable time cannot be scheduled, and guessing a
       // time would put a blackout window in the wrong place. Skip it.
       if (at == null) continue;
-      out.add(EconomicEvent(
-        name: '${row['title'] ?? 'Event'}',
-        currency: '${row['currency'] ?? 'USD'}',
-        tier: tierFromImpact('${row['impact'] ?? 'LOW'}'),
-        releaseTime: at,
-        actual: _toDouble(row['actual']),
-        forecast: _toDouble(row['forecast']),
-        previous: _toDouble(row['previous']),
-        source: 'supabase',
-      ));
+      out.add(
+        EconomicEvent(
+          name: '${row['title'] ?? 'Event'}',
+          currency: '${row['currency'] ?? 'USD'}',
+          tier: tierFromImpact('${row['impact'] ?? 'LOW'}'),
+          releaseTime: at,
+          actual: _toDouble(row['actual']),
+          forecast: _toDouble(row['forecast']),
+          previous: _toDouble(row['previous']),
+          source: 'supabase',
+        ),
+      );
     }
     return out;
   }

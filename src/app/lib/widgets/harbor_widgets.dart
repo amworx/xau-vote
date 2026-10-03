@@ -66,13 +66,11 @@ class HarborHeader extends StatelessWidget {
   /// lifecycle labels like `NO CONSENSUS`, which are not market claims. Only
   /// the derived market-session pill is gated, because an offline build has no
   /// feed to describe.
-  bool get _showsStatus =>
-      statusText != null || (marketStatusLabel ?? !mockMode);
+  bool get _showsStatus => statusText != null || (marketStatusLabel ?? !mockMode);
 
   /// Real session state at [now], unless a caller overrides it (tests).
   bool _openAt(DateTime now) => sessionOpen ?? isSessionOpen(now);
-  String _nameAt(DateTime now) =>
-      sessionName ?? sessionLabel(sessionAt(now));
+  String _nameAt(DateTime now) => sessionName ?? sessionLabel(sessionAt(now));
 
   /// Never claims a live market while the market is shut.
   String _pillText(DateTime now) {
@@ -136,39 +134,33 @@ class HarborHeader extends StatelessWidget {
             const SizedBox.shrink()
           else
             Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-            decoration: BoxDecoration(
-              color: isClosed ? harborWarnSoft : livePillBg,
-              border: Border.all(color: isClosed ? harborWarn : livePillBorder),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 6,
-                  height: 6,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: isClosed ? harborWarn : harborLong,
-                      shape: BoxShape.circle,
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+              decoration: BoxDecoration(
+                color: isClosed ? harborWarnSoft : livePillBg,
+                border: Border.all(color: isClosed ? harborWarn : livePillBorder),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Pulses only while the market is genuinely open; a pulsing
+                  // dot on a closed market would assert activity that is not
+                  // happening.
+                  PulseDot(color: isClosed ? harborWarn : harborLong, pulse: !isClosed),
+                  const SizedBox(width: 5),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      fontFamily: 'Sora',
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1,
+                      color: isClosed ? harborWarn : livePillInk,
                     ),
                   ),
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  status,
-                  style: TextStyle(
-                    fontFamily: 'Sora',
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1,
-                    color: isClosed ? harborWarn : livePillInk,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -177,45 +169,175 @@ class HarborHeader extends StatelessWidget {
   /// Brand and subtitle only, with no market-status claim at all. Used by the
   /// offline build, which has no feed and must not imply that it does.
   Widget _headerOnly(String? sub) => Padding(
-        padding: const EdgeInsets.fromLTRB(18, 17, 18, 10),
-        child: Row(
-          children: [
-            const BrandMark(),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'XV',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Sora',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.7,
-                    ),
-                  ),
-                  if (sub != null)
-                    Text(
-                      sub,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: 'Space Mono',
-                        fontSize: 10,
-                        color: harborFaint,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                ],
+    padding: const EdgeInsets.fromLTRB(18, 17, 18, 10),
+    child: Row(
+      children: [
+        const BrandMark(),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'XV',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Sora',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.7,
+                ),
               ),
-            ),
-          ],
+              if (sub != null)
+                Text(
+                  sub,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Space Mono',
+                    fontSize: 10,
+                    color: harborFaint,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+            ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
+}
+
+/// Pulsing status dot.
+///
+/// Port of the Uiverse "Loader" by Yaya12085 (MIT licence):
+/// a solid dot with a halo that grows from 0 to 14px and fades out, on a 1.5s
+/// ease-in-out loop.
+///
+/// The pulse is *only* used for a genuinely open session. A pulsing dot on a
+/// closed market would assert activity that does not exist, which is the same
+/// class of lie as the hardcoded `LIVE` label this replaced.
+class PulseDot extends StatefulWidget {
+  const PulseDot({
+    super.key,
+    required this.color,
+    this.size = 6,
+    this.pulse = true,
+    this.duration = const Duration(milliseconds: 1500),
+  });
+
+  /// Core dot and halo colour. Pass the same value as the surrounding text so
+  /// the dot reads as part of the label rather than an independent element.
+  final Color color;
+
+  /// Diameter of the solid core.
+  final double size;
+
+  /// False renders a static dot: no halo, no animation.
+  final bool pulse;
+
+  final Duration duration;
+
+  @override
+  State<PulseDot> createState() => _PulseDotState();
+}
+
+class _PulseDotState extends State<PulseDot> with SingleTickerProviderStateMixin {
+  /// Created eagerly in [initState] and nullable.
+  ///
+  /// A `late final` initialiser would construct the controller on first *use*,
+  /// which can happen inside [dispose] — and building a Ticker then looks up an
+  /// ancestor of a deactivated element, which throws. Null means "this dot does
+  /// not pulse", which is the correct state for a closed market anyway.
+  AnimationController? _c;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.pulse) {
+      _c = AnimationController(vsync: this, duration: widget.duration)
+        ..repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PulseDot old) {
+    super.didUpdateWidget(old);
+    // The session can open or close while this is mounted; start or stop the
+    // pulse to match rather than leaving it stuck in the old state.
+    if (old.pulse == widget.pulse) return;
+    if (widget.pulse) {
+      _c ??= AnimationController(vsync: this, duration: widget.duration)
+        ..repeat(reverse: true);
+    } else {
+      _c?.stop();
+      _c?.dispose();
+      _c = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _c?.dispose();
+    _c = null;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // An animation is motion the user did not ask for, so honour the platform
+    // setting: a static dot still communicates the same state.
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final animate = widget.pulse && !reduceMotion && _c != null;
+
+    // The halo is drawn inside a fixed box and overflows its centre outward, so
+    // the row reserves room for it instead of the halo being clipped.
+    final extent = widget.size * 2.4;
+    final core = SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+      ),
+    );
+
+    if (!animate) {
+      return core;
+    }
+
+    return SizedBox(
+      width: extent,
+      height: extent,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          AnimatedBuilder(
+            animation: _c!,
+            builder: (context, _) {
+              final t = Curves.easeInOut.transform(_c!.value);
+              return Transform.scale(
+                // Grows from the dot's own size out to the full halo extent.
+                scale: 1 + t * (extent / widget.size - 1),
+                child: Opacity(
+                  opacity: 0.55 * (1 - t),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: widget.color,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              );
+            },
+          ),
+          core,
+        ],
+      ),
+    );
+  }
 }
 
 /// Brand mark for **XV** (XAU-Vote): a 27px box with a 2px ink border, 8px
@@ -377,10 +499,7 @@ class SpotPriceBlock extends StatelessWidget {
             runSpacing: 2,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              _MetaPair(
-                label: 'Spread',
-                value: signal.spread.toStringAsFixed(2),
-              ),
+              _MetaPair(label: 'Spread', value: signal.spread.toStringAsFixed(2)),
               const _MetaPair(label: 'Session', value: 'NY'),
               _MetaPair(label: 'Updated', value: clockLabel()),
             ],
@@ -413,11 +532,7 @@ class _MetaPair extends StatelessWidget {
         children: [
           TextSpan(
             text: label,
-            style: const TextStyle(
-              fontFamily: 'Sora',
-              fontSize: 10,
-              color: harborDim,
-            ),
+            style: const TextStyle(fontFamily: 'Sora', fontSize: 10, color: harborDim),
           ),
           TextSpan(text: ' '),
           TextSpan(
@@ -528,9 +643,13 @@ String _rangeFromSignal(DisplaySignal signal) {
 /// confirmation and 1H is context. Tapping a segment must never change the
 /// consensus, so the control deliberately has no gesture handler.
 class TimeframeSwitch extends StatelessWidget {
-  const TimeframeSwitch({super.key, this.active = '15M'});
+  const TimeframeSwitch({super.key, this.active = '15M', this.onChanged});
 
   final String active;
+
+  /// Called with the newly selected timeframe. Null makes the control inert,
+  /// which is what a caller that has nothing to switch uses.
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -553,30 +672,36 @@ class TimeframeSwitch extends StatelessWidget {
   }
 
   Widget _segment(String label, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 9),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.white : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        // Mockup `box-shadow:0 1px 3px #0001` on the active segment.
-        boxShadow: isActive
-            ? const [
-                BoxShadow(
-                  color: Color(0x01000000),
-                  offset: Offset(0, 1),
-                  blurRadius: 3,
-                ),
-              ]
-            : null,
-      ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontFamily: 'Sora',
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: isActive ? harborInk : harborDim,
+    // Only the segment itself is interactive, so a tap on the already-active
+    // segment does not emit a change.
+    return InkWell(
+      onTap: isActive || onChanged == null ? null : () => onChanged!(label),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          // Mockup `box-shadow:0 1px 3px #0001` on the active segment.
+          boxShadow: isActive
+              ? const [
+                  BoxShadow(
+                    color: Color(0x01000000),
+                    offset: Offset(0, 1),
+                    blurRadius: 3,
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Sora',
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: isActive ? harborInk : harborDim,
+          ),
         ),
       ),
     );
@@ -665,10 +790,7 @@ class HarborChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      decoration: BoxDecoration(
-        color: chipBg,
-        borderRadius: BorderRadius.circular(999),
-      ),
+      decoration: BoxDecoration(color: chipBg, borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -678,11 +800,7 @@ class HarborChip extends StatelessWidget {
           ],
           Text(
             label,
-            style: TextStyle(
-              fontFamily: 'Sora',
-              fontSize: fontSize,
-              color: chipInk,
-            ),
+            style: TextStyle(fontFamily: 'Sora', fontSize: fontSize, color: chipInk),
           ),
         ],
       ),
@@ -710,19 +828,19 @@ class HarborPill extends StatelessWidget {
   final double fontSize;
 
   BoxDecoration get _decoration => BoxDecoration(
-        color: active ? tpActiveBg : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: active ? harborCobalt : harborLine),
-      );
+    color: active ? tpActiveBg : Colors.white,
+    borderRadius: BorderRadius.circular(8),
+    border: Border.all(color: active ? harborCobalt : harborLine),
+  );
   Widget get _label => Text(
-        label,
-        style: TextStyle(
-          fontFamily: 'Sora',
-          fontSize: fontSize,
-          fontWeight: FontWeight.w700,
-          color: active ? harborCobalt : harborDim,
-        ),
-      );
+    label,
+    style: TextStyle(
+      fontFamily: 'Sora',
+      fontSize: fontSize,
+      fontWeight: FontWeight.w700,
+      color: active ? harborCobalt : harborDim,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -739,22 +857,17 @@ class HarborPill extends StatelessWidget {
         padding: const WidgetStatePropertyAll(EdgeInsets.zero),
         minimumSize: const WidgetStatePropertyAll(Size(0, 0)),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        backgroundColor: WidgetStatePropertyAll(
-          active ? tpActiveBg : Colors.white,
-        ),
+        backgroundColor: WidgetStatePropertyAll(active ? tpActiveBg : Colors.white),
         side: WidgetStatePropertyAll(
-          active ? const BorderSide(color: harborCobalt)
+          active
+              ? const BorderSide(color: harborCobalt)
               : const BorderSide(color: harborLine),
         ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         textStyle: WidgetStatePropertyAll(
-          TextStyle(
-            fontFamily: 'Sora',
-            fontSize: fontSize,
-            fontWeight: FontWeight.w700,
-          ),
+          TextStyle(fontFamily: 'Sora', fontSize: fontSize, fontWeight: FontWeight.w700),
         ),
       ),
       child: shell,
@@ -936,15 +1049,11 @@ class DirectionPill extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (direction != Direction.neutral)
-            _trendArrow(fg),
+          if (direction != Direction.neutral) _trendArrow(fg),
           const SizedBox(width: 7),
           Text(
             label,
@@ -1041,9 +1150,7 @@ class VerdictLevelCell extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       decoration: BoxDecoration(
         color: highlighted ? levelEntryBg : Colors.white,
-        border: Border.all(
-          color: highlighted ? levelEntryBorder : levelBorder,
-        ),
+        border: Border.all(color: highlighted ? levelEntryBorder : levelBorder),
         borderRadius: BorderRadius.circular(11),
       ),
       child: Column(
@@ -1328,24 +1435,16 @@ class DemoStateRow extends StatelessWidget {
         minimumSize: const WidgetStatePropertyAll(Size(0, 0)),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         backgroundColor: const WidgetStatePropertyAll(chipBg),
-        foregroundColor: WidgetStatePropertyAll(
-          isActive ? harborCobalt : chipInk,
-        ),
+        foregroundColor: WidgetStatePropertyAll(isActive ? harborCobalt : chipInk),
         // Transparent when idle so selecting a state never shifts the row.
         side: WidgetStatePropertyAll(
-          BorderSide(
-            color: isActive ? harborCobalt : Colors.transparent,
-          ),
+          BorderSide(color: isActive ? harborCobalt : Colors.transparent),
         ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         ),
         textStyle: const WidgetStatePropertyAll(
-          TextStyle(
-            fontFamily: 'Sora',
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-          ),
+          TextStyle(fontFamily: 'Sora', fontSize: 9, fontWeight: FontWeight.w700),
         ),
       ),
       child: Text(label),
@@ -1359,11 +1458,7 @@ class DemoStateRow extends StatelessWidget {
 /// hit target and routes to the Events tab; there is no separate button.
 /// Context only: events never vote (rule 9).
 class EventGuardrailBar extends StatelessWidget {
-  const EventGuardrailBar({
-    super.key,
-    required this.event,
-    required this.onTap,
-  });
+  const EventGuardrailBar({super.key, required this.event, required this.onTap});
 
   final DisplayEvent event;
   final VoidCallback onTap;
@@ -1386,10 +1481,7 @@ class EventGuardrailBar extends StatelessWidget {
                   width: 6,
                   height: 6,
                   child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: harborShort,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: harborShort, shape: BoxShape.circle),
                   ),
                 ),
                 const SizedBox(width: 9),
@@ -1498,10 +1590,7 @@ class StatusPill extends StatelessWidget {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
       child: Text(
         label,
         style: TextStyle(
@@ -1630,10 +1719,7 @@ class ImpactPill extends StatelessWidget {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
       child: Text(
         impactLabel(impact),
         style: TextStyle(
@@ -1674,10 +1760,7 @@ class PressurePill extends StatelessWidget {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
       child: Text(
         pressureLabel(pressure),
         style: TextStyle(
@@ -1714,11 +1797,7 @@ class MacroBackdropStrip extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(
-              HarborIcons.layers,
-              size: 13,
-              color: inkMuted,
-            ),
+            const Icon(HarborIcons.layers, size: 13, color: inkMuted),
             const SizedBox(width: 9),
             Expanded(
               child: Text(
@@ -1732,11 +1811,7 @@ class MacroBackdropStrip extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(
-              HarborIcons.arrowUpRight,
-              size: 14,
-              color: inkMuted,
-            ),
+            const Icon(HarborIcons.arrowUpRight, size: 14, color: inkMuted),
           ],
         ),
       ),
@@ -1767,14 +1842,75 @@ class _EventCountdownState extends State<EventCountdown> {
   @override
   void initState() {
     super.initState();
+    // The target is an absolute instant, so the displayed value is derived
+    // from the clock rather than accumulated. `Timer.periodic` drifts (each
+    // tick is scheduled a full period after the previous one *fires*, not
+    // after the previous deadline), which is what made the seconds appear to
+    // stutter or skip.
     _target = DateTime.now().add(widget.startsIn);
     _remaining = widget.startsIn;
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      setState(() {
-        _remaining = _target.difference(DateTime.now());
-      });
+    _scheduleTick();
+  }
+
+  /// Rebuild cadence follows the magnitude of the countdown.
+  ///
+  /// Ticking a multi-day countdown once a second rebuilt the whole Events list
+  /// hundreds of times for a value whose seconds are never displayed. A
+  /// sub-day countdown still ticks each second because that is what the user
+  /// is actually watching.
+  void _scheduleTick() {
+    _timer?.cancel();
+    _timer = Timer.periodic(_tickInterval(_remaining), (_) => _onTick());
+  }
+
+  static const _second = Duration(seconds: 1);
+  static const _minute = Duration(minutes: 1);
+
+  /// Next deadline that changes the rendered text.
+  ///
+  /// Computed from the target rather than the interval alone, so the first tick
+  /// lands on the visible boundary instead of one interval later.
+  Duration _tickInterval(Duration remaining) {
+    if (!countdownTicksSeconds(remaining)) return _minute;
+    final s = remaining.inSeconds;
+    // Under a minute only the seconds change; past a minute the minute can
+    // roll over first, so tick no later than that boundary.
+    if (s <= 60) return _second;
+    final secondsToNextMinute = s % 60;
+    return Duration(seconds: secondsToNextMinute == 0 ? 60 : secondsToNextMinute);
+  }
+
+  void _onTick() {
+    if (!mounted) return;
+    final next = _target.difference(DateTime.now());
+    // Past the target: stop rebuilding entirely rather than ticking at zero
+    // forever, and show the elapsed state instead.
+    setState(() {
+      _remaining = next.isNegative ? Duration.zero : next;
     });
+    if (next.isNegative) {
+      _timer?.cancel();
+      _timer = null;
+      return;
+    }
+    // Re-derive the cadence: crossing an hour or a day boundary changes the
+    // rendered precision, and the interval must follow it.
+    final interval = _tickInterval(next);
+    _timer?.cancel();
+    _timer = Timer.periodic(interval, (_) => _onTick());
+  }
+
+  @override
+  void didUpdateWidget(covariant EventCountdown old) {
+    super.didUpdateWidget(old);
+    // A new poll delivers a new startsIn for the same event. Re-pin the target,
+    // otherwise the countdown keeps ticking toward a stale deadline and drifts
+    // away from the server's answer.
+    if (old.startsIn != widget.startsIn) {
+      _target = DateTime.now().add(widget.startsIn);
+      _remaining = widget.startsIn;
+      _scheduleTick();
+    }
   }
 
   @override
@@ -1785,13 +1921,17 @@ class _EventCountdownState extends State<EventCountdown> {
 
   @override
   Widget build(BuildContext context) {
+    // Elapsed, not upcoming. Rendered neutrally so a finished countdown can
+    // never read as an imminent red one.
+    final elapsed =
+        _remaining == Duration.zero && _target.difference(DateTime.now()).isNegative;
     return Text(
-      '${widget.prefix}${formatCountdown(_remaining)}',
-      style: const TextStyle(
+      elapsed ? 'released' : '${widget.prefix}${formatCountdown(_remaining)}',
+      style: TextStyle(
         fontFamily: 'Space Mono',
         fontSize: 12,
         fontWeight: FontWeight.w700,
-        color: harborShort,
+        color: elapsed ? harborDim : harborShort,
       ),
     );
   }

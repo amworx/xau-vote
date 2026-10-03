@@ -85,8 +85,9 @@ void main() {
     );
     expect(find.text('Retail Sales m/m'), findsOneWidget);
     expect(find.text('ECB Rate Decision'), findsOneWidget);
-    // Live countdown ticks from the 12m41s fixture (prefix 'in ').
-    expect(find.textContaining('in 00:12:4'), findsWidgets);
+    // Live countdown ticks from the 12m41s fixture (prefix 'in '). Under an hour
+    // it renders MM:SS, not HH:MM:SS.
+    expect(find.textContaining('in 12:4'), findsWidgets);
     for (final banned in _banned) {
       expect(find.textContaining(banned), findsNothing);
     }

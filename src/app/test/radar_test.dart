@@ -8,8 +8,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:xauvote/config.dart' show mockMode;
 import 'package:xauvote/main.dart';
+import 'package:xauvote/screens/radar_screen.dart';
+import 'package:xauvote/models/display_models.dart';
+import 'package:xauvote/state/app_state.dart';
 import 'package:xauvote/widgets/harbor_widgets.dart';
 
 Future<void> _pumpApp(WidgetTester tester) async {
@@ -18,6 +22,21 @@ Future<void> _pumpApp(WidgetTester tester) async {
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   await tester.pumpWidget(const XauVoteApp());
+  await tester.pumpAndSettle();
+}
+
+/// Sets the target scope on the app's own [AppState].
+///
+/// The default scope is now TP1, so a test about narrowing from all three must
+/// state that starting point rather than inherit the default. The state is
+/// reached through the rendered tree because `XauVoteApp` owns its own
+/// provider, and an outer one would simply be shadowed.
+Future<void> _setTargets(WidgetTester tester, TargetSelection targets) async {
+  final state = Provider.of<AppState>(
+    tester.element(find.byType(RadarScreen)),
+    listen: false,
+  );
+  state.setTargets(targets);
   await tester.pumpAndSettle();
 }
 
@@ -98,7 +117,9 @@ void main() {
 
   testWidgets('Target scope narrows the visible targets', skip: !mockMode,
       (tester) async {
+    // Start from all three so the test measures narrowing, not the default.
     await _pumpApp(tester);
+    await _setTargets(tester, TargetSelection.all);
 
     expect(find.text('4,340'), findsOneWidget);
     final tp1 = find.widgetWithText(TextButton, 'TP1');

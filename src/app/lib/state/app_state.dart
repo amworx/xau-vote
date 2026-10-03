@@ -16,7 +16,11 @@ enum RadarScenario { strong, noConsensus, developing, blackout }
 class AppState extends ChangeNotifier {
   int _tabIndex = 0;
   RadarScenario _scenario = RadarScenario.strong;
-  TargetSelection _targets = TargetSelection.all;
+  // TP1 is the default target scope. The trader asked for a single take-profit
+  // as the starting position, which is also the conservative reading: TP1 is
+  // the nearest level, so it is the one most likely to be reached, and the
+  // levels below it stay visible rather than being implied away.
+  TargetSelection _targets = TargetSelection.tp1Only;
 
   // D-20260927-003 — pip size is a display preference. Points stay canonical;
   // the convention only rescales pip figures (default B = 0.01, FXPro/Vantage).

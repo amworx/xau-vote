@@ -57,10 +57,12 @@ class SourcesScreen extends StatelessWidget {
     final signal = live != null
         ? live.signal
         : mockMode
-            ? MockFixtures.strongLong
-            : null;
-    final sources =
-        live != null ? const <DisplaySource>[] : MockFixtures.sources;
+        ? MockFixtures.strongLong
+        : null;
+    // Live reads the publishers actually linked to the active signal. It used to
+    // hardcode an empty list here, so the screen could never show a row in a
+    // live build no matter what the pipeline had produced.
+    final sources = live != null ? live.contributors : MockFixtures.sources;
     final enabled = sources.where((s) => state.isSourceEnabled(s.id)).toList();
     final agreeing = live != null
         ? (signal?.agreeCount ?? 0)
@@ -86,8 +88,15 @@ class SourcesScreen extends StatelessWidget {
         Center(
           child: Text(
             sources.isEmpty
-                ? 'Contributing rows arrive with the next pipeline run'
-                : 'Tap a card for full details · toggle to include',
+                ? (live != null
+                      // No rows can mean two very different things, so say which one it is instead
+                      // of implying a pipeline problem either way.
+                      ? signal == null
+                            ? 'No active signal — nothing to attribute yet'
+                            : 'This signal has no linked idea rows'
+                      : 'Contributing rows arrive with the next pipeline run')
+                : '${sources.length} contributing ${sources.length == 1 ? 'source' : 'sources'}'
+                      '${live != null ? '' : ' · toggle to include'}',
             style: const TextStyle(
               fontFamily: 'Space Mono',
               fontSize: 10,
@@ -104,7 +113,7 @@ class SourcesScreen extends StatelessWidget {
         Center(
           child: Text(
             live != null
-                ? 'Dedup runs in the pipeline · no rows stored yet'
+                ? 'Dedup runs in the pipeline · fingerprint per idea'
                 : 'Fingerprints verified · 21:47:12',
             style: const TextStyle(
               fontFamily: 'Space Mono',
@@ -182,9 +191,7 @@ class SourcesScreen extends StatelessWidget {
                   for (final source in enabled)
                     HarborChip(
                       'DESK ${source.id}',
-                      glyph: source.agrees
-                          ? HarborIcons.check
-                          : HarborIcons.cross,
+                      glyph: source.agrees ? HarborIcons.check : HarborIcons.cross,
                       glyphColor: source.agrees ? harborLong : harborShort,
                       fontSize: 8,
                     ),
@@ -292,9 +299,8 @@ class _SourceCardState extends State<_SourceCard> {
                       value: enabled,
                       activeTrackColor: harborLong,
                       inactiveTrackColor: harborLine,
-                      onChanged: (value) => context
-                          .read<AppState>()
-                          .setSourceEnabled(s.id, value),
+                      onChanged: (value) =>
+                          context.read<AppState>().setSourceEnabled(s.id, value),
                     ),
                     HarborChevron(open: _open),
                   ],
@@ -350,9 +356,9 @@ class _SourceCardState extends State<_SourceCard> {
   String _stopValue(BuildContext context, DisplaySource s) {
     final points = s.stopPoints;
     if (points == null) return s.stopText;
-    final factor = context.select<AppState, PipConvention>(
-      (state) => state.pipConvention,
-    ).pipFactor;
+    final factor = context
+        .select<AppState, PipConvention>((state) => state.pipConvention)
+        .pipFactor;
     final pips = pipsFromPoints(points, pipFactor: factor).abs();
     return '${s.stopText} · −${pips}p';
   }
@@ -402,10 +408,7 @@ class _SourceCardState extends State<_SourceCard> {
             const SizedBox(height: 8),
             Row(
               children: [
-                SizedBox(
-                  width: 28,
-                  child: Text(rows[i].$1, style: _hitLabel),
-                ),
+                SizedBox(width: 28, child: Text(rows[i].$1, style: _hitLabel)),
                 const HarborDivider(verticalExtent: 12),
                 const SizedBox(width: 9),
                 Expanded(child: _meter(rows[i].$2)),
@@ -466,9 +469,9 @@ class _SourceCardState extends State<_SourceCard> {
   /// until T5.7 opens [DisplaySource.sourceUrl] externally.
   Widget _viewOriginal(BuildContext context, DisplaySource s) {
     return InkWell(
-      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Opens ${s.sourceUrl}')),
-      ),
+      onTap: () => ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Opens ${s.sourceUrl}'))),
       child: const Padding(
         padding: EdgeInsets.symmetric(vertical: 14),
         child: Row(
@@ -511,10 +514,7 @@ class _IndependenceNote extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 18),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-      decoration: BoxDecoration(
-        color: chipBg,
-        borderRadius: BorderRadius.circular(14),
-      ),
+      decoration: BoxDecoration(color: chipBg, borderRadius: BorderRadius.circular(14)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -523,11 +523,11 @@ class _IndependenceNote extends StatelessWidget {
           Text(
             live
                 ? 'Independence is decided by the consensus engine. No '
-                    'contributing rows are stored for the active setup yet, '
-                    'so there is nothing to deduplicate.'
+                      'contributing rows are stored for the active setup yet, '
+                      'so there is nothing to deduplicate.'
                 : 'A/B/C/E cluster tightly on levels but differ in author, '
-                    'wording and timing → counted as 3.2 independent votes. '
-                    'No copy-paste detected.',
+                      'wording and timing → counted as 3.2 independent votes. '
+                      'No copy-paste detected.',
             style: const TextStyle(
               fontFamily: 'Space Mono',
               fontSize: 9.5,

@@ -433,11 +433,46 @@ class DisplayNewsItem {
   final String url;
 }
 
-/// Formats a [Duration] as `HH:MM:SS` (negative → `00:00:00`).
+/// Formats a [remaining] duration as a human countdown.
+///
+/// Scale is chosen by magnitude, because a fixed `HH:MM:SS` misrepresents
+/// anything past a day: a release 6 days out rendered as `141:33:44`, which
+/// reads like a 141-hour clock and is meaningless to a trader.
+///
+/// * under an hour → `MM:SS`
+/// * under a day  → `HH:MM:SS`
+/// * a day or more → `6d 03:20` (days and hours only; seconds on a multi-day
+///   countdown are noise, and ticking them implies false precision)
+///
+/// Negative durations clamp to `00:00`.
 String formatCountdown(Duration remaining) {
-  final s = remaining.isNegative ? 0 : remaining.inSeconds;
-  final h = (s ~/ 3600).toString().padLeft(2, '0');
-  final m = ((s % 3600) ~/ 60).toString().padLeft(2, '0');
+  if (remaining.isNegative) return '00:00';
+  final s = remaining.inSeconds;
+
+  // A day or more: days + hours, no seconds.
+  if (s >= 86400) {
+    final d = s ~/ 86400;
+    final h = ((s % 86400) ~/ 3600).toString().padLeft(2, '0');
+    return '${d}d $h:h';
+  }
+
+  // An hour or more: HH:MM:SS.
+  if (s >= 3600) {
+    final h = (s ~/ 3600).toString().padLeft(2, '0');
+    final m = ((s % 3600) ~/ 60).toString().padLeft(2, '0');
+    final sec = (s % 60).toString().padLeft(2, '0');
+    return '$h:$m:$sec';
+  }
+
+  // Under an hour: MM:SS. Leading hours would be a pointless `00:`.
+  final m = (s ~/ 60).toString().padLeft(2, '0');
   final sec = (s % 60).toString().padLeft(2, '0');
-  return '$h:$m:$sec';
+  return '$m:$sec';
 }
+
+/// Whether [remaining] is long enough that seconds are noise.
+///
+/// The countdown only ticks visibly when this is false; a multi-day release
+/// stops rebuilding every second, which is what made the list feel laggy.
+bool countdownTicksSeconds(Duration remaining) =>
+    !remaining.isNegative && remaining.inSeconds < 86400;
