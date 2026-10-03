@@ -14,6 +14,16 @@ import 'live_repository.dart';
 ///
 /// The scan is strictly read-only. It cannot create or flip a published signal:
 /// consensus and lifecycle remain owned by the backend.
+/// Session-gate helpers, exposed for testing.
+///
+/// The DST maths is the part most likely to rot, so it is verified directly
+/// rather than only through a scan.
+@visibleForTesting
+bool sessionIsOpenAt(DateTime utc) => AnalysisService.sessionGate(utc);
+
+@visibleForTesting
+DateTime newYorkTime(DateTime utc) => AnalysisService.nyTime(utc);
+
 class AnalysisService extends ChangeNotifier {
   AnalysisService({LiveRepository? repository, MarketScanner? scanner})
       : _repo = repository ?? LiveRepository(),
@@ -128,13 +138,63 @@ class AnalysisService extends ChangeNotifier {
   /// Gold trades from Sunday 18:00 ET to Friday 17:00 ET. Outside that window
   /// the market is closed, and a "no trade" is the correct answer rather than a
   /// stale setup.
+  /// Whether the spot-gold market is open at [utc].
+  ///
+  /// Gold (XAUUSD) runs from Sunday 18:00 New York to Friday 17:00 New York.
+  ///
+  /// The offset is computed from the US DST rules rather than hard-coded to -4h:
+  /// a fixed offset is wrong for roughly eight months of the year, which would
+  /// open the gate an hour early in winter and shut it an hour late, letting a
+  /// scan evaluate a "live" setup against a stale last bar.
+  ///
+  /// DST runs from the second Sunday in March to the first Sunday in November.
+  @visibleForTesting
+  static bool sessionGate(DateTime utc) => _isSessionOpen(utc);
+
+  @visibleForTesting
+  static DateTime nyTime(DateTime utc) => _newYork(utc);
+
   static bool _isSessionOpen(DateTime utc) {
-    final et = utc.toUtc().subtract(const Duration(hours: 4)); // close enough for a session gate
-    final weekday = et.weekday;
-    if (weekday == DateTime.sunday) return et.hour >= 18;
+    final ny = _newYork(utc);
+    final weekday = ny.weekday;
+
+    // Saturday: closed all day. Sunday: opens at 18:00.
     if (weekday == DateTime.saturday) return false;
-    if (weekday == DateTime.friday) return et.hour < 17;
+    if (weekday == DateTime.sunday) return ny.hour >= 18;
+    // Friday: closes at 17:00.
+    if (weekday == DateTime.friday) return ny.hour < 17;
     return true;
+  }
+
+  /// Converts [utc] to New York wall-clock time using the US DST rule.
+  ///
+  /// DST transitions occur at 02:00 LOCAL time: 02:00 EST (07:00 UTC) in
+  /// March, and 02:00 EDT (06:00 UTC) in November. Building the boundary in UTC
+  /// would be wrong by five hours in spring, which is exactly the class of bug
+  /// that leaves the gate open an hour early for part of the year.
+  static DateTime _newYork(DateTime utc) {
+    final dstStart = _transitionUtc(utc.year, 3, 2);
+    final dstEnd = _transitionUtc(utc.year, 11, 1);
+    final isSummer = !utc.isBefore(dstStart) && utc.isBefore(dstEnd);
+    return utc.subtract(isSummer ? _edt : _est);
+  }
+
+  static const _est = Duration(hours: 5);
+  static const _edt = Duration(hours: 4);
+
+  /// The UTC instant of the [nth] Sunday of [month], at the local 02:00 that
+  /// DST flips. Spring is 02:00 EST -> 07:00 UTC; autumn is 02:00 EDT ->
+  /// 06:00 UTC.
+  static DateTime _transitionUtc(int year, int month, int nth) {
+    // Walk to the nth Sunday using UTC midnight, then apply the right offset.
+    var day = DateTime.utc(year, month, 1);
+    while (day.weekday != DateTime.sunday) {
+      day = day.add(const Duration(days: 1));
+    }
+    final sunday = day.add(Duration(days: (nth - 1) * 7));
+    // Spring flips at 02:00 standard; autumn at 02:00 daylight.
+    final localHourOffset = month == 3 ? _est : _edt;
+    return sunday.add(const Duration(hours: 2) + localHourOffset);
   }
 
   /// 1H regime decides the candidate direction; nothing narrower does.

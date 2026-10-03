@@ -1,0 +1,74 @@
+﻿00:00 +0: loading C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart
+00:00 +0: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: service basics an empty backend yields NO TRADE, never a fabricated setup
+00:00 +1: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: service basics a backend exception surfaces as an error rather than a fake result
+00:00 +2: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: service basics a scan caches and exposes a timestamp
+00:00 +3: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: direction comes only from the 1H regime a rising 1H offers a long candidate
+00:00 +4: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: direction comes only from the 1H regime a falling 1H offers a short candidate
+00:00 +5: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: direction comes only from the 1H regime a flat 1H offers no candidate at all
+00:00 +6: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: spread status is reported honestly a genuine fresh spread is marked available
+00:00 +7: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: spread status is reported honestly a stale spread is treated as unavailable
+00:00 +8: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: spread status is reported honestly no spread reports UNAVAILABLE and names it as a data-quality note
+00:00 +9: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: data-quality notes always explain a quiet app degraded warm-up history is called out
+00:00 +10: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: data-quality notes always explain a quiet app short history is called out with the shortfall
+00:00 +11: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: independence metrics our derived readers report methods but zero sources
+00:00 +12: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: independence metrics external publishers produce a real ratio
+00:00 +13: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: independence metrics one release read three ways is one effective voice
+00:00 +14: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: independence metrics an unknown model owner cannot earn source credit
+00:00 +15: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: session gate and DST New York offset follows US daylight saving
+00:00 +16: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: session gate and DST the DST boundary itself flips at the right instant
+00:00 +17: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: session gate and DST autumn fall-back repeats the hour and uses the autumn offset
+00:00 +18: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: session gate and DST the market is open midweek regardless of season
+00:00 +19: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: session gate and DST Saturday is always closed
+00:00 +20: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: session gate and DST Sunday opens at 18:00 New York, not 18:00 UTC
+00:00 +21: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: session gate and DST Friday closes at 17:00 New York, not 17:00 UTC
+00:00 +22: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/analysis_service_test.dart: the scan never invents a signal no configuration produces a long or short without levels
+00:00 +23: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/app_test.dart: Sources lists all desks with View Original placeholder
+00:01 +24: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/app_test.dart: Sources lists all desks with View Original placeholder
+00:01 +25: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/app_test.dart: Sources lists all desks with View Original placeholder
+00:01 +26: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/app_test.dart: Sources lists all desks with View Original placeholder
+00:01 +27: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/app_test.dart: Sources lists all desks with View Original placeholder
+00:01 +28: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/app_test.dart: Sources lists all desks with View Original placeholder
+00:02 +29: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/app_test.dart: Sources lists all desks with View Original placeholder
+00:02 +30: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/live_mode_test.dart: Radar reads the snapshot price, range, levels and agreement come from the poller
+00:02 +31: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +32: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +33: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +34: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +35: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +36: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +37: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +38: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +39: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +40: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +41: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +42: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:03 +43: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention B renders the documented figures and one-line cells
+00:04 +44: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/signal_test.dart: Signal shows levels, timeline, context and TP control
+00:04 +45: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/signal_test.dart: Signal shows levels, timeline, context and TP control
+00:04 +46: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/signal_test.dart: Signal shows levels, timeline, context and TP control
+00:04 +47: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/radar_test.dart: Target scope narrows the visible targets
+00:04 +48: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/radar_test.dart: Target scope narrows the visible targets
+00:04 +49: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention picking A rescales the readouts and nothing else
+00:04 +50: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention picking A rescales the readouts and nothing else
+00:04 +51: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention picking A rescales the readouts and nothing else
+00:04 +52: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention picking A rescales the readouts and nothing else
+00:04 +53: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention picking A rescales the readouts and nothing else
+00:05 +54: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention picking A rescales the readouts and nothing else
+00:05 +55: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention picking A rescales the readouts and nothing else
+00:05 +56: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention picking A rescales the readouts and nothing else
+00:05 +57: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/signal_test.dart: No rendered text frames agreement as a forecast
+00:05 +58: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/signal_test.dart: No rendered text frames agreement as a forecast
+00:05 +59: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/signal_test.dart: No rendered text frames agreement as a forecast
+00:05 +60: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/signal_test.dart: No rendered text frames agreement as a forecast
+00:06 +61: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/signal_test.dart: No rendered text frames agreement as a forecast
+00:06 +62: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/signal_test.dart: No rendered text frames agreement as a forecast
+00:06 +63: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention a source stop distance is derived, not stored
+00:06 +64: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: Signal + History readouts follow the active convention a source stop distance is derived, not stored
+00:06 +65: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/live_mode_test.dart: 390px layout a populated snapshot never overflows
+00:06 +66: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: 390px layout no tab overflows or wraps a one-line string
+00:06 +67: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: 390px layout no tab overflows or wraps a one-line string
+00:07 +68: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: 390px layout no tab overflows or wraps a one-line string
+00:07 +69: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: 390px layout no tab overflows or wraps a one-line string
+00:07 +70: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: 390px layout no tab overflows or wraps a one-line string
+00:07 +71: C:/Users/HP/Documents/code_repo/xau-vote/src/app/test/pip_convention_test.dart: 390px layout no tab overflows or wraps a one-line string
+00:07 +72: All tests passed!

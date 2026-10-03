@@ -56,9 +56,26 @@ class _StubRepository implements LiveRepository {
     this.signal,
     this.historyRows = const [],
     this.events = const [],
-    this.digest = const [],
+this.digest = const [],
     this.failWith,
+    this.agreement = (distinctIdeas: 0, distinctSources: 0),
+    this.enabledSources = 1,
+    this.provenance = const [],
   });
+
+  // Defaults are unused by the populated fixture, which supplies both
+  // explicitly; they exist so a minimal stub still satisfies the interface.
+
+  /// Agreement fixture. Distinct ideas and distinct sources are separate on
+  /// purpose: many ideas from one source is one vote, not broad agreement.
+  final ({int distinctIdeas, int distinctSources}) agreement;
+
+  /// Denominator: how many sources could have voted.
+  final int enabledSources;
+
+  /// Provenance fixture. Empty by default: a stub must not fabricate
+  /// independence that the backend did not report.
+  final List<IdeaProvenance> provenance;
 
   final double? price;
   final double? low;
@@ -99,13 +116,7 @@ class _StubRepository implements LiveRepository {
     return signal;
   }
 
-  @override
-  Future<int> agreeingSourceCount(String signalId) async {
-    _guard();
-    return signal?.agreeCount ?? 0;
-  }
-
-  @override
+@override
   Future<List<DisplayHistoryEntry>> history({int limit = 50}) async {
     _guard();
     return historyRows;
@@ -133,6 +144,24 @@ Future<List<DisplayDigestTheme>> latestDigest() async {
   Future<Map<Tf, TimeframeBars>> analysisBars({int maxPerTimeframe = 600}) async {
     _guard();
     return const {};
+  }
+
+  @override
+  Future<({int distinctIdeas, int distinctSources})> agreementCount(String signalId) async {
+    _guard();
+    return agreement;
+  }
+
+  @override
+  Future<int> enabledSourceCount() async {
+    _guard();
+    return enabledSources;
+  }
+
+  @override
+  Future<List<IdeaProvenance>> ideaProvenance(String signalId) async {
+    _guard();
+    return provenance;
   }
 
   @override
@@ -207,10 +236,31 @@ LiveData _populated() {
       price: 4312.45,
       low: 4300.10,
       high: 4320.90,
-      signal: _liveSignal,
+signal: _liveSignal,
       historyRows: _liveHistory,
       events: const [_liveEvent],
       digest: const [_liveDigest],
+      // 9 distinct ideas from 4 independent sources, with 6 sources enabled.
+      // Deliberately different numbers: the poller must show partial
+      // agreement, and a fixture where both counts match would hide the
+      // tautology that produced the old "11 of 11".
+      agreement: (distinctIdeas: 9, distinctSources: 4),
+      enabledSources: 6,
+      // Provenance for the four agreeing external publishers. Without it the
+      // scorer reports zero sources and the UI renders "No external sources yet",
+      // which is correct but is not what this fixture is demonstrating.
+      provenance: [
+        for (final p in ['P1', 'P2', 'P3', 'P4'])
+          IdeaProvenance(
+            ideaId: 'idea-$p',
+            direction: 'LONG',
+            modelOwner: ModelOwner.thirdParty,
+            publisherId: p,
+            methodologyId: 'method-$p',
+            publishedAt: DateTime.utc(2026, 10, 2, 12),
+            derived: false,
+          ),
+      ],
     ),
   );
   addTearDown(live.dispose);
@@ -356,8 +406,12 @@ void main() {
 
       // Agreement is a split, and the offline source chips do not exist here.
       expect(find.text('15M Consensus Setup'), findsOneWidget);
-      expect(find.text('STRONG · 4 / 4'), findsOneWidget);
-      expect(find.text('4 of 4 sources agree'), findsOneWidget);
+expect(find.text('STRONG · 4 / 6'), findsOneWidget);
+      // 4 independent sources out of 6 that could have voted. The numerator is
+      // a distinct source count, not an idea count, so one prolific source can
+      // never look like broad agreement.
+      expect(find.text('4 of 6 sources agree'), findsOneWidget);
+      expect(find.text('4 of 4 sources agree'), findsNothing);
       expect(find.text('Source A ✓'), findsNothing);
       expect(find.text('LONG'), findsOneWidget);
       expect(find.text('—'), findsWidgets,
@@ -528,8 +582,9 @@ void main() {
       await _pumpLive(tester, _populated());
       await _openTab(tester, 'SOURCES');
 
-      expect(find.text('SOURCES · live-1'), findsOneWidget);
-      expect(find.text('4 / 4'), findsOneWidget);
+expect(find.text('SOURCES · live-1'), findsOneWidget);
+      // 4 independent sources of 6 that could have voted.
+      expect(find.text('4 / 6'), findsOneWidget);
       expect(find.text('agree'), findsOneWidget);
       // Agreement label, not a probability, and derived from the signal.
       expect(find.text('STRONG 88'), findsOneWidget);

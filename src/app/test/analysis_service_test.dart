@@ -200,6 +200,147 @@ void main() {
     });
   });
 
+  group('independence metrics', () {
+    IdeaProvenance idea({
+      required String id,
+      required ModelOwner owner,
+      String? publisher,
+      String? dataset,
+      String? method,
+    }) =>
+        IdeaProvenance(
+          ideaId: id,
+          direction: 'LONG',
+          modelOwner: owner,
+          publisherId: publisher,
+          upstreamDataset: dataset,
+          methodologyId: method,
+          publishedAt: DateTime.utc(2026, 10, 2, 12),
+          derived: owner != ModelOwner.thirdParty,
+        );
+
+    test('our derived readers report methods but zero sources', () {
+      final r = const IndependenceScorer().score(
+        IdeaAgreement(direction: 'LONG', ideas: [
+          idea(id: 'a', owner: ModelOwner.us, dataset: 'D1', method: 'cot_reader'),
+          idea(id: 'b', owner: ModelOwner.us, dataset: 'D2', method: 'rates_reader'),
+          idea(id: 'c', owner: ModelOwner.us, dataset: 'D3', method: 'cal_reader'),
+        ]),
+      );
+      expect(r.externalVoices, 0);
+      expect(r.analyticalMethods, 3);
+      expect(r.upstreamDatasets, 3);
+      // With no eligible publisher the UI must not render a ratio at all,
+      // because "0 of 0 sources" reads as an error rather than a state.
+      expect(r.canShowSourceRatio, isFalse);
+      expect(r.isAwaitingExternalSources, isTrue);
+    });
+
+    test('external publishers produce a real ratio', () {
+      final r = const IndependenceScorer().score(
+        IdeaAgreement(direction: 'LONG', ideas: [
+          idea(id: 'x', owner: ModelOwner.thirdParty, publisher: 'P1', method: 'm1'),
+          idea(id: 'y', owner: ModelOwner.thirdParty, publisher: 'P2', method: 'm2'),
+        ]),
+        eligiblePublishers: 5,
+      );
+      expect(r.externalVoices, 2);
+      expect(r.canShowSourceRatio, isTrue);
+      expect(r.eligiblePublishers, 5);
+    });
+
+    test('one release read three ways is one effective voice', () {
+      final r = const IndependenceScorer().score(
+        IdeaAgreement(direction: 'LONG', ideas: [
+          idea(id: 'A', owner: ModelOwner.us, dataset: 'CFTC-COT-1', method: 'cot_positioning'),
+          idea(id: 'B', owner: ModelOwner.us, dataset: 'CFTC-COT-1', method: 'cot_trend'),
+          idea(id: 'C', owner: ModelOwner.us, dataset: 'CFTC-COT-1', method: 'rsi_ema_macd'),
+        ]),
+      );
+      expect(r.effectiveVoices, 1.0);
+      expect(r.clusters, hasLength(1));
+      // Methodological diversity survives only in its own metric.
+      expect(r.analyticalMethods, 3);
+      expect(r.upstreamDatasets, 1);
+    });
+
+    test('an unknown model owner cannot earn source credit', () {
+      final r = const IndependenceScorer().score(
+        IdeaAgreement(direction: 'LONG', ideas: [
+          idea(id: 'u', owner: ModelOwner.unknown, publisher: 'P?', method: 'm'),
+        ]),
+      );
+      expect(r.externalVoices, 0);
+    });
+  });
+
+  group('session gate and DST', () {
+    // Regression: the gate used a fixed -4h offset, which is wrong for roughly
+    // eight months a year and would open the gate an hour early in winter.
+    test('New York offset follows US daylight saving', () {
+      // 2026: DST starts 8 March, ends 1 November.
+      expect(newYorkTime(DateTime.utc(2026, 1, 15, 17)), DateTime.utc(2026, 1, 15, 12));
+      expect(newYorkTime(DateTime.utc(2026, 7, 15, 16)), DateTime.utc(2026, 7, 15, 12));
+    });
+
+    test('the DST boundary itself flips at the right instant', () {
+      // US DST starts at 02:00 local STANDARD time on 8 March 2026, which is
+      // 07:00 UTC. One minute earlier is still EST (-5).
+      expect(newYorkTime(DateTime.utc(2026, 3, 8, 6, 59)), DateTime.utc(2026, 3, 8, 1, 59));
+      expect(newYorkTime(DateTime.utc(2026, 3, 8, 7, 0)), DateTime.utc(2026, 3, 8, 3, 0));
+      // Across spring-forward, 1 minute of UTC advances the local clock by 1h01m
+      // (01:59 EST -> 03:00 EDT): the 02:00 hour does not exist on this date.
+      // That 61-minute skew is the proof the offset actually changed.
+      final before = newYorkTime(DateTime.utc(2026, 3, 8, 6, 59));
+      final after = newYorkTime(DateTime.utc(2026, 3, 8, 7, 0));
+      expect(after.isAfter(before), isTrue);
+      expect(
+        after.difference(before),
+        const Duration(hours: 1, minutes: 1),
+      );
+    });
+
+    test('autumn fall-back repeats the hour and uses the autumn offset', () {
+      // 2026: DST ends 1 November at 02:00 EDT = 06:00 UTC.
+      // 05:59 UTC is 01:59 EDT; 06:00 UTC is 01:00 EST, so 01:00 occurs twice.
+      // 05:30 UTC is 01:30 EDT (before the flip); 06:30 UTC is 01:30 EST (after).
+      // Both land on 01:30 wall-clock, which is the observable signature of the
+      // repeated hour.
+      expect(newYorkTime(DateTime.utc(2026, 11, 1, 5, 30)), DateTime.utc(2026, 11, 1, 1, 30));
+      expect(newYorkTime(DateTime.utc(2026, 11, 1, 6, 30)), DateTime.utc(2026, 11, 1, 1, 30));
+      // One hour later in UTC is only one hour later locally after the flip.
+      expect(
+        newYorkTime(DateTime.utc(2026, 11, 1, 7, 30)),
+        DateTime.utc(2026, 11, 1, 2, 30),
+      );
+    });
+
+    test('the market is open midweek regardless of season', () {
+      expect(sessionIsOpenAt(DateTime.utc(2026, 1, 14, 15)), isTrue);
+      expect(sessionIsOpenAt(DateTime.utc(2026, 7, 15, 15)), isTrue);
+    });
+
+    test('Saturday is always closed', () {
+      expect(sessionIsOpenAt(DateTime.utc(2026, 1, 10, 15)), isFalse);
+    });
+
+    test('Sunday opens at 18:00 New York, not 18:00 UTC', () {
+      // 22:00 UTC in January = 17:00 EST -> still closed.
+      expect(sessionIsOpenAt(DateTime.utc(2026, 1, 11, 22)), isFalse);
+      // 23:00 UTC = 18:00 EST -> open.
+      expect(sessionIsOpenAt(DateTime.utc(2026, 1, 11, 23)), isTrue);
+      // In July the same 22:00 UTC is 18:00 EDT -> already open.
+      expect(sessionIsOpenAt(DateTime.utc(2026, 7, 12, 22)), isTrue);
+    });
+
+    test('Friday closes at 17:00 New York, not 17:00 UTC', () {
+      // 21:00 UTC in January = 16:00 EST -> still open.
+      expect(sessionIsOpenAt(DateTime.utc(2026, 1, 9, 21)), isTrue);
+      // 22:00 UTC = 17:00 EST -> closed.
+      expect(sessionIsOpenAt(DateTime.utc(2026, 1, 9, 22)), isFalse);
+    });
+  });
+
   group('the scan never invents a signal', () {
     test('no configuration produces a long or short without levels', () async {
       final configs = [

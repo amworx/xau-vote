@@ -16,6 +16,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:xau_core/analysis/independence.dart';
 
 import 'live_repository.dart';
 import '../models/display_models.dart';
@@ -37,6 +38,12 @@ class LiveData extends ChangeNotifier {
   double? _sessionLow;
   double? _sessionHigh;
   DisplaySignal? _signal;
+
+  /// Three separate independence metrics. Null before the first poll.
+  IndependenceResult? _independence;
+
+  /// Provenance-derived agreement figures. Never merged into one figure.
+  IndependenceResult? get independence => _independence;
   List<DisplayHistoryEntry> _history = const [];
   List<DisplayEvent> _events = const [];
   List<DisplayDigestTheme> _digest = const [];
@@ -99,7 +106,24 @@ class LiveData extends ChangeNotifier {
       final signal = await _repo.activeSignal();
       _signal = signal;
       if (signal != null) {
-        final agree = await _repo.agreeingSourceCount(signal.id);
+        final eligible = await _repo.enabledSourceCount();
+
+        // Independence is scored from provenance, never from row counts. The
+        // three metrics stay separate and are never merged: a derived reader
+        // contributes to methods and datasets, never to sources.
+        final provenance = await _repo.ideaProvenance(signal.id);
+        final scored = const IndependenceScorer().score(
+          IdeaAgreement(
+            direction: signal.direction == Direction.long ? 'LONG' : 'SHORT',
+            ideas: provenance,
+          ),
+          eligiblePublishers: eligible,
+        );
+        // When no eligible external source exists the UI must say so rather
+        // than render "0 of 0". That is a state, not an error, and the scorer
+        // already exposes it via isAwaitingExternalSources.
+        _independence = scored;
+
         _signal = DisplaySignal(
           id: signal.id,
           direction: signal.direction,
@@ -111,9 +135,11 @@ class LiveData extends ChangeNotifier {
           tp2: signal.tp2,
           tp3: signal.tp3,
           status: signal.status,
-          agreeCount: agree,
-          totalCount: agree,
+          agreeCount: scored.externalVoices,
+          totalCount: eligible,
         );
+      } else {
+        _independence = null;
       }
 
       _history = await _repo.history();

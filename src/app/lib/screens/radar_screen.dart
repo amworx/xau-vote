@@ -25,6 +25,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:xau_core/analysis/independence.dart';
 
 import '../config.dart';
 import '../data/analysis_service.dart';
@@ -35,6 +36,7 @@ import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/analysis_verdict_card.dart';
+import '../widgets/independence_line.dart';
 import '../widgets/harbor_widgets.dart';
 
 class RadarScreen extends StatelessWidget {
@@ -127,6 +129,7 @@ class RadarScreen extends StatelessWidget {
                   signal,
                   updatedLabel: _agoLabel(live.lastUpdated),
                   chips: const [],
+                  independence: live.independence,
                 )
         else
           switch (state.scenario) {
@@ -251,6 +254,7 @@ class RadarScreen extends StatelessWidget {
     String? stateLabel,
     String? updatedLabel,
     List<DisplaySource>? chips,
+    IndependenceResult? independence,
   }) {
     final state = context.watch<AppState>();
     return Padding(
@@ -305,7 +309,7 @@ class RadarScreen extends StatelessWidget {
             _levelGrid(signal, state.targets),
             const SizedBox(height: 9),
             const TargetScopePills(),
-            _agreeRow(signal, state.targets, chips),
+            _agreeRow(signal, state.targets, independence: independence, chips: chips),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -375,9 +379,10 @@ class RadarScreen extends StatelessWidget {
 
   Widget _agreeRow(
     DisplaySignal signal,
-    TargetSelection selection,
+    TargetSelection selection, {
+    IndependenceResult? independence,
     List<DisplaySource>? chips,
-  ) {
+  }) {
     final sources = chips ?? MockFixtures.sources.take(signal.totalCount);
     return Container(
       margin: const EdgeInsets.only(top: 13),
@@ -393,13 +398,10 @@ class RadarScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '${signal.agreeCount} of ${signal.totalCount} sources agree',
-                  style: const TextStyle(
-                    fontFamily: 'Space Mono',
-                    fontSize: 10,
-                    color: harborInk,
-                  ),
+                IndependenceLine(
+                  result: independence,
+                  fallbackAgree: signal.agreeCount,
+                  fallbackTotal: signal.totalCount,
                 ),
                 const SizedBox(height: 5),
                 Wrap(

@@ -1,0 +1,38 @@
+﻿l for the independent-source layer.
+Analytical Methods Representation: May show analytical diversity separately without misrepresenting as independent consensus.
+QUESTION 2 â€” Independence Calculation
+Provenance Model:
+Entities to Track:
+Publisher
+Author
+Dataset
+Upstream Source
+Methodology
+Timestamp
+Observation Window
+Derived Transformation
+Syndication/Copy Relationship
+Weighting Scheme:
+Shared Upstream Data: Treat common data usage as one source with multiple insights. Weight towards original source importance.
+Shared Publisher/Author: Content from the same entity or person lowers the independence score.
+Shared Methodology: Similar methods decrease scores, emphasizing diffs or innovations.
+Shared Time Window: Simultaneous reactions reduce independence due to synchronized interpretations.
+Effective Independent Voice Count:
+Computation Approach:
+Example: For 3 adapters deriving from one CFTC release, with 2 using similar methodologies and another using a significantly different methodology, assign weights reflecting limited independence:
+If methodology variance is significant, weight can adjust scores to 2/3, reflecting partial independence stemming from different approaches.
+UI Representation:
+Agreement Display: Transparent displays prevent misinformation:
+"Independent Sources: 1/1"
+"Analytical Methods: 4/5"
+Ensures users see the distinction between external consensus and internal methodological alignment.
+Hard Rule:
+Enforcement: Maintain distinctiveness between external consensus from across sources and internal method agreement. Multiple readings of one data source shouldn't masquerade as independent consensus. If analytic diversity is numerically reported, clarify it as "analytical alignment" to reduce potential confusion.
+Conclusion & Evaluation:
+Preferred Design Evaluation:
+Distinguish source independence from method agreement without misleadingly amplifying consensus strength.
+Inform user through clear labeling in UI.
+Avoid overstating consensus; base decisions and display on genuine source independence where possible.
+Analytical methods can provide depth but not substitute for genuine external perspectives in consensus displays.
+Copy
+AI can make mistakes. Verify important information.

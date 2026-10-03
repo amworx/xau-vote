@@ -1,0 +1,1852 @@
+﻿NUMERIC formula only. No architecture discussion, no prose recommendations.
+
+CONTEXT (already settled): XAUUSD signal engine. A trade idea is a directional call from a source. Already ratified: independent-source agreement and analytical-method agreement are two separate metrics, and multiple readings of ONE upstream dataset must NEVER count as multiple independent sources. Hard rule.
+
+WHAT I NEED: the arithmetic.
+
+1. Give an explicit weighting formula for an effective independent voice count. Define a similarity score between two trade ideas from these fields: publisher identity; author identity; upstream dataset id (e.g. CFTC-COT-2026-09-25); methodology/transform id (e.g. cot_positioning_reader); publication timestamp; observation/event window; directly published vs derived.
+
+2. State how to aggregate pairwise similarity into one effective voice count. Choose between and justify: graph connected-components, clustering with similarity threshold, weighted union-find, eigenvector centrality, or effective-number-of-entities exp(H) where H is Shannon entropy of cluster weight distribution. Give the exact expression and a threshold value with justification.
+
+3. WORKED EXAMPLE, numeric, every intermediate value. Three adapters, all bullish. A reads CFTC-COT-2026-09-25 via cot_positioning_reader, derived. B reads the same release via cot_trend_reader, derived. C reads the same release via rsi_ema_macd_reader, derived. All published within 10 minutes, all derived, one upstream release. Give the 3x3 pairwise similarity matrix values, then the final effective independent voice count.
+
+4. SECOND WORKED EXAMPLE, same formula. X = human analyst, publisher P1, directly published, methodology m1, timestamp T1. Y = human analyst, publisher P2, directly published, methodology m2, timestamp T2, different upstream dataset. Z = derived reader over dataset D3, methodology m3. Compute the effective independent voice count.
+
+5. CRITICAL: should methodology diversity ever INCREASE the effective independent voice count when all inputs share one upstream dataset? Argue for or against and state plainly whether it should contribute ZERO to source independence while still reported separately as analytical agreement.
+
+Give formulas with defined symbols and show all arithmetic. Be concise and numeric.
+
+Duck.ai said
+GPT-5.6 Luna
+
+Let each trade idea 
+ð‘–
+i have:
+
+ð‘–
+=
+(
+ð‘
+ð‘–
+,
+ð‘Ž
+ð‘–
+,
+ð‘¢
+ð‘–
+,
+ð‘š
+ð‘–
+,
+ð‘¡
+ð‘–
+,
+ð‘¤
+ð‘–
+,
+ð‘‘
+ð‘–
+)
+i=(p
+i
+	â€‹
+
+,a
+i
+	â€‹
+
+,u
+i
+	â€‹
+
+,m
+i
+	â€‹
+
+,t
+i
+	â€‹
+
+,w
+i
+	â€‹
+
+,d
+i
+	â€‹
+
+)
+
+where:
+
+ð‘
+ð‘–
+p
+i
+	â€‹
+
+: publisher identity
+ð‘Ž
+ð‘–
+a
+i
+	â€‹
+
+: author identity
+ð‘¢
+ð‘–
+u
+i
+	â€‹
+
+: upstream dataset/event ID
+ð‘š
+ð‘–
+m
+i
+	â€‹
+
+: methodology/transform ID
+ð‘¡
+ð‘–
+t
+i
+	â€‹
+
+: publication timestamp
+ð‘¤
+ð‘–
+w
+i
+	â€‹
+
+: observation/event window
+ð‘‘
+ð‘–
+d
+i
+	â€‹
+
+: directly published or derived
+1. Pairwise similarity
+
+Define:
+
+ð‘†
+ð‘–
+ð‘—
+=
+0.10
+ð‘ƒ
+ð‘–
+ð‘—
++
+0.05
+ð´
+ð‘–
+ð‘—
++
+0.70
+ð‘ˆ
+ð‘–
+ð‘—
++
+0.05
+ð‘€
+ð‘–
+ð‘—
++
+0.04
+ð‘‡
+ð‘–
+ð‘—
++
+0.04
+ð‘Š
+ð‘–
+ð‘—
++
+0.02
+ð·
+ð‘–
+ð‘—
+S
+ij
+	â€‹
+
+=0.10P
+ij
+	â€‹
+
++0.05A
+ij
+	â€‹
+
++0.70U
+ij
+	â€‹
+
++0.05M
+ij
+	â€‹
+
++0.04T
+ij
+	â€‹
+
++0.04W
+ij
+	â€‹
+
++0.02D
+ij
+	â€‹
+
+
+with:
+
+ð‘ƒ
+ð‘–
+ð‘—
+=
+{
+1
+,
+	
+ð‘
+ð‘–
+=
+ð‘
+ð‘—
+
+
+0
+,
+	
+ð‘
+ð‘–
+â‰ 
+ð‘
+ð‘—
+P
+ij
+	â€‹
+
+={
+1,
+0,
+	â€‹
+
+p
+i
+	â€‹
+
+=p
+j
+	â€‹
+
+p
+i
+	â€‹
+
+î€ 
+=p
+j
+	â€‹
+
+	â€‹
+
+
+ð´
+ð‘–
+ð‘—
+=
+{
+1
+,
+	
+ð‘Ž
+ð‘–
+=
+ð‘Ž
+ð‘—
+
+
+0
+,
+	
+ð‘Ž
+ð‘–
+â‰ 
+ð‘Ž
+ð‘—
+A
+ij
+	â€‹
+
+={
+1,
+0,
+	â€‹
+
+a
+i
+	â€‹
+
+=a
+j
+	â€‹
+
+a
+i
+	â€‹
+
+î€ 
+=a
+j
+	â€‹
+
+	â€‹
+
+
+ð‘ˆ
+ð‘–
+ð‘—
+=
+{
+1
+,
+	
+ð‘¢
+ð‘–
+=
+ð‘¢
+ð‘—
+
+
+0
+,
+	
+ð‘¢
+ð‘–
+â‰ 
+ð‘¢
+ð‘—
+U
+ij
+	â€‹
+
+={
+1,
+0,
+	â€‹
+
+u
+i
+	â€‹
+
+=u
+j
+	â€‹
+
+u
+i
+	â€‹
+
+î€ 
+=u
+j
+	â€‹
+
+	â€‹
+
+
+ð‘€
+ð‘–
+ð‘—
+=
+{
+1
+,
+	
+ð‘š
+ð‘–
+=
+ð‘š
+ð‘—
+
+
+0
+,
+	
+ð‘š
+ð‘–
+â‰ 
+ð‘š
+ð‘—
+M
+ij
+	â€‹
+
+={
+1,
+0,
+	â€‹
+
+m
+i
+	â€‹
+
+=m
+j
+	â€‹
+
+m
+i
+	â€‹
+
+î€ 
+=m
+j
+	â€‹
+
+	â€‹
+
+
+Timestamp similarity:
+
+ð‘‡
+ð‘–
+ð‘—
+=
+max
+â¡
+(
+0
+,
+1
+âˆ’
+âˆ£
+ð‘¡
+ð‘–
+âˆ’
+ð‘¡
+ð‘—
+âˆ£
+3600
+)
+T
+ij
+	â€‹
+
+=max(0,1âˆ’
+3600
+âˆ£t
+i
+	â€‹
+
+âˆ’t
+j
+	â€‹
+
+âˆ£
+	â€‹
+
+)
+
+where timestamp difference is in seconds.
+
+Window similarity:
+
+ð‘Š
+ð‘–
+ð‘—
+=
+{
+1
+,
+	
+ð‘¤
+ð‘–
+=
+ð‘¤
+ð‘—
+
+
+0
+,
+	
+ð‘¤
+ð‘–
+â‰ 
+ð‘¤
+ð‘—
+W
+ij
+	â€‹
+
+={
+1,
+0,
+	â€‹
+
+w
+i
+	â€‹
+
+=w
+j
+	â€‹
+
+w
+i
+	â€‹
+
+î€ 
+=w
+j
+	â€‹
+
+	â€‹
+
+
+Publication-status similarity:
+
+ð·
+ð‘–
+ð‘—
+=
+{
+1
+,
+	
+ð‘‘
+ð‘–
+=
+ð‘‘
+ð‘—
+
+
+0
+,
+	
+ð‘‘
+ð‘–
+â‰ 
+ð‘‘
+ð‘—
+D
+ij
+	â€‹
+
+={
+1,
+0,
+	â€‹
+
+d
+i
+	â€‹
+
+=d
+j
+	â€‹
+
+d
+i
+	â€‹
+
+î€ 
+=d
+j
+	â€‹
+
+	â€‹
+
+
+The diagonal is defined as:
+
+ð‘†
+ð‘–
+ð‘–
+=
+1
+S
+ii
+	â€‹
+
+=1
+
+2. Aggregation method
+
+Use thresholded connected components:
+
+ðº
+=
+(
+ð‘‰
+,
+ð¸
+)
+G=(V,E)
+
+(
+ð‘–
+,
+ð‘—
+)
+âˆˆ
+ð¸
+â€…â€Š
+âŸº
+â€…â€Š
+ð‘†
+ð‘–
+ð‘—
+â‰¥
+ðœ
+(i,j)âˆˆEâŸºS
+ij
+	â€‹
+
+â‰¥Ï„
+
+with:
+
+ðœ
+=
+0.65
+Ï„=0.65
+
+The threshold is justified because shared upstream data contributes 
+0.70
+0.70, so two readings of the same upstream release are treated as one source cluster even when their methodologies differ.
+
+Let connected components be:
+
+ð¶
+1
+,
+ð¶
+2
+,
+â€¦
+,
+ð¶
+ð¾
+C
+1
+	â€‹
+
+,C
+2
+	â€‹
+
+,â€¦,C
+K
+	â€‹
+
+
+For each component:
+
+ð‘ž
+ð‘˜
+=
+âˆ‘
+ð‘–
+âˆˆ
+ð¶
+ð‘˜
+ð‘Ÿ
+ð‘–
+q
+k
+	â€‹
+
+=âˆ‘
+iâˆˆC
+k
+	â€‹
+
+	â€‹
+
+r
+i
+	â€‹
+
+
+where 
+ð‘Ÿ
+ð‘–
+r
+i
+	â€‹
+
+ is the raw voice weight. For equal voice weights:
+
+ð‘Ÿ
+ð‘–
+=
+1
+r
+i
+	â€‹
+
+=1
+
+Normalize:
+
+ð‘
+ð‘˜
+=
+ð‘ž
+ð‘˜
+âˆ‘
+â„“
+=
+1
+ð¾
+ð‘ž
+â„“
+p
+k
+	â€‹
+
+=
+âˆ‘
+â„“=1
+K
+	â€‹
+
+q
+â„“
+	â€‹
+
+q
+k
+	â€‹
+
+	â€‹
+
+
+Shannon entropy:
+
+ð»
+=
+âˆ’
+âˆ‘
+ð‘˜
+=
+1
+ð¾
+ð‘
+ð‘˜
+ln
+â¡
+(
+ð‘
+ð‘˜
+)
+H=âˆ’âˆ‘
+k=1
+K
+	â€‹
+
+p
+k
+	â€‹
+
+ln(p
+k
+	â€‹
+
+)
+
+Effective independent voice count:
+
+ð‘
+e
+f
+f
+=
+exp
+â¡
+(
+ð»
+)
+N
+eff
+	â€‹
+
+=exp(H)
+
+3. Worked example: A, B, C
+
+All three use:
+
+ð‘¢
+ð´
+=
+ð‘¢
+ðµ
+=
+ð‘¢
+ð¶
+=
+CFTC-COT-2026-09-25
+u
+A
+	â€‹
+
+=u
+B
+	â€‹
+
+=u
+C
+	â€‹
+
+=CFTC-COT-2026-09-25
+
+All are derived:
+
+ð‘‘
+ð´
+=
+ð‘‘
+ðµ
+=
+ð‘‘
+ð¶
+=
+derived
+d
+A
+	â€‹
+
+=d
+B
+	â€‹
+
+=d
+C
+	â€‹
+
+=derived
+
+Assume distinct publishers and authors:
+
+ð‘ƒ
+ð‘–
+ð‘—
+=
+0
+,
+ð´
+ð‘–
+ð‘—
+=
+0
+P
+ij
+	â€‹
+
+=0,A
+ij
+	â€‹
+
+=0
+
+Distinct methodologies:
+
+ð‘€
+ð´
+ðµ
+=
+ð‘€
+ð´
+ð¶
+=
+ð‘€
+ðµ
+ð¶
+=
+0
+M
+AB
+	â€‹
+
+=M
+AC
+	â€‹
+
+=M
+BC
+	â€‹
+
+=0
+
+Same release/event window:
+
+ð‘Š
+ð´
+ðµ
+=
+ð‘Š
+ð´
+ð¶
+=
+ð‘Š
+ðµ
+ð¶
+=
+1
+W
+AB
+	â€‹
+
+=W
+AC
+	â€‹
+
+=W
+BC
+	â€‹
+
+=1
+
+All published within 10 minutes. Use the maximum stated separation:
+
+âˆ£
+ð‘¡
+ð‘–
+âˆ’
+ð‘¡
+ð‘—
+âˆ£
+=
+600
+Â seconds
+âˆ£t
+i
+	â€‹
+
+âˆ’t
+j
+	â€‹
+
+âˆ£=600Â seconds
+
+Therefore:
+
+ð‘‡
+ð‘–
+ð‘—
+=
+1
+âˆ’
+600
+3600
+=
+1
+âˆ’
+0.1666667
+=
+0.8333333
+T
+ij
+	â€‹
+
+=1âˆ’
+3600
+600
+	â€‹
+
+=1âˆ’0.1666667=0.8333333
+
+For every off-diagonal pair:
+
+ð‘†
+ð‘–
+ð‘—
+=
+0.10
+(
+0
+)
++
+0.05
+(
+0
+)
++
+0.70
+(
+1
+)
++
+0.05
+(
+0
+)
++
+0.04
+(
+0.8333333
+)
++
+0.04
+(
+1
+)
++
+0.02
+(
+1
+)
+S
+ij
+	â€‹
+
+=0.10(0)+0.05(0)+0.70(1)+0.05(0)+0.04(0.8333333)+0.04(1)+0.02(1)
+
+ð‘†
+ð‘–
+ð‘—
+=
+0
++
+0
++
+0.70
++
+0
++
+0.0333333
++
+0.04
++
+0.02
+S
+ij
+	â€‹
+
+=0+0+0.70+0+0.0333333+0.04+0.02
+
+ð‘†
+ð‘–
+ð‘—
+=
+0.7933333
+S
+ij
+	â€‹
+
+=0.7933333
+
+The pairwise similarity matrix is:
+
+[
+1
+	
+0.7933333
+	
+0.7933333
+
+
+0.7933333
+	
+1
+	
+0.7933333
+
+
+0.7933333
+	
+0.7933333
+	
+1
+]
+	â€‹
+
+1
+0.7933333
+0.7933333
+	â€‹
+
+0.7933333
+1
+0.7933333
+	â€‹
+
+0.7933333
+0.7933333
+1
+	â€‹
+
+	â€‹
+
+
+Since:
+
+0.7933333
+â‰¥
+0.65
+0.7933333â‰¥0.65
+
+all three vertices belong to one connected component:
+
+ð¶
+1
+=
+{
+ð´
+,
+ðµ
+,
+ð¶
+}
+C
+1
+	â€‹
+
+={A,B,C}
+
+Component weight:
+
+ð‘ž
+1
+=
+1
++
+1
++
+1
+=
+3
+q
+1
+	â€‹
+
+=1+1+1=3
+
+Normalized weight:
+
+ð‘
+1
+=
+3
+3
+=
+1
+p
+1
+	â€‹
+
+=
+3
+3
+	â€‹
+
+=1
+
+Entropy:
+
+ð»
+=
+âˆ’
+(
+1
+ln
+â¡
+1
+)
+=
+0
+H=âˆ’(1ln1)=0
+
+Effective independent voice count:
+
+ð‘
+e
+f
+f
+=
+exp
+â¡
+(
+0
+)
+=
+1
+N
+eff
+	â€‹
+
+=exp(0)=1
+
+4. Worked example: X, Y, Z
+
+Assume all unspecified identity, dataset, methodology, timestamp, and window fields are different.
+
+Thus:
+
+ð‘ƒ
+ð‘‹
+ð‘Œ
+=
+ð‘ƒ
+ð‘‹
+ð‘
+=
+ð‘ƒ
+ð‘Œ
+ð‘
+=
+0
+P
+XY
+	â€‹
+
+=P
+XZ
+	â€‹
+
+=P
+YZ
+	â€‹
+
+=0
+
+ð´
+ð‘‹
+ð‘Œ
+=
+ð´
+ð‘‹
+ð‘
+=
+ð´
+ð‘Œ
+ð‘
+=
+0
+A
+XY
+	â€‹
+
+=A
+XZ
+	â€‹
+
+=A
+YZ
+	â€‹
+
+=0
+
+ð‘ˆ
+ð‘‹
+ð‘Œ
+=
+ð‘ˆ
+ð‘‹
+ð‘
+=
+ð‘ˆ
+ð‘Œ
+ð‘
+=
+0
+U
+XY
+	â€‹
+
+=U
+XZ
+	â€‹
+
+=U
+YZ
+	â€‹
+
+=0
+
+ð‘€
+ð‘‹
+ð‘Œ
+=
+ð‘€
+ð‘‹
+ð‘
+=
+ð‘€
+ð‘Œ
+ð‘
+=
+0
+M
+XY
+	â€‹
+
+=M
+XZ
+	â€‹
+
+=M
+YZ
+	â€‹
+
+=0
+
+ð‘‡
+ð‘‹
+ð‘Œ
+=
+ð‘‡
+ð‘‹
+ð‘
+=
+ð‘‡
+ð‘Œ
+ð‘
+=
+0
+T
+XY
+	â€‹
+
+=T
+XZ
+	â€‹
+
+=T
+YZ
+	â€‹
+
+=0
+
+ð‘Š
+ð‘‹
+ð‘Œ
+=
+ð‘Š
+ð‘‹
+ð‘
+=
+ð‘Š
+ð‘Œ
+ð‘
+=
+0
+W
+XY
+	â€‹
+
+=W
+XZ
+	â€‹
+
+=W
+YZ
+	â€‹
+
+=0
+
+ð·
+ð‘‹
+ð‘Œ
+=
+1
+D
+XY
+	â€‹
+
+=1
+
+because both X and Y are directly published.
+
+ð·
+ð‘‹
+ð‘
+=
+ð·
+ð‘Œ
+ð‘
+=
+0
+D
+XZ
+	â€‹
+
+=D
+YZ
+	â€‹
+
+=0
+
+because Z is derived.
+
+Therefore:
+
+ð‘†
+ð‘‹
+ð‘Œ
+=
+0.10
+(
+0
+)
++
+0.05
+(
+0
+)
++
+0.70
+(
+0
+)
++
+0.05
+(
+0
+)
++
+0.04
+(
+0
+)
++
+0.04
+(
+0
+)
++
+0.02
+(
+1
+)
+S
+XY
+	â€‹
+
+=0.10(0)+0.05(0)+0.70(0)+0.05(0)+0.04(0)+0.04(0)+0.02(1)
+
+ð‘†
+ð‘‹
+ð‘Œ
+=
+0.02
+S
+XY
+	â€‹
+
+=0.02
+
+ð‘†
+ð‘‹
+ð‘
+=
+0.10
+(
+0
+)
++
+0.05
+(
+0
+)
++
+0.70
+(
+0
+)
++
+0.05
+(
+0
+)
++
+0.04
+(
+0
+)
++
+0.04
+(
+0
+)
++
+0.02
+(
+0
+)
+=
+0
+S
+XZ
+	â€‹
+
+=0.10(0)+0.05(0)+0.70(0)+0.05(0)+0.04(0)+0.04(0)+0.02(0)=0
+
+ð‘†
+ð‘Œ
+ð‘
+=
+0
+S
+YZ
+	â€‹
+
+=0
+
+Matrix:
+
+[
+1
+	
+0.02
+	
+0
+
+
+0.02
+	
+1
+	
+0
+
+
+0
+	
+0
+	
+1
+]
+	â€‹
+
+1
+0.02
+0
+	â€‹
+
+0.02
+1
+0
+	â€‹
+
+0
+0
+1
+	â€‹
+
+	â€‹
+
+
+No off-diagonal value reaches:
+
+ðœ
+=
+0.65
+Ï„=0.65
+
+Therefore:
+
+ð¶
+1
+=
+{
+ð‘‹
+}
+,
+ð¶
+2
+=
+{
+ð‘Œ
+}
+,
+ð¶
+3
+=
+{
+ð‘
+}
+C
+1
+	â€‹
+
+={X},C
+2
+	â€‹
+
+={Y},C
+3
+	â€‹
+
+={Z}
+
+Component weights:
+
+ð‘ž
+1
+=
+ð‘ž
+2
+=
+ð‘ž
+3
+=
+1
+q
+1
+	â€‹
+
+=q
+2
+	â€‹
+
+=q
+3
+	â€‹
+
+=1
+
+Total weight:
+
+ð‘„
+=
+1
++
+1
++
+1
+=
+3
+Q=1+1+1=3
+
+Normalized weights:
+
+ð‘
+1
+=
+ð‘
+2
+=
+ð‘
+3
+=
+1
+3
+p
+1
+	â€‹
+
+=p
+2
+	â€‹
+
+=p
+3
+	â€‹
+
+=
+3
+1
+	â€‹
+
+
+Entropy:
+
+ð»
+=
+âˆ’
+(
+1
+3
+ln
+â¡
+1
+3
++
+1
+3
+ln
+â¡
+1
+3
++
+1
+3
+ln
+â¡
+1
+3
+)
+H=âˆ’(
+3
+1
+	â€‹
+
+ln
+3
+1
+	â€‹
+
++
+3
+1
+	â€‹
+
+ln
+3
+1
+	â€‹
+
++
+3
+1
+	â€‹
+
+ln
+3
+1
+	â€‹
+
+)
+
+ð»
+=
+âˆ’
+ln
+â¡
+1
+3
+=
+ln
+â¡
+3
+H=âˆ’ln
+3
+1
+	â€‹
+
+=ln3
+
+Effective independent voice count:
+
+ð‘
+e
+f
+f
+=
+exp
+â¡
+(
+ln
+â¡
+3
+)
+=
+3
+N
+eff
+	â€‹
+
+=exp(ln3)=3
+
+5. Methodology diversity
+
+No: methodology diversity should not increase independent-source count when all ideas share one upstream dataset.
+
+For the source-independence metric:
+
+ð‘¢
+ð‘–
+=
+ð‘¢
+ð‘—
+â€…â€Š
+âŸ¹
+â€…â€Š
+0.70
+ð‘ˆ
+ð‘–
+ð‘—
+=
+0.70
+u
+i
+	â€‹
+
+=u
+j
+	â€‹
+
+âŸ¹0.70U
+ij
+	â€‹
+
+=0.70
+
+This keeps the ideas in the same source-dependence cluster unless other logic explicitly overrides it.
+
+Therefore, in the A/B/C example:
+
+methodologyÂ contributionÂ toÂ sourceÂ independence
+=
+0
+methodologyÂ contributionÂ toÂ sourceÂ independence=0
+
+even though:
+
+ð‘š
+ð´
+â‰ 
+ð‘š
+ðµ
+,
+ð‘š
+ð´
+â‰ 
+ð‘š
+ð¶
+,
+ð‘š
+ðµ
+â‰ 
+ð‘š
+ð¶
+m
+A
+	â€‹
+
+î€ 
+=m
+B
+	â€‹
+
+,m
+A
+	â€‹
+
+î€ 
+=m
+C
+	â€‹
+
+,m
+B
+	â€‹
+
+î€ 
+=m
+C
+	â€‹
+
+
+Methodology diversity should instead be reported as a separate analytical-method agreement metric:
+
+2nd opinion
+

@@ -84,12 +84,107 @@ class LiveRepository {
     return _toDisplaySignal(r);
   }
 
-  /// How many independent ideas contributed to [signalId].
+  /// Distinct idea and source counts behind [signalId].
   ///
-  /// Counts DISTINCT `trade_idea_id`: re-running build-consensus can leave
-  /// more than one link row per idea, and a raw row count over-reports
-  /// agreement (the app once showed "11 of 11 sources" for a single setup).
-  Future<int> agreeingSourceCount(String signalId) async {
+  /// Two numbers, because they answer different questions and conflating them
+  /// overstates agreement:
+  ///
+  ///   * `distinctIdeas` — distinct `trade_idea_id` link rows.
+  ///   * `distinctSources` — distinct `sources.id` behind those ideas, which is
+  ///     what product rule 3 actually means by "independent source".
+  ///
+  /// The manual seed collector writes a new idea each run with slightly
+  /// different levels, so idea count alone made a single source look like broad
+  /// agreement: the app once displayed "11 of 11 sources" for one source.
+  /// How many sources could have voted: the enabled ones.
+///
+/// This is the denominator for "N of M". Using the agreement count as its own
+/// denominator made the figure a tautology, so a lone source could never be
+/// distinguished from broad consensus.
+  /// Eligible publishers: sources whose license permits commercial use.
+  ///
+  /// This is the denominator for "N of M". Using the agreement count as its
+  /// own denominator made the figure a tautology, so a lone source could never
+  /// be distinguished from broad consensus.
+  Future<int> enabledSourceCount() async {
+    final r = await _client
+        .from('eligible_external_sources')
+        .select('id')
+        .eq('is_eligible_external', true);
+    return (r as List).length;
+  }
+
+  /// Provenance for the ideas behind [signalId], for independence scoring.
+  ///
+  /// Reads `model_owner` rather than inferring it: a `us` model is never an
+  /// independent source no matter how many datasets it reads.
+  Future<List<IdeaProvenance>> ideaProvenance(String signalId) async {
+    final links = await _client
+        .from('signal_sources')
+        .select('trade_idea_id')
+        .eq('signal_id', signalId);
+    if (links.isEmpty) return const [];
+    final ids = (links as List)
+        .map((row) => '${(row as Row)['trade_idea_id']}')
+        .toSet()
+        .toList();
+    if (ids.isEmpty) return const [];
+
+    final rows = await _client
+        .from('trade_ideas')
+        .select(
+            'id,direction,model_owner,source_id,author_ref,upstream_dataset_id,'
+            'methodology_id,event_window,published_at,fingerprint')
+        .inFilter('id', ids);
+    if (rows.isEmpty) return const [];
+
+    // Publisher id comes from the joined source, not the idea, so two ideas
+    // from one desk collapse to one voice.
+    final sourceIds = (rows as List)
+        .map((r) => '${(r as Row)['source_id']}')
+        .where((s) => s.isNotEmpty && s != 'null')
+        .toSet()
+        .toList();
+    final names = <String, String>{};
+    if (sourceIds.isNotEmpty) {
+      final src = await _client
+          .from('sources')
+          .select('id,name,commercial_use_allowed')
+          .inFilter('id', sourceIds);
+      for (final s in (src as List)) {
+        names['${(s as Row)['id']}'] = '${s['name'] ?? s['id']}';
+      }
+    }
+
+    return rows.map((row) {
+      final at = DateTime.tryParse('${row['published_at']}')?.toUtc();
+      final owner = switch ('${row['model_owner']}') {
+        'third_party' => ModelOwner.thirdParty,
+        'us' => ModelOwner.us,
+        _ => ModelOwner.unknown,
+      };
+      final srcId = '${row['source_id']}';
+      return IdeaProvenance(
+        ideaId: '${row['id']}',
+        direction: '${row['direction']}',
+        modelOwner: owner,
+        publisherId: names[srcId],
+        authorId: _blankToNull(row['author_ref']),
+        upstreamDataset: _blankToNull(row['upstream_dataset_id']),
+        methodologyId: _blankToNull(row['methodology_id']),
+        publishedAt: at ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        eventWindow: _blankToNull(row['event_window']),
+        derived: owner != ModelOwner.thirdParty,
+      );
+    }).toList();
+  }
+
+  static String? _blankToNull(Object? v) {
+    final s = '$v';
+    return (s.isEmpty || s == 'null') ? null : s;
+  }
+
+  Future<({int distinctIdeas, int distinctSources})> agreementCount(String signalId) async {
     final r = await _client
         .from('signal_sources')
         .select('trade_idea_id')
@@ -97,7 +192,20 @@ class LiveRepository {
     final ids = (r as List)
         .map((row) => '${(row as Row)['trade_idea_id']}')
         .toSet();
-    return ids.length;
+    if (ids.isEmpty) return (distinctIdeas: 0, distinctSources: 0);
+
+    // Distinct INDEPENDENT sources, not distinct ideas. Product rule 3: a
+    // source that posts eleven variants of one view is one vote. The manual
+    // seed currently produces a new idea per run, so counting ideas alone made
+    // a single source look like broad agreement.
+    final ideas = await _client
+        .from('trade_ideas')
+        .select('source_id')
+        .inFilter('id', ids.toList());
+    final sources = (ideas as List)
+        .map((row) => '${(row as Row)['source_id']}')
+        .toSet();
+    return (distinctIdeas: ids.length, distinctSources: sources.length);
   }
 
   /// Closed signals for the History tab.
