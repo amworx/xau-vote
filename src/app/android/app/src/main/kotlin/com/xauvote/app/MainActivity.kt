@@ -1,4 +1,4 @@
-package com.xauradar.xau_radar
+package com.xauvote.app
 
 import android.content.Intent
 import android.net.Uri

@@ -7,6 +7,9 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+// Session calendar only: the barrel also exports a Direction enum that
+// collides with the app's display models.
+import 'package:xau_core/analysis/session.dart';
 import 'package:xauvote/widgets/harbor_widgets.dart';
 
 /// Pumps a bare header with explicit session state, bypassing the clock so the
@@ -38,6 +41,34 @@ Future<void> _pump(
 }
 
 void main() {
+  testWidgets('the default pill reads the clock, not a hardcoded default',
+      (tester) async {
+    // Regression: the constructor once defaulted sessionOpen to true and
+    // sessionName to 'LIVE', so the nullable fields were never null and the
+    // clock was never consulted. Every other test here passes explicit values,
+    // so only this one - which omits them - can catch that.
+    // marketStatusLabel:true stands in for a live build, so the derived pill
+    // renders. Without it an offline test build hides the pill (correctly), and
+    // there would be nothing to assert against.
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: HarborHeader(marketStatusLabel: true)),
+      ),
+    );
+
+    // The pill is the trailing Text in the header row; "XV" is the wordmark.
+    final pill = tester.widget<Text>(find.byType(Text).last);
+    expect(pill.data, isNot('XV'));
+    final now = DateTime.now().toUtc();
+    if (isSessionOpen(now)) {
+      expect(pill.data, sessionLabel(sessionAt(now)));
+    } else {
+      expect(pill.data, 'MARKET CLOSED');
+    }
+    // Never the old frozen literal, whatever the hour.
+    expect(pill.data, isNot(contains('18s')));
+  });
+
   testWidgets('a shut market never reads as live', (tester) async {
     await _pump(tester, sessionOpen: false, sessionName: 'US');
     expect(find.text('US · CLOSED'), findsOneWidget);

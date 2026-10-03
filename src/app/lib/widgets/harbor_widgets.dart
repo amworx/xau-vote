@@ -35,8 +35,8 @@ class HarborHeader extends StatelessWidget {
     super.key,
     this.subtitle,
     this.statusText,
-    this.sessionOpen = true,
-    this.sessionName = 'LIVE',
+    this.sessionOpen,
+    this.sessionName,
     this.marketStatusLabel,
   });
 
