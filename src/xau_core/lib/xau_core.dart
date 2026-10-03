@@ -13,6 +13,7 @@ export 'analysis/confluence.dart';
 export 'analysis/independence.dart' hide IndependenceResult;
 export 'analysis/indicators.dart';
 export 'analysis/scanner.dart';
+export 'analysis/session.dart';
 export 'analysis/stop_plan.dart';
 export 'consensus/consensus.dart';
 export 'models/candle.dart';

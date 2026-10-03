@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Where the update APK may be written.
+
+  Deliberately one narrow directory rather than external storage: the file is
+  handed to the system installer via FileProvider and must not be world
+  readable, and the user can revoke install permission without us touching it.
+-->
+<paths>
+    <cache-path name="updates" path="updates/" />
+</paths>

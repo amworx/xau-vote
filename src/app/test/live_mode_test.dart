@@ -691,8 +691,10 @@ expect(find.text('SOURCES · live-1'), findsOneWidget);
       expect(find.text('SETTINGS'), findsNWidgets(2),
           reason: 'header subtitle + nav label');
       expect(find.text('15M / 5M / 1H'), findsOneWidget);
-      expect(find.text('Consensus forming'), findsOneWidget);
+expect(find.text('Consensus forming'), findsOneWidget);
       expect(find.text('MOCK'), findsNothing);
+      // No bare "LIVE" label: the pill names the real session phase, so this
+      // stays true whether the market is open or shut.
       expect(find.text('LIVE'), findsNothing);
     });
   });

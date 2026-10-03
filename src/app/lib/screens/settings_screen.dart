@@ -15,7 +15,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../config.dart';
 import '../models/display_models.dart';
+import '../services/update_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
@@ -137,7 +139,24 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const _Group(
+          title: 'About',
+          children: [
+            _SettingRow(
+              title: 'Developer',
+              subtitle: 'Built by',
+              value: 'AMWORX',
+            ),
+            _SettingRow(
+              title: 'App',
+              subtitle: 'XAUUSD 15M consensus assistant',
+              value: 'XV',
+            ),
+          ],
+        ),
+        const _UpdateGroup(),
+        const SizedBox(height: 12),
+        const SizedBox(height: 12),
         // Display-only micro-copy. The pip convention note, the icon
         // attribution and the not-financial-advice line are all required:
         // the UIcons licence demands attribution and the app must not read as
@@ -177,6 +196,274 @@ class _Group extends StatelessWidget {
               children[i],
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// In-app updater (Settings → Updates).
+///
+/// Owns its own [UpdateService] so a rebuild cannot interrupt a download, and
+/// disposes it on teardown. Every control is derived from [UpdateState] rather
+/// than local flags, so the UI cannot show "downloading" after a cancel or offer
+/// an install for a file that failed its checksum.
+///
+/// The controls deliberately stop short of installing silently: Android
+/// requires the user to approve the install, and the button says so.
+class _UpdateGroup extends StatefulWidget {
+  const _UpdateGroup();
+
+  @override
+  State<_UpdateGroup> createState() => _UpdateGroupState();
+}
+
+class _UpdateGroupState extends State<_UpdateGroup> {
+  late final UpdateService? _service;
+  String? _installFailure;
+
+  @override
+  void initState() {
+    super.initState();
+    final configured = updatesConfigured
+        ? Uri.tryParse(updateManifestUrl)
+        : null;
+    _service = configured == null
+        ? null
+        : UpdateService(manifestUrl: configured);
+  }
+
+  @override
+  void dispose() {
+    _service?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = _service;
+    if (service == null) {
+      // No endpoint was supplied at build time. Say so instead of offering a
+      // check that cannot succeed.
+      return const _Group(
+        title: 'App updates',
+        children: [
+          _SettingRow(
+            title: 'Check for updates',
+            subtitle: 'No update endpoint in this build',
+            value: 'UNAVAILABLE',
+          ),
+        ],
+      );
+    }
+
+    return ListenableBuilder(
+      listenable: service,
+      builder: (context, _) {
+        final state = service.state;
+        return _Group(
+          title: 'App updates',
+          children: [
+            _UpdateStatus(state: state, service: service),
+            if (state.isActive || state.status == DownloadState.ready)
+              _UpdateControls(
+                state: state,
+                service: service,
+                installFailure: _installFailure,
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Status line plus, while downloading, a progress bar.
+class _UpdateStatus extends StatelessWidget {
+  const _UpdateStatus({required this.state, required this.service});
+
+  final UpdateState state;
+  final UpdateService service;
+
+  @override
+  Widget build(BuildContext context) {
+    final release = state.release;
+    final detail = switch (state.status) {
+      DownloadState.idle =>
+        'Compares against the installed build',
+      DownloadState.checking =>
+        'Contacting the update endpoint...',
+      DownloadState.upToDate => state.message ?? 'Up to date',
+      DownloadState.available =>
+        '${release?.version ?? 'Update'} available${_sizeNote(release)}',
+      DownloadState.downloading => 'Downloading...',
+      DownloadState.paused => state.message ?? 'Paused',
+      DownloadState.verifying => 'Verifying signature...',
+      DownloadState.ready => state.message ?? 'Ready to install',
+      DownloadState.failed => state.message ?? 'Update failed',
+    };
+
+    final label = switch (state.status) {
+      DownloadState.available ||
+      DownloadState.upToDate ||
+      DownloadState.failed =>
+        'Check for updates',
+      DownloadState.ready => 'Update downloaded',
+      _ => 'Update in progress',
+    };
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(child: _RowLabels(label, detail)),
+              const SizedBox(width: 10),
+              if (!state.isBusy && !state.isInstallable)
+                TextButton(
+                  onPressed: () => service.check(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: harborCobalt,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    minimumSize: const Size(0, 34),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'CHECK',
+                    style: TextStyle(
+                      fontFamily: 'Space Mono',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (state.isActive) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: state.progress,
+                minHeight: 4,
+                backgroundColor: harborLine,
+                valueColor: const AlwaysStoppedAnimation(harborCobalt),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _bytes(state.received),
+              style: const TextStyle(
+                fontFamily: 'Space Mono',
+                fontSize: 9,
+                color: harborFaint,
+              ),
+            ),
+          ],
+          if (state.status == DownloadState.ready)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Android will ask you to approve the install.',
+                style: TextStyle(
+                  fontFamily: 'Space Mono',
+                  fontSize: 9,
+                  color: harborFaint,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static String _sizeNote(ReleaseInfo? r) =>
+      (r != null && r.sizeBytes > 0) ? ' · ${_bytes(r.sizeBytes)}' : '';
+
+  static String _bytes(int n) {
+    if (n >= 1048576) return '${(n / 1048576).toStringAsFixed(1)} MB';
+    if (n >= 1024) return '${(n / 1024).toStringAsFixed(0)} KB';
+    return '$n B';
+  }
+}
+
+/// Action row: download / pause / resume / cancel / install.
+class _UpdateControls extends StatelessWidget {
+  const _UpdateControls({
+    required this.state,
+    required this.service,
+    required this.installFailure,
+  });
+
+  final UpdateState state;
+  final UpdateService service;
+  final String? installFailure;
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <Widget>[];
+
+    if (state.status == DownloadState.available) {
+      actions.add(_action('DOWNLOAD', () => service.startDownload()));
+    }
+    if (state.status == DownloadState.downloading) {
+      actions.add(_action('PAUSE', () => service.pause()));
+    }
+    if (state.status == DownloadState.paused) {
+      actions.add(_action('RESUME', () => service.startDownload()));
+    }
+    if (state.isActive) {
+      actions.add(_action('CANCEL', () => service.cancel(), warn: true));
+    }
+    if (state.isInstallable) {
+      actions.add(
+        _action('INSTALL', () async {
+          final ok = await service.install();
+          if (!ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Could not open the installer. Allow installs for this app '
+                  'in Android settings, then try again.',
+                ),
+              ),
+            );
+          }
+        }),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 12),
+      child: Wrap(spacing: 7, runSpacing: 7, children: actions),
+    );
+  }
+
+  /// One outline action, in the app's pill language.
+  Widget _action(String label, VoidCallback onTap, {bool warn = false}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: warn ? harborWarn : harborCobalt),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Space Mono',
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: warn ? harborWarn : harborCobalt,
+          ),
         ),
       ),
     );

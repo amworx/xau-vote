@@ -11,25 +11,86 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+// Session calendar only; the barrel also exports an enum that collides with
+// the app's own display models.
+import 'package:xau_core/analysis/session.dart';
 
+import '../config.dart';
 import '../icons.dart';
 import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 
-/// Brand header: XV mark + wordmark + LIVE pill (mockup `.top`).
+/// Brand header: XV mark + wordmark + market-status pill (mockup `.top`).
 ///
 /// Global chrome shared by all six screens, so it is the one place the brand
 /// row is defined. [subtitle] is optional: the Radar header is the bare brand
 /// row, other screens still carry their section subtitle under the wordmark.
+///
+/// The pill reports the real trading session. It previously read a hardcoded
+/// `LIVE · 18s`, which claimed a live market with a frozen timestamp even when
+/// the market was shut for the weekend.
 class HarborHeader extends StatelessWidget {
-  const HarborHeader({super.key, this.subtitle, this.statusText});
+  const HarborHeader({
+    super.key,
+    this.subtitle,
+    this.statusText,
+    this.sessionOpen = true,
+    this.sessionName = 'LIVE',
+    this.marketStatusLabel,
+  });
 
   final String? subtitle;
+
+  /// Overrides the pill text entirely. Screens that know better pass this.
   final String? statusText;
+
+  /// Whether the XAUUSD market is trading. Null means "ask the clock", which is
+  /// what every screen wants; a shut market must never be presented as live.
+  final bool? sessionOpen;
+
+  /// Phase name shown when [statusText] is not supplied, e.g. `US`, `ASIA`.
+  /// Null means "derive it from the current session".
+  final String? sessionName;
+
+  /// Whether to show a market-status claim at all.
+  ///
+  /// Defaults to `!mockMode`: an offline build has no feed, so it says nothing
+  /// rather than implying a market it cannot see. Defaults to a `const` so the
+  /// `const HarborHeader(...)` call sites keep working.
+  final bool? marketStatusLabel;
+
+  /// Whether to show the pill at all.
+  ///
+  /// An explicit [statusText] is always shown: callers use it for signal
+  /// lifecycle labels like `NO CONSENSUS`, which are not market claims. Only
+  /// the derived market-session pill is gated, because an offline build has no
+  /// feed to describe.
+  bool get _showsStatus =>
+      statusText != null || (marketStatusLabel ?? !mockMode);
+
+  /// Real session state at [now], unless a caller overrides it (tests).
+  bool _openAt(DateTime now) => sessionOpen ?? isSessionOpen(now);
+  String _nameAt(DateTime now) =>
+      sessionName ?? sessionLabel(sessionAt(now));
+
+  /// Never claims a live market while the market is shut.
+  String _pillText(DateTime now) {
+    final name = _nameAt(now);
+    // Closed, with no session phase to speak of, is simply CLOSED.
+    if (!_openAt(now) && name == 'CLOSED') return 'MARKET CLOSED';
+    return _openAt(now) ? name : '$name · CLOSED';
+  }
 
   @override
   Widget build(BuildContext context) {
+    // An offline build has no market feed, so it shows no market claim at all.
+    if (!_showsStatus) return _headerOnly(subtitle);
+    // Read the clock once so the phase and the open/closed verdict cannot
+    // disagree across a midnight or DST boundary mid-rebuild.
+    final now = DateTime.now().toUtc();
+    final isClosed = !_openAt(now);
+    final status = statusText ?? _pillText(now);
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 17, 18, 10),
       child: Row(
@@ -71,35 +132,38 @@ class HarborHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 9),
-          Container(
+          if (!_showsStatus)
+            const SizedBox.shrink()
+          else
+            Container(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
             decoration: BoxDecoration(
-              color: livePillBg,
-              border: Border.all(color: livePillBorder),
+              color: isClosed ? harborWarnSoft : livePillBg,
+              border: Border.all(color: isClosed ? harborWarn : livePillBorder),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 6,
                   height: 6,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: harborLong,
+                      color: isClosed ? harborWarn : harborLong,
                       shape: BoxShape.circle,
                     ),
                   ),
                 ),
                 const SizedBox(width: 5),
                 Text(
-                  statusText ?? 'LIVE · 18s',
-                  style: const TextStyle(
+                  status,
+                  style: TextStyle(
                     fontFamily: 'Sora',
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1,
-                    color: livePillInk,
+                    color: isClosed ? harborWarn : livePillInk,
                   ),
                 ),
               ],
@@ -109,6 +173,49 @@ class HarborHeader extends StatelessWidget {
       ),
     );
   }
+
+  /// Brand and subtitle only, with no market-status claim at all. Used by the
+  /// offline build, which has no feed and must not imply that it does.
+  Widget _headerOnly(String? sub) => Padding(
+        padding: const EdgeInsets.fromLTRB(18, 17, 18, 10),
+        child: Row(
+          children: [
+            const BrandMark(),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'XV',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Sora',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.7,
+                    ),
+                  ),
+                  if (sub != null)
+                    Text(
+                      sub,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Space Mono',
+                        fontSize: 10,
+                        color: harborFaint,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 /// Brand mark for **XV** (XAU-Vote): a 27px box with a 2px ink border, 8px

@@ -27,9 +27,12 @@ void main() {
       (tester) async {
     await _pumpApp(tester);
 
-    // Header: wordmark, LIVE pill, no subtitle, no cobold icon tile.
+    // Header: wordmark, no subtitle, no cobold icon tile.
+    //
+    // There is deliberately no market-status assertion here. The offline build
+    // has no market feed, so the header hides the pill rather than asserting
+    // "LIVE" from a string literal - the bug this replaced.
     expect(find.text('XV'), findsOneWidget);
-    expect(find.text('LIVE · 18s'), findsOneWidget);
     expect(find.text('GOLD · XAUUSD · 15M'), findsNothing);
 
     // Price block.

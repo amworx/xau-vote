@@ -18,11 +18,12 @@ import 'live_repository.dart';
 ///
 /// The DST maths is the part most likely to rot, so it is verified directly
 /// rather than only through a scan.
+///
+/// Both now delegate to `xau_core`'s session module: the engine already owns
+/// the calendar, and a second copy here is exactly the kind of divergence that
+/// lets the scanner and the header disagree about whether the market is open.
 @visibleForTesting
 bool sessionIsOpenAt(DateTime utc) => AnalysisService.sessionGate(utc);
-
-@visibleForTesting
-DateTime newYorkTime(DateTime utc) => AnalysisService.nyTime(utc);
 
 class AnalysisService extends ChangeNotifier {
   AnalysisService({LiveRepository? repository, MarketScanner? scanner})
@@ -90,7 +91,7 @@ class AnalysisService extends ChangeNotifier {
           events: events,
           now: now,
           currentPrice: m5Bars.bars.isNotEmpty ? m5Bars.bars.last.close : h1Bars?.bars.lastOrNull?.close,
-          sessionOpen: _isSessionOpen(now),
+          sessionOpen: isSessionOpen(now),
         ),
       );
 
@@ -149,53 +150,7 @@ class AnalysisService extends ChangeNotifier {
   ///
   /// DST runs from the second Sunday in March to the first Sunday in November.
   @visibleForTesting
-  static bool sessionGate(DateTime utc) => _isSessionOpen(utc);
-
-  @visibleForTesting
-  static DateTime nyTime(DateTime utc) => _newYork(utc);
-
-  static bool _isSessionOpen(DateTime utc) {
-    final ny = _newYork(utc);
-    final weekday = ny.weekday;
-
-    // Saturday: closed all day. Sunday: opens at 18:00.
-    if (weekday == DateTime.saturday) return false;
-    if (weekday == DateTime.sunday) return ny.hour >= 18;
-    // Friday: closes at 17:00.
-    if (weekday == DateTime.friday) return ny.hour < 17;
-    return true;
-  }
-
-  /// Converts [utc] to New York wall-clock time using the US DST rule.
-  ///
-  /// DST transitions occur at 02:00 LOCAL time: 02:00 EST (07:00 UTC) in
-  /// March, and 02:00 EDT (06:00 UTC) in November. Building the boundary in UTC
-  /// would be wrong by five hours in spring, which is exactly the class of bug
-  /// that leaves the gate open an hour early for part of the year.
-  static DateTime _newYork(DateTime utc) {
-    final dstStart = _transitionUtc(utc.year, 3, 2);
-    final dstEnd = _transitionUtc(utc.year, 11, 1);
-    final isSummer = !utc.isBefore(dstStart) && utc.isBefore(dstEnd);
-    return utc.subtract(isSummer ? _edt : _est);
-  }
-
-  static const _est = Duration(hours: 5);
-  static const _edt = Duration(hours: 4);
-
-  /// The UTC instant of the [nth] Sunday of [month], at the local 02:00 that
-  /// DST flips. Spring is 02:00 EST -> 07:00 UTC; autumn is 02:00 EDT ->
-  /// 06:00 UTC.
-  static DateTime _transitionUtc(int year, int month, int nth) {
-    // Walk to the nth Sunday using UTC midnight, then apply the right offset.
-    var day = DateTime.utc(year, month, 1);
-    while (day.weekday != DateTime.sunday) {
-      day = day.add(const Duration(days: 1));
-    }
-    final sunday = day.add(Duration(days: (nth - 1) * 7));
-    // Spring flips at 02:00 standard; autumn at 02:00 daylight.
-    final localHourOffset = month == 3 ? _est : _edt;
-    return sunday.add(const Duration(hours: 2) + localHourOffset);
-  }
+  static bool sessionGate(DateTime utc) => isSessionOpen(utc);
 
   /// 1H regime decides the candidate direction; nothing narrower does.
   static Side? _candidateDirection(TimeframeBars? h1, TimeframeBars m5) {

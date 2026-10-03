@@ -35,6 +35,11 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   provider: ^6.1.5+1
+  # Promoted from transitive: the update checker streams APKs directly rather
+  # than routing large downloads through a client we do not control.
+  http: ^1.2.2
+  # Streaming SHA-256 of the downloaded APK before offering it for install.
+  crypto: ^3.0.6
   supabase_flutter: ^2.17.2
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0

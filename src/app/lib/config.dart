@@ -41,3 +41,14 @@ const String supabasePublishableKey =
 /// data to the user).
 bool get liveConfigured =>
     supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
+
+/// JSON manifest describing the newest published build.
+///
+/// Returns null when not supplied, which disables the updater instead of
+/// pointing it somewhere arbitrary. There is deliberately no hardcoded
+/// fallback URL: an update endpoint that is not under the user's control is a
+/// remote-code-execution path into the app.
+const String updateManifestUrl = String.fromEnvironment('UPDATE_MANIFEST_URL');
+
+/// Whether this build can check for updates at all.
+bool get updatesConfigured => Uri.tryParse(updateManifestUrl)?.isAbsolute ?? false;

@@ -43,3 +43,10 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // androidx.core provides FileProvider, used to hand a downloaded APK to the
+    // system installer. Flutter's embedding pulls in most of androidx.core but
+    // not this class on every version, so it is declared explicitly.
+    implementation("androidx.core:core-ktx:1.13.1")
+}
