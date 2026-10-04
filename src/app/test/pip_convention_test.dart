@@ -119,6 +119,10 @@ const _prose = {
   'The scan runs on closed bars only. Waiting for enough history to evaluate '
       'the 1H regime.',
   'XV does not execute trades.',
+  // The History bento hero caption. Explanatory copy that carries the hit-rate
+  // denominator, and is designed to wrap to two lines. The constant
+  // `Closed signals: ` prefix lets it be skipped whatever the counts are.
+  'Closed signals: ',
 };
 
 void main() {
@@ -238,8 +242,9 @@ void main() {
       expect(find.text('-1500 PIPS'), findsOneWidget);
       expect(find.text('+8400'), findsOneWidget);
       expect(find.text('Pips x0.01 · per D-003'), findsOneWidget);
-      expect(wrappedTexts(tester), isEmpty,
-          reason: 'every History row detail line must fit one line at 390px');
+      expect(wrappedTexts(tester, skip: _prose), isEmpty,
+          reason: 'every History figure and label must fit one line at 390px; '
+              'only the bento hero caption is designed prose');
     });
 
     testWidgets('picking A rescales the readouts and nothing else',
@@ -272,7 +277,9 @@ void main() {
       expect(find.text('+310 PIPS'), findsOneWidget);
       expect(find.text('+840'), findsOneWidget);
       expect(find.text('Pips x0.10 · per D-003'), findsOneWidget);
-      expect(wrappedTexts(tester), isEmpty);
+      expect(wrappedTexts(tester, skip: _prose), isEmpty,
+          reason: 'the shorter A figures must still be one line, bar the '
+              'bento hero caption');
     });
 
     testWidgets('a source stop distance is derived, not stored', skip: !mockMode,

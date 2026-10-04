@@ -29,6 +29,7 @@ import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
+import '../widgets/stats_bento.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -67,7 +68,15 @@ class HistoryScreen extends StatelessWidget {
           child: HarborEyebrow('Signal log · 7 days'),
         ),
         const SizedBox(height: 11),
-        _StatHeader(pipFactor: pipFactor, entries: entries, live: live != null),
+        _StatHeader(
+          pipFactor: pipFactor,
+          // Passed in rather than re-derived from pipFactor: convention B has
+          // the LARGER factor (100) and the SMALLER pip (0.01), so guessing the
+          // label from the factor silently inverts it.
+          pipSizeLabel: convention.pipSizeLabel,
+          entries: entries,
+          live: live != null,
+        ),
         const SizedBox(height: 11),
         if (entries.isEmpty)
           // Distinguish "not loaded yet" from "genuinely nothing": a skeleton
@@ -97,84 +106,168 @@ class HistoryScreen extends StatelessWidget {
   }
 }
 
-/// Wins / losses / TP distribution as four [HarborStat] tiles.
+/// The closed-setup figures the bento shows, derived once from the log rows.
 ///
-/// The row is wrapped in a scale-to-fit box because the longest eyebrow
-/// (`INVALIDATED`) is wider than a quarter of a 390px page — HTML lets that
-/// overflow silently, a Flutter `Row` would either wrap the label or clip it.
-/// One uniform scale keeps all four tiles the same height and the labels on
-/// a single line.
-///
-/// Offline the tiles are the recorded window totals (fixtures). Live there is
-/// no recorded total to show, so every figure is derived from the rows the
-/// poller actually returned — including the net, which is the sum of their
-/// closed outcomes.
-class _StatHeader extends StatelessWidget {
-  const _StatHeader({
-    required this.pipFactor,
-    required this.entries,
-    required this.live,
+/// Extracted from the widget so the arithmetic can be tested directly. Every
+/// number here traces to a row on this screen, with one deliberate exception:
+/// offline the window NET is [MockFixtures.historyNetPipsPoints], a recorded
+/// total covering every closed setup in the 7-day window rather than a
+/// re-derivation of the rows displayed. [netIsWindowTotal] records that, and
+/// the card says so in words.
+@immutable
+class HistoryStats {
+  const HistoryStats({
+    required this.tpHits,
+    required this.invalidated,
+    required this.expired,
+    required this.resolved,
+    required this.netPips,
+    required this.series,
+    required this.netIsWindowTotal,
   });
 
-  /// Points per pip for the active [PipConvention]; the tiles scale with the
-  /// log rows.
-  final int pipFactor;
-
-  final List<DisplayHistoryEntry> entries;
-
-  final bool live;
-
   /// Statuses that count as a target hit (spec §14).
-  static const _hits = {
+  static const hits = {
     DisplayStatus.tp1Hit,
     DisplayStatus.tp2Hit,
     DisplayStatus.tp3Hit,
   };
 
-  int _count(Set<DisplayStatus> statuses) =>
-      entries.where((e) => statuses.contains(e.status)).length;
+  factory HistoryStats.from(
+    List<DisplayHistoryEntry> entries, {
+    required int pipFactor,
+    required bool live,
+  }) {
+    int count(Set<DisplayStatus> statuses) =>
+        entries.where((e) => statuses.contains(e.status)).length;
+
+    final tpHits = count(hits);
+    final invalidated = count({DisplayStatus.invalidated});
+    final expired = count({DisplayStatus.expired});
+
+    // "Resolved" is a CLOSED outcome only. A `developing` setup is still open
+    // and a `null` status is the engine correctly holding; counting either
+    // would put open trades in the denominator and understate the rate.
+    final resolved = tpHits + invalidated + expired;
+
+    return HistoryStats(
+      tpHits: tpHits,
+      invalidated: invalidated,
+      expired: expired,
+      resolved: resolved,
+      netPips: pipsFromPoints(
+        live
+            ? entries.fold<double>(0, (sum, e) => sum + e.pipsPoints)
+            : MockFixtures.historyNetPipsPoints,
+        pipFactor: pipFactor,
+      ),
+      // Rows arrive newest first; the chart reads left to right in time.
+      series: entries.reversed
+          .map((e) => pipsFromPoints(e.pipsPoints, pipFactor: pipFactor))
+          .map((p) => p.toDouble())
+          .toList(growable: false),
+      netIsWindowTotal: !live,
+    );
+  }
+
+  final int tpHits;
+  final int invalidated;
+  final int expired;
+
+  /// Closed outcomes only — see the factory.
+  final int resolved;
+
+  final int netPips;
+
+  /// Per-signal pips, oldest first. Not the same thing as [netPips] offline.
+  final List<double> series;
+
+  final bool netIsWindowTotal;
+
+  /// Null when nothing is resolved, so an empty log renders no percentage
+  /// rather than a confident 0%.
+  int? get hitRatePercent => resolved == 0 ? null : (tpHits / resolved * 100).round();
+}
+
+/// The closed-setup summary as a bento: one dominant hit-rate figure, the
+/// window net with a per-signal series, and the two failure counts.
+///
+/// This also replaces a `FittedBox(scaleDown)` that existed only because
+/// `INVALIDATED` is wider than a quarter of the page — stacking removes the
+/// need to shrink text to fit.
+class _StatHeader extends StatelessWidget {
+  const _StatHeader({
+    required this.pipFactor,
+    required this.pipSizeLabel,
+    required this.entries,
+    required this.live,
+  });
+
+  final int pipFactor;
+
+  /// The active convention's pip size, e.g. `0.01`.
+  final String pipSizeLabel;
+  final List<DisplayHistoryEntry> entries;
+  final bool live;
 
   @override
   Widget build(BuildContext context) {
-    final tpHits = _count(_hits);
-    final invalidated = _count({DisplayStatus.invalidated});
-    final expired = _count({DisplayStatus.expired});
-    final net = pipsFromPoints(
-      live
-          ? entries.fold<double>(0, (sum, e) => sum + e.pipsPoints)
-          : MockFixtures.historyNetPipsPoints,
+    final s = HistoryStats.from(
+      entries,
       pipFactor: pipFactor,
+      live: live,
     );
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.topLeft,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+    final net = s.netPips;
+    final rate = s.hitRatePercent;
+
+    return StatsBento(
+      children: [
+        StatsHero(
+          badge: 'TP hit rate',
+          // No denominator, no percentage: an empty log must not read as 0%.
+          figure: rate?.toString() ?? '–',
+          suffix: rate == null ? '' : '%',
+          caption: s.resolved == 0
+              ? 'Closed signals: none in this window yet.'
+              : 'Closed signals: ${s.tpHits} of ${s.resolved} hit a TP. '
+                  'Open setups excluded.',
+        ),
+        StatsGrowth(
+          eyebrow: s.netIsWindowTotal ? 'Net pips · 7-day window' : 'Net pips · window',
+          value: net >= 0 ? '+$net' : '$net',
+          sub: 'pip $pipSizeLabel · chart is per closed signal',
+          valueColor: net >= 0 ? const Color(0xFF5FE3B0) : harborShort,
+          chart: PipsLineChart(
+            values: s.series,
+            semanticsLabel: s.series.isEmpty
+                ? null
+                : 'Pips per closed signal, oldest to newest. '
+                    'Net $net over the window.',
+          ),
+        ),
+        Row(
+          // NOT `stretch`: this sits in a scrolling list, so the Row's height is
+          // unbounded and stretch would throw. Both cards carry the same min
+          // height instead, so they stay level without measuring twice.
           children: [
-            HarborStat(
-              value: live ? '$tpHits' : '9',
-              label: 'TP HIT',
-              valueColor: harborLong,
+            Expanded(
+              child: StatsNumber(
+                value: '${s.invalidated}',
+                label: 'Invalidated',
+                valueColor: const Color(0xFFFF8A8A),
+              ),
             ),
-            const SizedBox(width: 8),
-            HarborStat(
-              value: live ? '$invalidated' : '3',
-              label: 'INVALIDATED',
-              valueColor: harborShort,
+            const SizedBox(width: 10),
+            Expanded(
+              child: StatsNumber(
+                value: '${s.expired}',
+                label: 'Expired',
+                valueColor: const Color(0xFF8FA9FF),
+              ),
             ),
-            const SizedBox(width: 8),
-            HarborStat(
-              value: live ? '$expired' : '2',
-              label: 'EXPIRED',
-              valueColor: harborCobalt,
-            ),
-            const SizedBox(width: 8),
-            HarborStat(value: '+$net', label: 'NET PIPS'),
           ],
         ),
-      ),
+      ],
     );
   }
 }
