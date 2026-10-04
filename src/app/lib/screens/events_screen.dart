@@ -333,17 +333,16 @@ class _EventsScreenState extends State<EventsScreen> {
         const SizedBox(height: 10),
         if (events.isEmpty)
           // Skeleton while the first read is in flight; the honest empty note
-          // only once a read has genuinely returned nothing. Otherwise a
-          // scheduled release briefly looks like "no events".
+          // only once a read has genuinely returned nothing.
           (_live?.loading ?? false)
-              ? const Column(
-                  children: [
-                    SkeletonCard(lines: 3),
-                    SkeletonCard(lines: 3),
-                    SkeletonCard(lines: 2),
-                  ],
-                )
+              ? const SkeletonEventList()
               : const _SilenceNote('No events match these filters.')
+        else if (_live?.refreshing ?? false)
+          // A deliberate pull re-shapes the existing rows into placeholders, so
+          // the gesture is acknowledged rather than looking inert. Poll-driven
+          // reads deliberately do NOT do this, or the list would strobe every
+          // 15 seconds.
+          SkeletonEventList(count: events.length)
         else
           for (final event in events) ...[
             _EventRow(

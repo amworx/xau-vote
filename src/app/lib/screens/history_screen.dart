@@ -75,13 +75,9 @@ class HistoryScreen extends StatelessWidget {
           // while the first read is in flight, and the honest empty note only
           // once a read has actually returned no rows.
           live != null && live.loading
-              ? const Column(
-                  children: [
-                    SkeletonCard(lines: 3),
-                    SkeletonCard(lines: 2),
-                    SkeletonCard(lines: 3),
-                  ],
-                )
+              ? const SkeletonList(count: 4)
+              : live != null && live.refreshing && entries.isNotEmpty
+              ? SkeletonList(count: entries.length)
               : const _EmptyNote('No closed setups yet.')
         else
           for (final entry in entries) ...[

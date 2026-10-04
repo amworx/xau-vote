@@ -59,6 +59,15 @@ class LiveData extends ChangeNotifier {
   // ------------------------------------------------------------------ state
 
   bool get loading => _loading;
+
+  /// True while an EXPLICIT refresh (pull-to-refresh) is in flight.
+  ///
+  /// Separate from [loading] on purpose: [loading] means "no data yet", which
+  /// only happens on the very first read. Showing skeletons on that basis would
+  /// mean flashing the whole list every 15 seconds, so poll-driven reads stay
+  /// silent and only a deliberate pull animates the list.
+  bool get refreshing => _refreshing;
+  bool _refreshing = false;
   String? get error => _error;
   DateTime? get lastUpdated => _lastUpdated;
   double? get price => _price;
@@ -102,9 +111,11 @@ class LiveData extends ChangeNotifier {
 
   static const _slowInterval = Duration(minutes: 5);
 
-  Future<void> _pollFast() => _refresh(includeSlowSections: false);
+  Future<void> _pollFast() =>
+      _refresh(includeSlowSections: false, manual: false);
 
-  Future<void> _pollSlow() => _refresh(includeSlowSections: true);
+  Future<void> _pollSlow() =>
+      _refresh(includeSlowSections: true, manual: false);
 
   void stopPolling() {
     _fastTimer?.cancel();
@@ -114,7 +125,7 @@ class LiveData extends ChangeNotifier {
   }
 
   /// Full read, used by pull-to-refresh and by the slow poll.
-  Future<void> refresh() => _refresh(includeSlowSections: true);
+  Future<void> refresh() => _refresh(includeSlowSections: true, manual: true);
 
   /// Fetch what the app shows.
   ///
@@ -122,7 +133,16 @@ class LiveData extends ChangeNotifier {
   /// the news digest alongside the live quote. Individual failures are
   /// tolerated: a failed section keeps its previous value and only records the
   /// error, so one slow table cannot blank the whole screen.
-  Future<void> _refresh({required bool includeSlowSections}) async {
+  Future<void> _refresh({
+    required bool includeSlowSections,
+    required bool manual,
+  }) async {
+    // Notify immediately, before the first await. Otherwise the UI only learns
+    // about the refresh when it finishes, and the skeletons never appear at all.
+    if (manual) {
+      _refreshing = true;
+      notifyListeners();
+    }
     _loading = _signal == null && _price == null;
     var changed = false;
     try {
@@ -209,8 +229,14 @@ class LiveData extends ChangeNotifier {
       _error = '$e';
       // Notify anyway: the error line must appear.
       changed = true;
-    } finally {
+} finally {
       _loading = false;
+      if (manual) {
+        _refreshing = false;
+        // A deliberate pull must always repaint, even if nothing changed, so
+        // the skeleton resolves back to the real rows.
+        changed = true;
+      }
       // Only wake listeners when something actually moved. Notifying on every
       // poll rebuilt every screen several times a minute for identical data,
       // which is what made the Events list look like it was constantly

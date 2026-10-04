@@ -69,6 +69,61 @@ class SkeletonBox extends StatelessWidget {
   }
 }
 
+/// Fully-rounded pill, for chips and short labels.
+class SkeletonPill extends StatelessWidget {
+  const SkeletonPill({super.key, this.width = 54, this.height = 16});
+
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) =>
+      SkeletonBox(width: width, height: height, radius: height / 2);
+}
+
+/// Rounded square, for an icon-sized placeholder.
+class SkeletonSquare extends StatelessWidget {
+  const SkeletonSquare({super.key, this.size = 18, this.radius = 6});
+
+  final double size;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) =>
+      SkeletonBox(width: size, height: size, radius: radius);
+}
+
+/// Circle, for a flag or an avatar.
+class SkeletonCircle extends StatelessWidget {
+  const SkeletonCircle({super.key, this.size = 16});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) =>
+      SkeletonBox(width: size, height: size, radius: size / 2);
+}
+
+/// Horizontal pill row matching a meta line: circle, short pills, trailing bar.
+class SkeletonMetaRow extends StatelessWidget {
+  const SkeletonMetaRow({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        SkeletonCircle(size: 14),
+        SizedBox(width: 7),
+        SkeletonPill(width: 34, height: 12),
+        SizedBox(width: 7),
+        SkeletonPill(width: 40, height: 12),
+        SizedBox(width: 7),
+        SkeletonBox(width: 70, height: 11, radius: 5),
+      ],
+    );
+  }
+}
+
 /// A stack of bones standing in for a paragraph.
 ///
 /// The final line is short, as a paragraph's last line usually is, so the
@@ -121,6 +176,85 @@ class SkeletonCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A generic stack of card placeholders, for lists that are not the Events
+/// screen (History, Sources).
+class SkeletonList extends StatelessWidget {
+  const SkeletonList({super.key, this.count = 3});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          for (var i = 0; i < count; i++)
+            SkeletonCard(lines: i.isEven ? 3 : 2),
+        ],
+      );
+}
+
+/// Placeholder shaped like a real Events row.
+///
+/// This mirrors `_EventRow`'s structure - impact chip, two title lines of
+/// different widths, a meta pill row, then a wider outlook block - rather than
+/// being three generic bars. A placeholder that does not resemble the content
+/// it stands in for is what makes a loading state look broken.
+class SkeletonEventRow extends StatelessWidget {
+  const SkeletonEventRow({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 13),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: harborLine),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Impact chip + its leading colour bar.
+            const Row(
+              children: [
+                SkeletonBox(width: 4, height: 14, radius: 2),
+                SizedBox(width: 7),
+                SkeletonPill(width: 40, height: 14),
+              ],
+            ),
+            const SizedBox(height: 11),
+            // Title: two lines, the second shorter, as real titles wrap.
+            const SkeletonBox(height: 12),
+            const SizedBox(height: 7),
+            const SkeletonBox(width: 168, height: 12),
+            const SizedBox(height: 9),
+            const SkeletonMetaRow(),
+            const SizedBox(height: 12),
+            // Outlook block.
+            const SkeletonBox(height: 34, radius: 10),
+            const SizedBox(height: 11),
+            const SkeletonBox(width: 220, height: 9, radius: 4),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A stack of event-row placeholders.
+class SkeletonEventList extends StatelessWidget {
+  const SkeletonEventList({super.key, this.count = 3});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [for (var i = 0; i < count; i++) const SkeletonEventRow()],
+      );
 }
 
 /// Wraps real content so it renders as a skeleton while [loading].

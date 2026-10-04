@@ -98,15 +98,12 @@ class SourcesScreen extends StatelessWidget {
           agreement: agreement,
           awaitingExternal: awaitingExternal,
         ),
-        // While the linked rows are still being read, hold the space with a
-        // skeleton rather than collapsing to the empty note and then popping.
+        // While the linked rows are still being read, hold the space with
+        // skeletons rather than collapsing to the empty note and then popping.
         if (live != null && live.loading && sources.isEmpty)
-          const Column(
-            children: [
-              SkeletonCard(lines: 2),
-              SkeletonCard(lines: 3),
-            ],
-          ),
+          const SkeletonList(count: 3)
+        else if (live != null && live.refreshing && sources.isNotEmpty)
+          SkeletonList(count: sources.length),
         const SizedBox(height: 11),
         Center(
           child: Text(
