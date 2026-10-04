@@ -380,7 +380,12 @@ class _PillNavItem extends StatelessWidget {
           child: SizedBox(
             height: HarborNavBar.itemHeight,
             child: Stack(
-              alignment: Alignment.centerLeft,
+              // `center`, NOT `centerLeft`: the icon+label pair must sit in the
+              // middle of the tab. Aligning left was tempting so the label would
+              // clip on the right while the slot animates, but it left the whole
+              // group hugging the leading edge - visibly off-centre in the wide
+              // active slot. The fade covers the brief symmetric clip instead.
+              alignment: Alignment.center,
               children: [
                 Row(
                   mainAxisSize: MainAxisSize.min,
