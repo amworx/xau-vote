@@ -32,6 +32,7 @@ import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
+import '../widgets/skeleton.dart';
 
 class SignalScreen extends StatelessWidget {
   const SignalScreen({super.key, this.sessionOpenOverride});
@@ -104,11 +105,24 @@ class SignalScreen extends StatelessWidget {
           // A closed market is not an empty record. The closed setups still
           // happened and the trader still wants to review them, so the recent
           // history is listed underneath rather than leaving the screen bare.
-          if (recentHistory.isNotEmpty)
+          if (recentHistory.isEmpty && (live?.loading ?? false))
+            const Column(
+              children: [
+                SkeletonCard(lines: 3),
+                SkeletonCard(lines: 2),
+              ],
+            )
+          else if (recentHistory.isNotEmpty)
             _ClosedSetupHistory(entries: recentHistory, pipFactor: pipFactor),
-        ] else if (signal == null)
-          const _NoSetupCard()
-        else ...[
+        ] else if (signal == null && (live?.loading ?? false))
+          // First read in flight: hold the level grid's shape instead of
+          // flashing "NO CONSENSUS", which reads as a verdict rather than as
+          // "not loaded yet".
+          const Padding(
+            padding: EdgeInsets.fromLTRB(18, 14, 18, 0),
+            child: SkeletonCard(lines: 4),
+          )
+        else if (signal == null) const _NoSetupCard() else ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
             child: Column(

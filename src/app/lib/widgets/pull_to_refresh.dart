@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 
 import '../data/analysis_service.dart';
 import '../data/live_data.dart';
+import 'skeleton.dart';
 
 /// Wraps [child] in a [RefreshIndicator] that re-reads the live snapshot.
 ///
@@ -44,7 +45,10 @@ Widget withPullToRefresh(BuildContext context, Widget child) {
     // No scanner provider.
   }
 
-  return RefreshIndicator(
+  // A skeleton rule, not Material's RefreshIndicator: the stock indicator paints
+  // a grey disc that covers the content being refreshed and reads as a
+  // rendering fault against white cards.
+  return SkeletonRefreshIndicator(
     onRefresh: () async {
       await snapshot.refresh();
       try {

@@ -22,6 +22,7 @@ import '../services/update_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
+import '../widgets/skeleton.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -548,8 +549,15 @@ class _NotificationPermissionState extends State<_NotificationPermission> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_checked) return const SizedBox.shrink();
     final canDeliver = _service?.canDeliver ?? false;
+    // The permission read is asynchronous; hold the row rather than showing a
+    // wrong "OFF" for a frame.
+    if (!_checked) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: SkeletonBox(height: 26, radius: 8),
+      );
+    }
     return _SettingRow(
       title: 'Allow notifications',
       subtitle: canDeliver

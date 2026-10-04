@@ -34,6 +34,7 @@ import '../icons.dart';
 import '../models/display_models.dart';
 import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
+import '../widgets/skeleton.dart';
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
@@ -331,7 +332,18 @@ class _EventsScreenState extends State<EventsScreen> {
         _nextBlackoutCard(next),
         const SizedBox(height: 10),
         if (events.isEmpty)
-          const _SilenceNote('No events match these filters.')
+          // Skeleton while the first read is in flight; the honest empty note
+          // only once a read has genuinely returned nothing. Otherwise a
+          // scheduled release briefly looks like "no events".
+          (_live?.loading ?? false)
+              ? const Column(
+                  children: [
+                    SkeletonCard(lines: 3),
+                    SkeletonCard(lines: 3),
+                    SkeletonCard(lines: 2),
+                  ],
+                )
+              : const _SilenceNote('No events match these filters.')
         else
           for (final event in events) ...[
             _EventRow(

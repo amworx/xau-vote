@@ -39,6 +39,7 @@ import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/analysis_verdict_card.dart';
+import '../widgets/skeleton.dart';
 import '../widgets/independence_line.dart';
 import '../widgets/harbor_widgets.dart';
 
@@ -152,7 +153,23 @@ class _RadarScreenState extends State<RadarScreen> {
       children: [
         HarborHeader(sessionOpen: sessionOpen),
         if (live != null && live.error != null) _ErrorLine(live.error!),
-        if (live != null)
+        if (live != null && live.price == null && live.loading)
+          // First read in flight: hold the layout with a skeleton instead of
+          // flashing "WAITING FOR FIRST TICK", which reads as an error.
+          const Padding(
+            padding: EdgeInsets.fromLTRB(18, 14, 18, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(width: 130, height: 9),
+                SizedBox(height: 10),
+                SkeletonBox(width: 190, height: 30, radius: 8),
+                SizedBox(height: 10),
+                SkeletonBox(width: 220, height: 11),
+              ],
+            ),
+          )
+        else if (live != null)
           _LiveQuoteHero(live: live)
         else
           const SpotPriceBlock(signal: quote),

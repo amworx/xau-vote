@@ -27,7 +27,12 @@ class LiveData extends ChangeNotifier {
     : _repo = repository ?? LiveRepository(client);
 
   final LiveRepository _repo;
-  Timer? _timer;
+
+  /// Fast cadence: quote, range, active signal.
+  Timer? _fastTimer;
+
+  /// Slow cadence: calendar, history, news digest.
+  Timer? _slowTimer;
 
   bool _loading = true;
   String? _error;
@@ -82,37 +87,65 @@ class LiveData extends ChangeNotifier {
   /// the first (each call returns a new timer and the previous would still be
   /// pending), which is an easy way to silently double the request rate.
   void startPolling({int seconds = 15}) {
-    _timer?.cancel();
-    _timer = Timer.periodic(Duration(seconds: seconds), (_) => refresh());
-    refresh();
+    _fastTimer?.cancel();
+    _slowTimer?.cancel();
+    _fastTimer = Timer.periodic(Duration(seconds: seconds), (_) => _pollFast());
+    // Scheduled calendar and history rows change on the order of minutes to
+    // hours. Re-reading them on every price tick was the cause of the Events
+    // screen visibly re-rendering several times a minute: each poll replaced the
+    // rows with fresh objects, so every countdown re-pinned and the whole list
+    // rebuilt for data that had not moved.
+    _slowTimer = Timer.periodic(_slowInterval, (_) => _pollSlow());
+    _pollFast();
+    _pollSlow();
   }
+
+  static const _slowInterval = Duration(minutes: 5);
+
+  Future<void> _pollFast() => _refresh(includeSlowSections: false);
+
+  Future<void> _pollSlow() => _refresh(includeSlowSections: true);
 
   void stopPolling() {
-    _timer?.cancel();
-    _timer = null;
+    _fastTimer?.cancel();
+    _fastTimer = null;
+    _slowTimer?.cancel();
+    _slowTimer = null;
   }
 
-  /// Fetch everything the app shows. Individual failures are tolerated: a
-  /// failed section keeps its previous value and only records the error, so
-  /// one slow table cannot blank the whole screen.
-  Future<void> refresh() async {
+  /// Full read, used by pull-to-refresh and by the slow poll.
+  Future<void> refresh() => _refresh(includeSlowSections: true);
+
+  /// Fetch what the app shows.
+  ///
+  /// [includeSlowSections] pulls the scheduled calendar, the history log and
+  /// the news digest alongside the live quote. Individual failures are
+  /// tolerated: a failed section keeps its previous value and only records the
+  /// error, so one slow table cannot blank the whole screen.
+  Future<void> _refresh({required bool includeSlowSections}) async {
     _loading = _signal == null && _price == null;
+    var changed = false;
     try {
       final price = await _repo.latestPrice();
-      if (price != null) {
+      if (price != null && price.price != _price) {
         _price = price.price;
         _priceAt = price.at;
+        changed = true;
       }
 
       final range = await _repo.sessionRange();
-      if (range != null) {
+      if (range != null && (range.low != _sessionLow || range.high != _sessionHigh)) {
         _sessionLow = range.low;
         _sessionHigh = range.high;
+        changed = true;
       }
 
       // A null signal is a legitimate "no setup right now" — clear it rather
       // than keeping a stale signal on screen.
       final signal = await _repo.activeSignal();
+      if (signal?.id != _signal?.id || signal?.status != _signal?.status) {
+        changed = true;
+      }
       _signal = signal;
       if (signal != null) {
         final eligible = await _repo.enabledSourceCount();
@@ -153,19 +186,32 @@ class LiveData extends ChangeNotifier {
         _contributors = const [];
       }
 
-      _history = await _repo.history();
-      _events = await _repo.upcomingEvents();
-      _digest = await _repo.latestDigest();
+      if (includeSlowSections) {
+        // Scheduled releases, the closed-setup log and the news digest. Slow
+        // by nature, so they are only re-read on the slow cadence or on an
+        // explicit pull.
+        _history = await _repo.history();
+        _events = await _repo.upcomingEvents();
+        _digest = await _repo.latestDigest();
+        changed = true;
+      }
 
       _lastUpdated = DateTime.now();
       _error = null;
+      changed = true;
     } catch (e) {
       // Keep the last good values on screen and surface the failure, rather
       // than replacing real data with nothing (or with fixtures).
       _error = '$e';
+      // Notify anyway: the error line must appear.
+      changed = true;
     } finally {
       _loading = false;
-      notifyListeners();
+      // Only wake listeners when something actually moved. Notifying on every
+      // poll rebuilt every screen several times a minute for identical data,
+      // which is what made the Events list look like it was constantly
+      // refreshing.
+      if (changed) notifyListeners();
     }
   }
 

@@ -29,6 +29,7 @@ import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
+import '../widgets/skeleton.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -70,7 +71,18 @@ class HistoryScreen extends StatelessWidget {
         _StatHeader(pipFactor: pipFactor, entries: entries, live: live != null),
         const SizedBox(height: 11),
         if (entries.isEmpty)
-          const _EmptyNote('No closed setups yet.')
+          // Distinguish "not loaded yet" from "genuinely nothing": a skeleton
+          // while the first read is in flight, and the honest empty note only
+          // once a read has actually returned no rows.
+          live != null && live.loading
+              ? const Column(
+                  children: [
+                    SkeletonCard(lines: 3),
+                    SkeletonCard(lines: 2),
+                    SkeletonCard(lines: 3),
+                  ],
+                )
+              : const _EmptyNote('No closed setups yet.')
         else
           for (final entry in entries) ...[
             _HistoryRow(entry: entry, pipFactor: pipFactor),
