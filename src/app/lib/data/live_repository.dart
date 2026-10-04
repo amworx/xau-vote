@@ -128,9 +128,13 @@ class LiveRepository {
     final ideas = await _client
         .from('trade_ideas')
         .select(
+          // Targets live in the `take_profits` array column. There are no
+          // target_1/2/3 columns: an earlier query used them and PostgREST
+          // rejected the whole read with "column does not exist", which emptied
+          // the Sources screen.
           'id,source_id,direction,entry_low,entry_high,stop_loss,'
-          'target_1,target_2,target_3,methodology_id,upstream_dataset_id,'
-          'published_at,fingerprint,author_ref',
+          'take_profits,methodology_id,upstream_dataset_id,published_at,'
+          'fingerprint,author_ref',
         )
         .inFilter('id', ids);
     if (ideas.isEmpty) return const [];
@@ -159,20 +163,28 @@ class LiveRepository {
         publisherLicensed[id] = '${row['commercial_use_allowed']}' == 'true';
       }
     }
-
-    return (ideas as List).map((r) {
+// One row per PUBLISHER, not per idea. Several ideas from one desk are one
+    // vote (product rule 3): listing six rows all named "manual-seed" made one
+    // source look like six, which is the exact miscount the independence model
+    // exists to prevent. The first idea per publisher supplies the levels.
+    final bySource = <String, DisplaySource>{};
+    for (final r in ideas as List) {
       final row = r as Row;
       final srcId = '${row['source_id']}';
       final hasPublisher = srcId.isNotEmpty && srcId != 'null';
       final method = '${row['methodology_id']}';
+      final key = hasPublisher ? srcId : 'no-publisher';
+      if (bySource.containsKey(key)) continue;
       final dataset = '${row['upstream_dataset_id']}';
-      return DisplaySource(
-        id: hasPublisher ? srcId : 'no-publisher',
+      bySource[key] = DisplaySource(
+        id: key,
         name: hasPublisher
             ? (publisherNames[srcId] ?? srcId)
             // No publisher: name the row after its own provenance so it is not
             // blank, and say plainly that it is unattributed.
-            : (method.isEmpty || method == 'null' ? 'Unattributed idea' : method),
+            : (method.isEmpty || method == 'null'
+                  ? 'Unattributed idea'
+                  : method),
         direction: directionOf('${row['direction']}'),
         agrees: true,
         entryText: _zone(row, 'entry_low', 'entry_high'),
@@ -189,9 +201,9 @@ class LiveRepository {
         tp2HitRate: 0,
         tp3HitRate: 0,
       );
-    }).toList();
+    }
+    return bySource.values.toList(growable: false);
   }
-
   /// DB direction text → the display enum, defaulting to neutral.
   ///
   /// Neutral is the safe default rather than a guess: an unrecognised value
@@ -212,13 +224,14 @@ class LiveRepository {
     return d == null ? '-' : formatLevel(d);
   }
 
-  /// The targets the idea actually published, in order, skipping absent levels.
+  /// The targets the idea actually published, in order.
+  ///
+  /// `take_profits` is a numeric ARRAY column, so it arrives as a List. There
+  /// are no per-target columns.
   static String _targets(Row row) {
-    final parts = [
-      'target_1',
-      'target_2',
-      'target_3',
-    ].map((k) => _toDouble(row[k])).whereType<double>().map(formatLevel).toList();
+    final raw = row['take_profits'];
+    if (raw is! List) return '-';
+    final parts = raw.map(_toDouble).whereType<double>().map(formatLevel).toList();
     return parts.isEmpty ? '-' : parts.join(' · ');
   }
 

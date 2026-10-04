@@ -21,6 +21,7 @@ import 'screens/sources_screen.dart';
 import 'services/backend_service.dart';
 import 'state/app_state.dart';
 import 'theme.dart';
+import 'widgets/pull_to_refresh.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +42,10 @@ class XauVoteApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = ChangeNotifierProvider(
-      create: (_) => AppState(),
+      // Load stored preferences before the first screen reads them, so a
+      // restart shows the trader's actual choices rather than defaults for one
+      // frame. Failures are swallowed inside AppState.load.
+      create: (_) => AppState()..load(),
       child: const _Shell(),
     );
 
@@ -171,7 +175,11 @@ class _Shell extends StatelessWidget {
           // offstage ListView viewports inside an IndexedStack crash the
           // semantics/tree walk under `flutter test` (Flutter 3.44).
           // Scroll offsets survive via PageStorageKeys on each screen list.
-          child: _screens[tabIndex],
+          //
+          // Pull-to-refresh is applied here, once, rather than in each screen:
+          // it must work on all six, and six copies would be six places for the
+          // gesture to be wired to a different fetch.
+          child: withPullToRefresh(context, _screens[tabIndex]),
         ),
         // Rendered in `bottomNavigationBar` (not stacked over the body) so
         // the screen list is laid out above it and never scrolls underneath.

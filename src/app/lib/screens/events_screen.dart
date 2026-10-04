@@ -554,63 +554,65 @@ class _EventRow extends StatelessWidget {
     final color = impactColor(event.impact);
     return HarborCard(
       radius: 16,
-      padding: EdgeInsets.zero,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Impact colour bar. A 4px edge reads instantly while scrolling and
-            // does not steal space from the title.
-            Container(width: 4, color: color),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 10, 13),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 13),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Impact colour as a compact bar plus its text badge. Two redundant
+          // cues, so impact is readable without relying on colour alone.
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 7),
+              HarborChip(impactLabel(event.impact), fontSize: 8),
+            ],
+          ),
+          const SizedBox(height: 9),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                event.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontFamily: 'Sora',
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.25,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              _MetaLine(event: event, color: color),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _AlertBell(
-                          enabled: alertsEnabled,
-                          title: event.title,
-                          onTap: onToggleAlerts,
-                        ),
-                      ],
+                    Text(
+                      event.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Sora',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    _OutlookLine(outlook: event.outlook),
-                    const SizedBox(height: 10),
-                    _FigureRow(event: event),
+                    const SizedBox(height: 6),
+                    _MetaLine(event: event, color: color),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: 8),
+              _AlertBell(
+                enabled: alertsEnabled,
+                title: event.title,
+                onTap: onToggleAlerts,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _OutlookLine(outlook: event.outlook),
+          const SizedBox(height: 10),
+          _FigureRow(event: event),
+        ],
       ),
     );
   }

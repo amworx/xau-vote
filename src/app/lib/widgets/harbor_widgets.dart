@@ -748,12 +748,21 @@ class HarborCard extends StatelessWidget {
     this.radius = 18,
     this.padding = const EdgeInsets.all(15),
     this.margin = 18,
+    this.accentEdge,
   });
 
   final Widget child;
   final double radius;
   final EdgeInsets padding;
   final double margin;
+
+  /// Draws a thicker coloured edge down the leading side of the card.
+  ///
+  /// Preferred over a sibling `Container` strip: a full-height strip needs the
+  /// row's height to be resolved first (IntrinsicHeight), which is both
+  /// expensive and fragile inside a scrolling list — it rendered as a huge
+  /// block when the row also contained a `Wrap`. A border needs no measurement.
+  final Color? accentEdge;
 
   @override
   Widget build(BuildContext context) {
@@ -764,6 +773,9 @@ class HarborCard extends StatelessWidget {
         padding: padding,
         decoration: BoxDecoration(
           color: Colors.white,
+          // Uniform by necessity: Flutter cannot round a border whose sides
+          // differ in colour, so an accent edge is drawn by the caller as a
+          // leading element rather than by tinting one side here.
           border: Border.all(color: harborLine),
           borderRadius: BorderRadius.circular(radius),
         ),

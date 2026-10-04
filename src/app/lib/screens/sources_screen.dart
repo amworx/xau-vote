@@ -68,6 +68,20 @@ class SourcesScreen extends StatelessWidget {
         ? (signal?.agreeCount ?? 0)
         : enabled.where((s) => s.agrees).length;
     final total = live != null ? (signal?.totalCount ?? 0) : enabled.length;
+    // With no eligible external source there is nothing for the score to be
+    // agreement *between*. Printing "STRONG 87" beside "0 / 0" claims broad
+    // consensus while the denominator says no source could have voted, which is
+    // the one reading a trader must never take away. Say what is true: the
+    // pipeline has a figure and it rests on internal material only.
+    final awaitingExternal =
+        live != null && (live.independence?.isAwaitingExternalSources ?? false);
+    final agreement = live != null
+        ? (signal == null
+              ? '—'
+              : awaitingExternal
+                  ? 'INTERNAL ONLY'
+                  : '${bandLabel(signal.band)} ${signal.strength}')
+        : _agreement;
     return ListView(
       key: const PageStorageKey<String>('sources'),
       padding: const EdgeInsets.only(bottom: 18),
@@ -80,9 +94,8 @@ class SourcesScreen extends StatelessWidget {
           total,
           enabled,
           independence: live != null ? '—' : _independence,
-          agreement: live != null
-              ? (signal == null ? '—' : '${bandLabel(signal.band)} ${signal.strength}')
-              : _agreement,
+          agreement: agreement,
+          awaitingExternal: awaitingExternal,
         ),
         const SizedBox(height: 11),
         Center(
@@ -140,6 +153,7 @@ class SourcesScreen extends StatelessWidget {
     List<DisplaySource> enabled, {
     required String independence,
     required String agreement,
+    required bool awaitingExternal,
   }) {
     return Column(
       children: [
@@ -184,19 +198,39 @@ class SourcesScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 13),
-              Wrap(
-                spacing: 5,
-                runSpacing: 5,
-                children: [
-                  for (final source in enabled)
-                    HarborChip(
-                      'DESK ${source.id}',
-                      glyph: source.agrees ? HarborIcons.check : HarborIcons.cross,
-                      glyphColor: source.agrees ? harborLong : harborShort,
-                      fontSize: 8,
-                    ),
-                ],
-              ),
+              // Explains the headline instead of leaving the reader to
+              // reconcile "0 / 0" with a strength band.
+              if (awaitingExternal)
+                const Text(
+                  'No external source is eligible yet, so this score cannot be '
+                  'agreement between independent desks. It reflects internal '
+                  'material only and must not be read as consensus.',
+                  style: TextStyle(
+                    fontFamily: 'Sora',
+                    fontSize: 11,
+                    height: 1.4,
+                    color: inkMuted,
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: 5,
+                  runSpacing: 5,
+                  children: [
+                    // The source's NAME, never its id: a raw UUID tells a trader
+                    // nothing about who is voting.
+                    for (final source in enabled)
+                      HarborChip(
+                        source.name.toUpperCase(),
+                        glyph: source.agrees
+                            ? HarborIcons.check
+                            : HarborIcons.cross,
+                        glyphColor:
+                            source.agrees ? harborLong : harborShort,
+                        fontSize: 8,
+                      ),
+                  ],
+                ),
             ],
           ),
         ),

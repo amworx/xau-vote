@@ -40,6 +40,9 @@ dependencies:
   http: ^1.2.2
   # Streaming SHA-256 of the downloaded APK before offering it for install.
   crypto: ^3.0.6
+  # Persists the trader's Settings so a choice survives a restart. Promoted
+  # from transitive: AppState is the only caller.
+  shared_preferences: ^2.3.0
   supabase_flutter: ^2.17.2
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
