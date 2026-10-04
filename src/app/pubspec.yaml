@@ -43,6 +43,10 @@ dependencies:
   # Persists the trader's Settings so a choice survives a restart. Promoted
   # from transitive: AppState is the only caller.
   shared_preferences: ^2.3.0
+  # Shimmer skeleton loaders. Skeletonizer converts the REAL layout into a
+  # skeleton, so a placeholder cannot drift out of sync with the content it
+  # stands in for - the failure mode of hand-written skeleton screens.
+  skeletonizer: ^3.0.0
   supabase_flutter: ^2.17.2
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0

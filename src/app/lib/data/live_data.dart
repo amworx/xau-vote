@@ -198,7 +198,11 @@ class LiveData extends ChangeNotifier {
 
       _lastUpdated = DateTime.now();
       _error = null;
-      changed = true;
+      // Deliberately NOT marked as changed. Bumping the freshness stamp alone
+      // is not a data change, and notifying on it rebuilt every screen - the
+      // Events list visibly several times a minute - for a timestamp that had
+      // moved by a second. Screens that show "updated Xs ago" re-read it on the
+      // next real change or the next pull.
     } catch (e) {
       // Keep the last good values on screen and surface the failure, rather
       // than replacing real data with nothing (or with fixtures).

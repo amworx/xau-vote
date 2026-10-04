@@ -1,24 +1,44 @@
-/// Skeleton loading surfaces.
+/// Skeleton loading surfaces, built on **skeletonizer** (pub.dev/packages/skeletonizer).
 ///
-/// # Why a shimmer instead of the Material refresh indicator
+/// # Why the package rather than hand-written placeholders
 ///
-/// `RefreshIndicator` paints a solid grey circle with a spinner. Against this
-/// app's white cards it reads as a rendering fault rather than as progress, and
-/// it covers the content it is refreshing. A skeleton keeps the layout stable
-/// and shows the shape of what is arriving, which is what a trader staring at
-/// a mostly-empty Radar actually needs.
+/// A hand-written skeleton screen is a second layout of the same screen, and it
+/// silently drifts: the real card gains a row, the skeleton does not, and the
+/// placeholder stops resembling what it stands for. Skeletonizer converts the
+/// real widget tree into a skeleton, so the two cannot disagree.
 ///
-/// The shimmer is a single shared [AnimationController] per skeleton, driven by
-/// a gradient sweep. It stops when `MediaQuery.disableAnimations` is set, and
-/// degrades to a flat fill rather than animating forever, so it cannot keep the
-/// frame scheduler busy (which previously hung every `pumpAndSettle`).
+/// Two earlier hand-rolled attempts are why this exists:
+/// * a `GestureDetector` wrapping a scrollable loses every vertical drag to the
+///   list, so the pull gesture never fired;
+/// * `RefreshIndicator` made transparent still painted a grey disc, because it
+///   is a Material with elevation and the shadow shows through.
+///
+/// So the gesture is derived from scroll notifications, and the shimmer is
+/// `ShimmerEffect` applied to `Bone` widgets.
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+
 import '../theme.dart';
 
-/// A shimmering placeholder block.
-class SkeletonBox extends StatefulWidget {
+/// The app's shimmer: a slow, low-contrast sweep in the Harbor palette.
+///
+/// Slower and softer than a typical shimmer because this is a trading app read
+/// in glances, not a web page waited on - a fast flash reads as an alert.
+const _shimmer = ShimmerEffect(
+  baseColor: harborLine,
+  highlightColor: Color(0xFFF1F4F9),
+  // A slow left-to-right sweep: this app is read in glances, not waited on, and
+  // a fast flash reads as an alert rather than as loading.
+  begin: AlignmentDirectional(-1.0, 0),
+  end: AlignmentDirectional(1.0, 0),
+  duration: Duration(milliseconds: 1400),
+);
+
+/// A single shimmering placeholder block.
+class SkeletonBox extends StatelessWidget {
   const SkeletonBox({
     super.key,
     this.width,
@@ -32,76 +52,27 @@ class SkeletonBox extends StatefulWidget {
   final double radius;
 
   @override
-  State<SkeletonBox> createState() => _SkeletonBoxState();
-}
-
-class _SkeletonBoxState extends State<SkeletonBox>
-    with SingleTickerProviderStateMixin {
-  AnimationController? _c;
-
-  @override
-  void initState() {
-    super.initState();
-    _c = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1100),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    // Nullable and eager: a late final would construct inside dispose(), where
-    // creating a Ticker looks up a deactivated ancestor and throws.
-    _c?.dispose();
-    _c = null;
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    final controller = _c;
-    if (reduce || controller == null || !controller.isAnimating) {
-      return _fill();
-    }
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) => ShaderMask(
-        // A single sweep across the block, rather than a pulsing opacity: it
-        // reads as "loading" rather than as "disabled".
-        blendMode: BlendMode.srcIn,
-        shaderCallback: (rect) {
-          final t = controller.value * 2 - 1;
-          return LinearGradient(
-            begin: Alignment(t - 1, 0),
-            end: Alignment(t + 1, 0),
-            colors: const [
-              harborLine,
-              Color(0xFFF1F4F9),
-              harborLine,
-            ],
-            stops: const [0.1, 0.5, 0.9],
-          ).createShader(rect);
-        },
-        child: _fill(),
+    // Its own Skeletonizer rather than Skeletonizer.zone: a Bone is only shaded
+    // inside an ENABLED skeletonizer, and a bare zone renders nothing. Each box
+    // owning one is slightly more animations than ideal, but it keeps the
+    // primitive usable anywhere without the caller having to wrap a subtree.
+    return Skeletonizer(
+      enabled: true,
+      effect: _shimmer,
+      child: Bone(
+        width: width ?? double.infinity,
+        height: height,
+        borderRadius: BorderRadius.circular(radius),
       ),
     );
   }
-
-  Widget _fill() => Container(
-        width: widget.width,
-        height: widget.height,
-        decoration: BoxDecoration(
-          color: harborLine,
-          borderRadius: BorderRadius.circular(widget.radius),
-        ),
-      );
 }
 
-/// A stack of skeleton lines standing in for a paragraph or a card body.
+/// A stack of bones standing in for a paragraph.
 ///
-/// [lines] shorter lines approximate the ragged right edge of real copy, so the
-/// placeholder has the same silhouette as the content that replaces it and the
+/// The final line is short, as a paragraph's last line usually is, so the
+/// placeholder has the same silhouette as the copy that replaces it and the
 /// layout does not jump.
 class SkeletonLines extends StatelessWidget {
   const SkeletonLines({super.key, this.lines = 3, this.lineHeight = 10});
@@ -119,7 +90,6 @@ class SkeletonLines extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(bottom: i == lines - 1 ? 0 : 7),
             child: SkeletonBox(
-              // Last line is shorter, as a paragraph's final line usually is.
               width: i == lines - 1 ? 96 : null,
               height: lineHeight,
               radius: 5,
@@ -153,8 +123,33 @@ class SkeletonCard extends StatelessWidget {
   }
 }
 
-/// The pull-to-refresh affordance: a thin shimmering rule rather than a grey
-/// disc, so it never covers the content being refreshed.
+/// Wraps real content so it renders as a skeleton while [loading].
+///
+/// Preferred over [SkeletonCard] wherever the real widget is available: the
+/// placeholder is then the genuine layout, tinted, rather than a guess at it.
+class Skeletonize extends StatelessWidget {
+  const Skeletonize({super.key, required this.loading, required this.child});
+
+  final bool loading;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Skeletonizer(
+        // A slow fade between states stops the switch from snapping.
+        enableSwitchAnimation: true,
+        effect: _shimmer,
+        // Containers are kept so cards keep their silhouette; only their fill
+        // is replaced.
+        ignoreContainers: false,
+        enabled: loading,
+        child: child,
+      );
+}
+
+/// The pull-to-refresh affordance: a thin shimmering rule at the top edge.
+///
+/// It never covers the content being refreshed, and there is no grey spinner
+/// disc anywhere.
 class SkeletonRefreshIndicator extends StatefulWidget {
   const SkeletonRefreshIndicator({
     super.key,
@@ -166,82 +161,140 @@ class SkeletonRefreshIndicator extends StatefulWidget {
   final Widget child;
 
   @override
-  State<SkeletonRefreshIndicator> createState() => _SkeletonRefreshIndicatorState();
+  State<SkeletonRefreshIndicator> createState() =>
+      _SkeletonRefreshIndicatorState();
 }
 
 class _SkeletonRefreshIndicatorState extends State<SkeletonRefreshIndicator> {
-  /// 0 = at rest, 1 = pulled past the threshold, >1 = refreshing.
-  double _pull = 0;
+  /// Logical pixels pulled past the top, capped for the opacity ramp.
+  double _pulled = 0;
 
-  bool _armed = false;
   bool _busy = false;
 
-  static const _threshold = 72.0;
+  /// Pull distance for a full-strength reveal, and the trigger threshold.
+  static const _threshold = 90.0;
+
+  /// Whether the user is currently dragging downwards at the top.
+  bool _draggingDown = false;
 
   Future<void> _run() async {
     if (_busy) return;
     setState(() {
       _busy = true;
-      _pull = 1;
+      _pulled = _threshold;
     });
     try {
       await widget.onRefresh();
     } finally {
-      if (mounted) setState(() => _pull = 0);
+      if (mounted) setState(() => _pulled = 0);
+      _draggingDown = false;
       _busy = false;
     }
   }
 
+  bool _handle(ScrollNotification n) {
+    if (_busy) return false;
+
+    if (n is UserScrollNotification) {
+      // forward == dragging the content downward, i.e. towards the top.
+      _draggingDown = n.direction == ScrollDirection.forward;
+      return false;
+    }
+
+    if (n is ScrollUpdateNotification) {
+      // At the very top only. Without this an ordinary downward scroll would
+      // trigger a refresh.
+      if (_draggingDown && n.metrics.pixels <= 0) {
+        final delta = (n.scrollDelta ?? 0).abs();
+        if (delta > 0) {
+          setState(() {
+            _pulled = (_pulled + delta).clamp(0.0, _threshold);
+          });
+        }
+      }
+      return false;
+    }
+
+    // Clamping scroll physics DISCARDS the overscroll delta, so
+    // ScrollUpdateNotification can arrive with zero. `overscroll` is the
+    // un-applied amount, which is the only reliable measure of the pull.
+    if (n is OverscrollNotification) {
+      if (n.overscroll > 0 && _draggingDown && !_busy) {
+        setState(() {
+          _pulled = (_pulled + n.overscroll).clamp(0.0, _threshold);
+        });
+      } else if (n.overscroll < 0 && !_busy) {
+        setState(() => _pulled = 0);
+      }
+      return false;
+    }
+
+    if (n is ScrollEndNotification) {
+      final trigger = _pulled >= _threshold;
+      setState(() => _pulled = 0);
+      _draggingDown = false;
+      if (trigger) _run();
+      return false;
+    }
+
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<OverscrollNotification>(
-      // Overscroll, not ScrollNotification: the gesture must also work when the
-      // list is already at its end, which is exactly when a trader pulls.
-      onNotification: (n) {
-        if (_busy || n.overscroll <= 0) return false;
-        setState(() => _pull = (_pull - n.overscroll / 400).clamp(0.0, 1.0));
-        final armed = _pull * _threshold >= _threshold;
-        if (armed != _armed) setState(() => _armed = armed);
-        return false;
-      },
-      child: GestureDetector(
-        // The pull itself: a vertical drag past the threshold triggers the
-        // refresh and reports back whether the gesture was consumed, so a pull
-        // that ends below the threshold springs back instead of firing.
-        onVerticalDragEnd: (d) {
-          final velocity = d.primaryVelocity ?? 0;
-          if (_armed || velocity < -320) _run();
-          if (!_busy) setState(() => _pull = 0);
-        },
-        child: Stack(
+    return NotificationListener<ScrollNotification>(
+      onNotification: _handle,
+      child: Stack(
         children: [
-          widget.child,
-          if (_pull > 0.02)
+          // RefreshIndicator is kept purely for its GESTURE, and made entirely
+          // invisible: `displacement: 0` is the important part, because
+          // RefreshIndicator builds a Material whose ELEVATION scales with
+          // displacement — that elevation is what painted the grey disc, and it
+          // shows through even with fully transparent colours.
+          //
+          // A hand-rolled gesture cannot replace it: a GestureDetector wrapping
+          // a scrollable loses every vertical drag to the list, and the
+          // scroll-notification route is defeated by ClampingScrollPhysics
+          // discarding the overscroll delta.
+          RefreshIndicator(
+            onRefresh: _run,
+            color: Colors.transparent,
+            backgroundColor: Colors.transparent,
+            // elevation 0 is what actually removes the grey disc. It is a
+            // separate parameter from displacement, and it defaults to 2.0 -
+            // so the indicator's Material casts a shadow that shows through
+            // even with fully transparent colours.
+            elevation: 0,
+            displacement: 0,
+            child: widget.child,
+          ),
+          if (_pulled > 2)
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: IgnorePointer(
                 child: Opacity(
-                  opacity: _pull.clamp(0.0, 1.0),
+                  // Fades in over the first stretch of the pull, so a small
+                  // accidental drag does not flash a bar.
+                  opacity: (_pulled / (_threshold * 0.4)).clamp(0.0, 1.0),
                   child: const _RefreshRule(),
                 ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 }
 
-/// The thin bar drawn at the top while pulling.
+/// The shimmering bar drawn at the top while pulling.
 class _RefreshRule extends StatelessWidget {
   const _RefreshRule();
 
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.only(top: 2),
+        padding: EdgeInsets.symmetric(vertical: 3, horizontal: 18),
         child: SkeletonBox(height: 3, radius: 2),
       );
 }
