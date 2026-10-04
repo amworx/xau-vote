@@ -56,13 +56,17 @@ try {
 
 # 2. Record the manifest. The digest must be the one just computed, so the
 #    client's verification compares against the real bytes on the server.
+#
+# Keys are the COLUMN names, which are snake_case. PostgREST does not translate
+# camelCase, so `versionCode` here fails with a 400 and the release is uploaded
+# but invisible to every client.
 $body = @{
     version     = $Version
-    versionCode = $VersionCode
-    apkUrl      = "$SupabaseUrl/storage/v1/object/public/app-releases/$fileName"
-    sha256      = $sha
-    sizeBytes   = $apkItem.Length
-    notes       = $Notes
+    version_code = $VersionCode
+    apk_url      = "$SupabaseUrl/storage/v1/object/public/app-releases/$fileName"
+    sha256       = $sha
+    size_bytes   = $apkItem.Length
+    notes        = $Notes
 } | ConvertTo-Json
 
 try {
