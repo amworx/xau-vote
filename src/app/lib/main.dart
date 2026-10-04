@@ -192,11 +192,28 @@ class _Shell extends StatelessWidget {
   }
 }
 
-/// Bottom navigation (mockup `.bottom`): 72px white bar, hairline top
-/// border, six equal icon+label columns.
+/// Bottom navigation: a floating pill.
 ///
-/// Replaces the Material `NavigationBar`: the mockup has no indicator pill
-/// and no background highlight, only a cobalt active colour.
+/// Design source: https://21st.dev/@arunachalam/components/bottom-nav-bar
+///
+/// The geometry is measured from that component's live preview in a browser
+/// rather than eyeballed: pill height 52, item height 40, fully rounded ends,
+/// 8px item padding, a translucent wash on the active tab, and a label that is
+/// present ONLY while its tab is active.
+///
+/// Two deliberate departures, both forced by having six tabs:
+///
+///  * The pill fills the available width and the active tab is WIDER than the
+///    rest. The reference is content-sized, and with six labelled tabs that
+///    overflowed every width measured - 384px of pill inside 373dp of space at
+///    393dp, and it clipped "SETTINGS" to "SETTING".
+///  * The active tab's extra width is measured from the actual label and
+///    animated, so switching tabs slides the highlight instead of snapping, and
+///    the label can never be wider than the space reserved for it.
+///
+/// Replaces the previous flat white bar (six equal icon+label columns). The
+/// active-only label is the reference's behaviour, so the inactive tabs no
+/// longer show text.
 class HarborNavBar extends StatelessWidget {
   const HarborNavBar({
     super.key,
@@ -207,9 +224,31 @@ class HarborNavBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelected;
 
-  static const double height = 72;
+  /// Reference tokens. `p-2`/`space-x-1` are tightened from 8/4 to 5/2 to pay
+  /// for the sixth tab; the pill's height, item height and radius are as-is.
+  static const double pillHeight = 52;
+  static const double itemHeight = 40;
+  static const double pillPad = 5;
+  static const double gap = 2;
+  static const double radius = 999;
+  static const double iconSize = 22;
+  static const double labelSize = 10.5;
+  static const double labelGap = 6;
 
-  static const _items = [
+  /// `primary/10` in the reference; cobalt at 10% over the white pill.
+  static const Color wash = Color(0x1A2347F5);
+
+  /// No explicit `height`: forcing the line box to 1.0 x fontSize clips Sora's
+  /// caps, which sit taller than the nominal size, and the label was shaved top
+  /// and bottom inside the 40px item.
+  static const _labelStyle = TextStyle(
+    fontFamily: 'Sora',
+    fontSize: labelSize,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.3,
+  );
+
+  static const _items = <({IconData icon, String label})>[
     (icon: HarborIcons.radar, label: 'RADAR'),
     (icon: HarborIcons.chartLineUp, label: 'SIGNAL'),
     (icon: HarborIcons.layers, label: 'SOURCES'),
@@ -218,72 +257,172 @@ class HarborNavBar extends StatelessWidget {
     (icon: HarborIcons.settingsSliders, label: 'SETTINGS'),
   ];
 
+  /// Intrinsic width of a label, so the active slot can be sized to fit it.
+  static double measureLabel(String text) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: _labelStyle),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    return painter.width;
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: harborLine)),
+    final active = _items[selectedIndex];
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        0,
+        16,
+        // The pill floats clear of the gesture bar rather than sitting on it.
+        bottomInset > 0 ? bottomInset + 6 : 14,
       ),
-      padding: EdgeInsets.fromLTRB(7, 7, 7, 9 + bottomInset),
-      child: SizedBox(
-        height: height - 7 - 9,
-        child: Row(
-          children: [
-            for (var i = 0; i < _items.length; i++)
-              Expanded(
-                child: _NavItem(
-                  icon: _items[i].icon,
-                  label: _items[i].label,
-                  isActive: i == selectedIndex,
-                  onTap: () => onSelected(i),
-                ),
-              ),
+      child: Container(
+        height: pillHeight,
+        padding: const EdgeInsets.symmetric(horizontal: pillPad),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(radius),
+          border: Border.all(color: harborLine),
+          boxShadow: const [
+            // shadow-xl, expressed as the two shadows Tailwind emits.
+            BoxShadow(
+              color: Color(0x1A0D1526),
+              blurRadius: 25,
+              offset: Offset(0, 20),
+              spreadRadius: -5,
+            ),
+            BoxShadow(
+              color: Color(0x1A0D1526),
+              blurRadius: 10,
+              offset: Offset(0, 8),
+              spreadRadius: -6,
+            ),
           ],
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final avail = constraints.maxWidth -
+                gap * (_items.length - 1);
+            final target = measureLabel(active.label) + labelGap;
+
+            return TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0, end: target),
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeOutCubic,
+              builder: (context, extra, _) {
+                // The active tab's slot is one `extra` wider than the rest; the
+                // remaining width is shared equally.
+                final unit = (avail - extra) / _items.length;
+                return Row(
+                  children: [
+                    for (var i = 0; i < _items.length; i++) ...[
+                      if (i > 0) const SizedBox(width: gap),
+                      SizedBox(
+                        key: ValueKey('nav-${_items[i].label}'),
+                        width: unit + (i == selectedIndex ? extra : 0),
+                        child: _PillNavItem(
+                          icon: _items[i].icon,
+                          label: _items[i].label,
+                          isActive: i == selectedIndex,
+                          // 0->1 as the slot widens, so the label fades in
+                          // instead of appearing already clipped.
+                          reveal: target == 0
+                              ? 0
+                              : (extra / target).clamp(0.0, 1.0),
+                          onTap: () => onSelected(i),
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
+            );
+          },
         ),
       ),
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
-  const _NavItem({
+class _PillNavItem extends StatelessWidget {
+  const _PillNavItem({
     required this.icon,
     required this.label,
     required this.isActive,
+    required this.reveal,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
   final bool isActive;
+  final double reveal;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final color = isActive ? harborCobalt : navIdle;
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            height: 30,
-            child: Center(child: Icon(icon, size: 18, color: color)),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Sora',
-              fontSize: 7,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-              color: color,
+    return Semantics(
+      button: true,
+      selected: isActive,
+      label: label,
+      child: Material(
+        color: isActive ? HarborNavBar.wash : Colors.transparent,
+        borderRadius: BorderRadius.circular(HarborNavBar.radius),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(HarborNavBar.radius),
+          child: SizedBox(
+            height: HarborNavBar.itemHeight,
+            child: Stack(
+              alignment: Alignment.centerLeft,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  // Explicit: the default is centre, but the label's own line
+                  // height must not be allowed to shift the pair off-axis.
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: HarborNavBar.iconSize, color: color),
+                    if (isActive)
+                      Flexible(
+                        // Flexible, not a bare Padding: while the slot animates
+                        // from narrow to wide the label is briefly wider than
+                        // the space allowed for it. A `min` Row lays children out
+                        // at their intrinsic size and reports RenderFlex
+                        // overflow regardless of the surrounding ClipRect -
+                        // clipping only stops the paint, not the assertion.
+                        // Flexible lets the text take what is actually there.
+                        child: ClipRect(
+                          child: Opacity(
+                            opacity: reveal,
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                left: HarborNavBar.labelGap,
+                              ),
+                              child: Text(
+                                label,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.clip,
+                                style: HarborNavBar._labelStyle
+                                    .copyWith(color: color),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

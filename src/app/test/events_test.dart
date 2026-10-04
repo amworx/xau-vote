@@ -10,6 +10,8 @@
 /// `pumpAndSettle()` — or the frame scheduler never settles.
 library;
 
+import 'package:flutter/foundation.dart';
+
 import 'dart:ui' show Size;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -29,7 +31,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
 }
 
 Future<void> _openEvents(WidgetTester tester) async {
-  await tester.tap(find.text('EVENTS'));
+  await tester.tap(find.byKey(const ValueKey('nav-EVENTS')));
   // No settle: the live countdown timer is now mounted.
   await tester.pump();
   await tester.pump();
@@ -139,7 +141,7 @@ void main() {
       skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
-    await tester.tap(find.text('SETTINGS'));
+    await tester.tap(find.byKey(const ValueKey('nav-SETTINGS')));
     await tester.pumpAndSettle();
 
     expect(find.text('EVENTS · CONTEXT ONLY'), findsOneWidget);

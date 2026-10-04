@@ -4,6 +4,7 @@
 /// global guard that agreement language never reads as a forecast.
 library;
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -29,7 +30,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
 }
 
 Future<void> _openSignal(WidgetTester tester) async {
-  await tester.tap(find.text('SIGNAL'));
+  await tester.tap(find.byKey(const ValueKey('nav-SIGNAL')));
   await tester.pumpAndSettle();
 }
 
@@ -121,7 +122,7 @@ void main() {
       (tester) async {
     await _pumpApp(tester);
     for (final label in ['SIGNAL', 'SOURCES', 'HISTORY', 'SETTINGS']) {
-      await tester.tap(find.text(label));
+      await tester.tap(find.byKey(ValueKey('nav-$label')));
       await tester.pumpAndSettle();
       // Build lazily-loaded rows too, so the scan covers the whole list.
       await tester.drag(find.byType(ListView), const Offset(0, -3000));

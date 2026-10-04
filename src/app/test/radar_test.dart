@@ -6,6 +6,7 @@
 /// asserted as an agreement label only (spec §7).
 library;
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -214,7 +215,7 @@ void main() {
       (tester) async {
     await _pumpApp(tester);
 
-    await tester.tap(find.text('SIGNAL'));
+    await tester.tap(find.byKey(const ValueKey('nav-SIGNAL')));
     await tester.pumpAndSettle();
 
     expect(find.text('ACTIVE SETUP · 15M LONG'), findsOneWidget);

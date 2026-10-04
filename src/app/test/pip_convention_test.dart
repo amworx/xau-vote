@@ -66,7 +66,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
 }
 
 Future<void> _openTab(WidgetTester tester, String tab) async {
-  await tester.tap(find.text(tab));
+  await tester.tap(find.byKey(ValueKey('nav-$tab')));
   await tester.pumpAndSettle();
 }
 

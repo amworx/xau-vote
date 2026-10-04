@@ -393,8 +393,18 @@ Future<void> _pumpLive(WidgetTester tester, LiveData live) async {
 
 /// Open a tab. Never settles: the Events countdown owns a 1s timer, so the
 /// frame scheduler cannot reach quiescence once that tab is mounted.
+/// Finds a tab by its bottom-nav key, falling back to plain text.
+///
+/// The bottom bar labels only the ACTIVE tab (that is the point of the pill
+/// design), so nav tabs are addressed by key. The Events screen's own
+/// UPCOMING / RESULTS / NEWS tabs are ordinary text and are not in the bar.
+Finder _tabFinder(String tab) {
+  final nav = find.byKey(ValueKey('nav-$tab'));
+  return nav.evaluate().isEmpty ? find.text(tab) : nav;
+}
+
 Future<void> _openTab(WidgetTester tester, String tab) async {
-  await tester.tap(find.text(tab));
+  await tester.tap(_tabFinder(tab));
   await tester.pump();
   await tester.pump();
 }

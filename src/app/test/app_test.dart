@@ -1,6 +1,8 @@
 /// Smoke tests — Sources, History, Settings render in MOCK_MODE.
 library;
 
+import 'package:flutter/foundation.dart';
+
 import 'dart:ui' show Size;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -21,7 +23,7 @@ void main() {
       skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
-    await tester.tap(find.text('SOURCES'));
+    await tester.tap(find.byKey(const ValueKey('nav-SOURCES')));
     await tester.pumpAndSettle();
 
     expect(find.text('DESK A · GoldPulse'), findsOneWidget);
@@ -46,7 +48,7 @@ void main() {
       skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
-    await tester.tap(find.text('HISTORY'));
+    await tester.tap(find.byKey(const ValueKey('nav-HISTORY')));
     await tester.pumpAndSettle();
 
     expect(find.text('TP2 HIT'), findsOneWidget);
@@ -62,7 +64,7 @@ void main() {
       skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
-    await tester.tap(find.text('SETTINGS'));
+    await tester.tap(find.byKey(const ValueKey('nav-SETTINGS')));
     await tester.pumpAndSettle();
 
     expect(find.text('15M / 5M / 1H'), findsOneWidget);
