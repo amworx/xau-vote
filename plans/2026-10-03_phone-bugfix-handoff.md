@@ -174,3 +174,70 @@ by deleting the closed-market branch.
   already installed on the phone.
 - `analysis-scan`, `warm-bars` and `oanda-quote` Edge Functions were deployed
   directly through MCP and are still not mirrored under `supabase/functions/`.
+
+---
+
+## UPDATE — second session, later items
+
+Done since the first hand-off:
+
+- **TP1-default tests**: all 8 now pass. Each pins the scope it needs via a
+  _setTargets helper instead of inheriting the default. Note that
+  XauVoteApp owns its AppState, so an outer provider is shadowed — reach the
+  state through ind.byType(RadarScreen) while the Radar tab is showing (the
+  shell renders only the selected screen, so RadarScreen is absent elsewhere).
+- **Events redesign**: impact colour bar, country flag beside the ISO code,
+  ACTUAL/FORECAST/PREV row, and the outlook line.
+- **Alert bell**: enables alerts, armed by default, silenced state shown by a
+  marker rather than by dimming the row. Silencing no longer changes the
+  blackout card — that was the "first row seems to swap" behaviour.
+- **Per-event outlook**: xau_core/lib/analysis/event_outlook.dart, 16 tests.
+- **Notification permission**: requested in context from Settings, with
+  POST_NOTIFICATIONS and the FCM service declared.
+
+Two bugs found while testing these:
+
+- PulseDot animated in the offline preview, so every pumpAndSettle in the
+  suite timed out. It now animates only in a live build with the market open.
+- UpdateService.cancel closed the same writer as the download loop, making the
+  cancel test order-dependent. Cancel now awaits the download it is cancelling.
+
+## STILL OPEN
+
+**Event figures.** economic_events holds 6 rows, all provider='manual'
+fixtures titled "…(approx. fixture)", with ctual, orecast and previous
+all null. The empty FCAST/PREV the user reported is missing data, not a UI bug.
+The outlook engine therefore returns NO PREDICTION for every row today, which
+is correct. Filling these needs a licensed calendar feed — a project-level
+licensing decision, not a code change. Nothing in the instruction files names a
+provider with forecast/actual data (FRED gives macro series, not release
+figures).
+
+**Icons.** Researched but not implemented. Recommendation is
+**Ultimate Regular - Free** (ultimate-regular-free, CC BY 4.0, 1000 icons) —
+its 1.5px balanced stroke and rounded terminals sit closest to the current
+UIcons weight, and it stays legible at the 18px tab-bar size. Ultimate Bold is
+the subordinate alternative if the tab bar reads too thin.
+
+Why it was not done: icons.dart uses a bundled TTF (uicons-regular-rounded.ttf),
+so swapping means generating a new font from Streamline SVGs, not just dropping
+in assets. That needs a font build (svg2ttf/fontTools) which is not available on
+this machine. Half-migrating would break every screen's icons, which is worse
+than the current state. The Streamline search is also noisy for abstract
+concepts — querying "radar scan target market signal" returned *Knives Set* and
+*Radiology Scan Doctor*, so each concept needs a precise query.
+
+Also note: the Settings attribution line currently reads "UIcons by Flaticon" and
+must be changed if the family is swapped — CC BY 4.0 requires attribution.
+
+**Notification delivery.** Permission can now be granted and the FCM service is
+declared, but no FCM server key is configured, so nothing can actually be sent
+yet. Settings says "delivery not yet enabled" rather than pretending otherwise.
+
+**Release keystore.** Encrypted, verified-restorable backup now exists at
+code_repo/xau-vote-keys/backup/xauvote-release-keys.gpg with the passphrase in
+PASSPHRASE.txt and steps in RECOVERY.md. Verified by decrypting and
+comparing SHA-256, then opening the restored keystore with the documented
+password. **It is still on this laptop only** — see RECOVERY.md for the 2-of-3
+recommendation. Play App Signing enrolment is the single highest-value step to
+remove the single point of failure.
