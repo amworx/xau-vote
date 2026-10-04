@@ -19,7 +19,6 @@ import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
-import '../widgets/skeleton.dart';
 
 /// Independence factor reported by the consensus engine for the active setup
 /// (spec §3). Fixture-pinned offline; the live engine reports it per signal, so
@@ -98,12 +97,7 @@ class SourcesScreen extends StatelessWidget {
           agreement: agreement,
           awaitingExternal: awaitingExternal,
         ),
-        // While the linked rows are still being read, hold the space with
-        // skeletons rather than collapsing to the empty note and then popping.
-        if (live != null && live.loading && sources.isEmpty)
-          const SkeletonList(count: 3)
-        else if (live != null && live.refreshing && sources.isNotEmpty)
-          SkeletonList(count: sources.length),
+
         const SizedBox(height: 11),
         Center(
           child: Text(

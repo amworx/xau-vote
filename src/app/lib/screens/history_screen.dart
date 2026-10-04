@@ -29,7 +29,6 @@ import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
-import '../widgets/skeleton.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -74,11 +73,8 @@ class HistoryScreen extends StatelessWidget {
           // Distinguish "not loaded yet" from "genuinely nothing": a skeleton
           // while the first read is in flight, and the honest empty note only
           // once a read has actually returned no rows.
-          live != null && live.loading
-              ? const SkeletonList(count: 4)
-              : live != null && live.refreshing && entries.isNotEmpty
-              ? SkeletonList(count: entries.length)
-              : const _EmptyNote('No closed setups yet.')
+          // Only a deliberate pull animates the rows; a poll must not strobe.
+          const _EmptyNote('No closed setups yet.')
         else
           for (final entry in entries) ...[
             _HistoryRow(entry: entry, pipFactor: pipFactor),

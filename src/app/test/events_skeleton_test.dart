@@ -47,6 +47,13 @@ Future<LiveData> _pumpEvents(
   return live;
 }
 
+// Skeletonizer replaces its child with a render object, so it cannot be found
+// by type. Matching on the runtime type name is the stable way to assert it.
+Finder skeletonizerInTree() => find.byWidgetPredicate(
+      (w) => w.runtimeType.toString().contains('Skeletonizer'),
+      description: 'a Skeletonizer in the tree',
+    );
+
 void main() {
   testWidgets('real rows are shown when idle', (tester) async {
     await _pumpEvents(tester, events: const [_event]);
@@ -55,7 +62,7 @@ void main() {
     expect(find.byType(SkeletonEventRow), findsNothing);
   });
 
-  testWidgets('a held refresh replaces the rows with shaped skeletons',
+  testWidgets('a held refresh turns the real rows into bones in place',
       (tester) async {
     final gate = Completer<void>();
     final live = await _pumpEvents(
@@ -63,7 +70,6 @@ void main() {
       events: const [_event],
       gate: gate,
     );
-    expect(find.byType(SkeletonEventRow), findsNothing);
 
     // Start a deliberate pull and leave it in flight.
     final refreshing = live.refresh();
@@ -71,18 +77,46 @@ void main() {
 
     expect(live.refreshing, isTrue,
         reason: 'a manual refresh must announce itself');
-    expect(find.byType(SkeletonEventRow), findsOneWidget);
-    // The shaped primitives are in use, not generic grey bars.
-    expect(find.byType(SkeletonPill), findsWidgets);
-    expect(find.byType(SkeletonMetaRow), findsOneWidget);
+    // The skeletonizer wraps the REAL pane, so the real rows are still mounted
+    // and the placeholder subtree is never swapped in.
+    expect(skeletonizerInTree(), findsWidgets);
+    expect(find.text('CPI m/m'), findsNWidgets(2),
+        reason: 'the real rows must stay mounted - swapping in a placeholder '
+            'subtree painted a full-width grey rectangle for a frame');
+    expect(find.byType(SkeletonEventRow), findsNothing,
+        reason: 'placeholder rows are no longer used during a pull');
 
     gate.complete();
     await refreshing;
     await tester.pump();
 
     expect(live.refreshing, isFalse);
-    expect(find.byType(SkeletonEventRow), findsNothing);
-    expect(find.text('CPI m/m'), findsWidgets);
+// Both the blackout card and the row carry the title, so it appears twice.
+    expect(find.text('CPI m/m'), findsNWidgets(2));
+  });
+
+  testWidgets('the top blackout card refreshes too', (tester) async {
+    // Regression: the blackout card sits above the list, so a swap that only
+    // covered the rows left the first item on screen looking untouched.
+    final gate = Completer<void>();
+    final live = await _pumpEvents(
+      tester,
+      events: const [_event],
+      gate: gate,
+    );
+
+    final refreshing = live.refresh();
+    await tester.pump();
+
+    expect(skeletonizerInTree(), findsWidgets);
+    // The blackout card AND the rows are covered, so the first item on
+    // screen refreshes with the rest rather than looking untouched.
+    expect(find.text('CPI m/m'), findsNWidgets(2),
+        reason: 'both the blackout card and the row are inside the skeleton');
+
+    gate.complete();
+    await refreshing;
+    await tester.pump();
   });
 
   testWidgets('skeletons are not shown by a background poll', (tester) async {

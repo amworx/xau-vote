@@ -326,23 +326,22 @@ class _EventsScreenState extends State<EventsScreen> {
   Widget _upcomingPane() {
     final next = _nextBlackout;
     final events = _visibleEvents;
-    return Column(
+    final live = _live;
+
+    // While a deliberate pull is in flight the REAL pane renders as bones. It is
+    // not replaced by a placeholder subtree: swapping the two painted a
+    // full-width grey rectangle for a frame as they exchanged, and it left the
+    // top card (the blackout countdown) un-refreshed because it sat outside the
+    // swapped region.
+    final pane = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _nextBlackoutCard(next),
         const SizedBox(height: 10),
         if (events.isEmpty)
-          // Skeleton while the first read is in flight; the honest empty note
-          // only once a read has genuinely returned nothing.
           (_live?.loading ?? false)
               ? const SkeletonEventList()
               : const _SilenceNote('No events match these filters.')
-        else if (_live?.refreshing ?? false)
-          // A deliberate pull re-shapes the existing rows into placeholders, so
-          // the gesture is acknowledged rather than looking inert. Poll-driven
-          // reads deliberately do NOT do this, or the list would strobe every
-          // 15 seconds.
-          SkeletonEventList(count: events.length)
         else
           for (final event in events) ...[
             _EventRow(
@@ -357,6 +356,13 @@ class _EventsScreenState extends State<EventsScreen> {
             const SizedBox(height: 10),
           ],
       ],
+    );
+
+    return Skeletonize(
+      // Only a deliberate pull animates the pane. Poll-driven reads stay
+      // silent, or the list would strobe every 15 seconds.
+      loading: live?.refreshing ?? false,
+      child: pane,
     );
   }
 

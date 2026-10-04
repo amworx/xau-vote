@@ -27,7 +27,7 @@ import '../theme.dart';
 ///
 /// Slower and softer than a typical shimmer because this is a trading app read
 /// in glances, not a web page waited on - a fast flash reads as an alert.
-const _shimmer = ShimmerEffect(
+const harborShimmer = ShimmerEffect(
   baseColor: harborLine,
   highlightColor: Color(0xFFF1F4F9),
   // A slow left-to-right sweep: this app is read in glances, not waited on, and
@@ -36,6 +36,8 @@ const _shimmer = ShimmerEffect(
   end: AlignmentDirectional(1.0, 0),
   duration: Duration(milliseconds: 1400),
 );
+
+const _shimmer = harborShimmer;
 
 /// A single shimmering placeholder block.
 class SkeletonBox extends StatelessWidget {
@@ -257,10 +259,19 @@ class SkeletonEventList extends StatelessWidget {
       );
 }
 
-/// Wraps real content so it renders as a skeleton while [loading].
+/// Shimmers real content while [loading].
 ///
-/// Preferred over [SkeletonCard] wherever the real widget is available: the
-/// placeholder is then the genuine layout, tinted, rather than a guess at it.
+/// This is the intended shape of use and the one that matters: the placeholder
+/// IS the real widget tree, converted. Two earlier approaches caused visible
+/// faults:
+///
+/// * swapping a placeholder subtree in and out painted a full-width grey
+///   rectangle for a frame as the two trees swapped;
+/// * one `Skeletonizer` per `SkeletonBox` multiplies the controllers and makes
+///   that swap worse.
+///
+/// Here there is nothing to swap - the same widgets stay mounted and simply
+/// render as bones - so no frame can disagree with the content.
 class Skeletonize extends StatelessWidget {
   const Skeletonize({super.key, required this.loading, required this.child});
 
@@ -269,13 +280,14 @@ class Skeletonize extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Skeletonizer(
-        // A slow fade between states stops the switch from snapping.
-        enableSwitchAnimation: true,
-        effect: _shimmer,
-        // Containers are kept so cards keep their silhouette; only their fill
-        // is replaced.
-        ignoreContainers: false,
+        effect: harborShimmer,
         enabled: loading,
+        // Containers keep their silhouette so cards still read as cards; only
+        // their fill is replaced.
+        ignoreContainers: false,
+        // Switch animation OFF: it cross-fades through a painted overlay, which
+        // is precisely the grey rectangle this is meant to avoid.
+        enableSwitchAnimation: false,
         child: child,
       );
 }
