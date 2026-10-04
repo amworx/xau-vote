@@ -38,19 +38,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Drag down far enough to pass the trigger threshold.
-    await tester.fling(
+    // A real pull is SLOW and deliberate. A fling is excluded by the speed
+    // gate, so this must be a timed drag.
+    await tester.timedDrag(
       find.byType(ListView),
-      const Offset(0, 320),
-      1200,
+      const Offset(0, 140),
+      const Duration(milliseconds: 900),
     );
     await tester.pumpAndSettle();
 
     expect(refreshes, 1, reason: 'the pull gesture must actually fire');
   });
 
-  testWidgets('the visible feedback is a skeleton rule, not a grey disc',
-      (tester) async {
+  testWidgets('no Material refresh indicator is involved at all', (tester) async {
     await _pump(tester, (onRefresh) => SkeletonRefreshIndicator(
           onRefresh: onRefresh,
           child: ListView.builder(
@@ -59,16 +59,85 @@ void main() {
           ),
         ));
 
-    // No grey spinner disc anywhere: the stock indicator is gone entirely, not
-    // merely made transparent (its Material elevation still showed a shadow).
-    final indicator = tester.widget<RefreshIndicator>(
-        find.byType(RefreshIndicator));
-    // displacement 0 is what removes the Material's shadow, i.e. the grey disc.
-    expect(indicator.elevation, 0, reason: 'the default 2.0 is the grey disc');
-    expect(indicator.displacement, 0);
-    expect(indicator.color, Colors.transparent);
-    expect(indicator.backgroundColor, Colors.transparent);
+    // Regression guard. RefreshIndicator misfired whenever the list content was
+    // replaced: a slow poll re-reads the calendar, the scroll position shifts,
+    // and it read that shift as a drag and fired a refresh nobody asked for.
+    // The gesture now observes raw pointer events, so no Material is involved.
+    expect(find.byType(RefreshIndicator), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(Listener), findsWidgets);
+  });
+
+  testWidgets('scrolling the list never triggers a refresh', (tester) async {
+    var refreshes = 0;
+    await tester.pumpWidget(
+      _host(
+        SkeletonRefreshIndicator(
+          onRefresh: () async {
+            refreshes++;
+          },
+          child: ListView.builder(
+            itemCount: 60,
+            itemBuilder: (_, i) => SizedBox(height: 60, child: Text('row $i')),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Scroll down through the list with a slow drag. Deliberately not
+    // `tester.fling`: fling simulates a throw by dragging past the end and back,
+    // which injects a synthetic second gesture and is not what scrolling does.
+    await tester.timedDrag(
+      find.byType(ListView),
+      const Offset(0, -400),
+      const Duration(milliseconds: 900),
+    );
+    await tester.pumpAndSettle();
+    expect(refreshes, 0, reason: 'scrolling down must not refresh');
+
+    // Now a genuine, slow pull - but started while the list is scrolled away
+    // from the top. That is ordinary scrolling downwards and must not refresh,
+    // however far the finger travels.
+    await tester.timedDrag(
+      find.byType(ListView),
+      const Offset(0, 200),
+      const Duration(milliseconds: 900),
+    );
+    await tester.pumpAndSettle();
+
+    expect(refreshes, 0,
+        reason: 'a pull that does not start at the top is not a refresh');
+  });
+
+  testWidgets('a fast flick past the threshold is not a pull', (tester) async {
+    var refreshes = 0;
+    await tester.pumpWidget(
+      _host(
+        SkeletonRefreshIndicator(
+          onRefresh: () async {
+            refreshes++;
+          },
+          child: ListView.builder(
+            itemCount: 60,
+            itemBuilder: (_, i) => SizedBox(height: 60, child: Text('row $i')),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Starts at the top and travels four times the threshold, but fast. This is
+    // the gesture that made the old implementation refresh by itself while the
+    // user was simply flicking through the calendar.
+    await tester.timedDrag(
+      find.byType(ListView),
+      const Offset(0, 400),
+      const Duration(milliseconds: 80),
+    );
+    await tester.pumpAndSettle();
+
+    expect(refreshes, 0, reason: 'speed, not distance, separates a pull');
   });
 
   testWidgets('a skeleton block renders and animates without error',
