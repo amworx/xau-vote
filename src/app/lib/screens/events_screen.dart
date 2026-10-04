@@ -358,12 +358,27 @@ class _EventsScreenState extends State<EventsScreen> {
       ],
     );
 
-    return Skeletonize(
-      // Only a deliberate pull animates the pane. Poll-driven reads stay
-      // silent, or the list would strobe every 15 seconds.
-      loading: live?.refreshing ?? false,
-      child: pane,
-    );
+    // The skeleton wrapper is added ONLY while a deliberate pull is in
+    // progress, and is otherwise absent from the tree entirely.
+    //
+    // It used to be here unconditionally, driven by `loading:
+    // live.refreshing`. That is wrong, and it is what produced the grey block
+    // over the Events pane on Android. `Skeletonizer` is not an inert wrapper:
+    // it installs its shimmer shader and painting context into the subtree even
+    // when `enabled` is false. So on a real device - Impeller, release build -
+    // a DISABLED Skeletonizer could still paint its subtree as one opaque quad.
+    // It is intermittent and poll-correlated because that is when the subtree
+    // is rebuilt, not because the loading flag is ever true: poll paths pass
+    // manual:false and never set `refreshing`, which is provably false here.
+    //
+    // Building the subtree with no Skeletonizer in it removes the failure mode
+    // by construction rather than by tuning a flag. Genuine first-load still
+    // shows skeletons via [SkeletonEventList], whose primitives each own an
+    // explicitly enabled Skeletonizer - the pattern the package documents.
+    if (live?.refreshing ?? false) {
+      return Skeletonize(loading: true, child: pane);
+    }
+    return pane;
   }
 
   /// The blackout card. With no armed USD HIGH event the countdown is
