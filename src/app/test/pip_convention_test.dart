@@ -16,10 +16,12 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:xauvote/data/mock_fixtures.dart';
 import 'package:xauvote/config.dart' show mockMode;
 import 'package:xauvote/main.dart';
 import 'package:xauvote/models/display_models.dart';
+import 'package:xauvote/screens/radar_screen.dart';
 import 'package:xauvote/state/app_state.dart';
 
 /// Verbatim copy of the pre-refactor implementation (hardcoded convention B).
@@ -65,6 +67,21 @@ Future<void> _pumpApp(WidgetTester tester) async {
 
 Future<void> _openTab(WidgetTester tester, String tab) async {
   await tester.tap(find.text(tab));
+  await tester.pumpAndSettle();
+}
+
+/// Sets the target scope on the app's own [AppState].
+///
+/// The default scope is TP1, so a test about pip scaling or layout must state
+/// the scope it wants instead of inheriting the default. `XauVoteApp` owns its
+/// provider, so an outer one is shadowed. Must be called while the Radar tab is
+/// showing, because the shell renders only the selected screen.
+Future<void> _setTargets(WidgetTester tester, TargetSelection targets) async {
+  final state = Provider.of<AppState>(
+    tester.element(find.byType(RadarScreen)),
+    listen: false,
+  );
+  state.setTargets(targets);
   await tester.pumpAndSettle();
 }
 
@@ -199,6 +216,9 @@ void main() {
         skip: !mockMode,
       (tester) async {
       await _pumpApp(tester);
+      // Pin all three targets: this suite is about pip scaling, and inheriting
+      // the TP1 default would hide TP2/TP3 readouts.
+      await _setTargets(tester, TargetSelection.all);
       await _openTab(tester, 'SIGNAL');
 
       expect(find.text('+1700 PIPS'), findsOneWidget);
@@ -226,6 +246,7 @@ void main() {
         skip: !mockMode,
       (tester) async {
       await _pumpApp(tester);
+      await _setTargets(tester, TargetSelection.all);
       await _openTab(tester, 'SETTINGS');
       await tester.ensureVisible(find.text('A · 0.10'));
       await tester.pumpAndSettle();
@@ -286,6 +307,8 @@ void main() {
         skip: !mockMode,
       (tester) async {
       await _pumpApp(tester);
+      // Pin the scope so this sweep measures layout, not the target default.
+      await _setTargets(tester, TargetSelection.all);
       for (final tab in [
         'RADAR',
         'SIGNAL',

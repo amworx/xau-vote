@@ -23,6 +23,9 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+// Event outlook types only; the `xau_core` barrel also exports a Direction enum
+// that collides with the app's display models.
+import 'package:xau_core/analysis/event_outlook.dart';
 
 import '../config.dart';
 import '../data/live_data.dart';
@@ -57,7 +60,7 @@ class _EventsScreenState extends State<EventsScreen> {
   int _tab = 0;
   final Set<String> _currenciesOn = {'USD', 'EUR', 'GBP'};
   EventImpact _minImpact = EventImpact.medium;
-  final Set<String> _muted = <String>{};
+  final Set<String> _silenced = <String>{};
 
   /// The polled snapshot for this build, or null in an offline build. See
   /// [RadarScreen._liveOf] for why this is the single seam between the two.
@@ -81,10 +84,9 @@ class _EventsScreenState extends State<EventsScreen> {
   /// Currency chips start on and a row is hidden only when it falls outside
   /// both the currency set and the impact floor.
   bool _visible(DisplayEvent event) =>
-      _currenciesOn.contains(event.currency) &&
-      _rank(event.impact) >= _rank(_minImpact);
+      _currenciesOn.contains(event.currency) && _rank(event.impact) >= _rank(_minImpact);
 
-  bool _isMuted(String id) => _muted.contains(id);
+  bool _isSilenced(String id) => _silenced.contains(id);
 
   /// Scheduled releases the guard can see: the polled calendar in a live
   /// build, the fixture calendar offline.
@@ -117,12 +119,14 @@ class _EventsScreenState extends State<EventsScreen> {
     return live != null ? const <DisplayNewsItem>[] : MockFixtures.headlines;
   }
 
-  /// The soonest armed USD HIGH event — the only combination that pauses new
-  /// signals. `null` when the trader muted or filtered it out, and the guard
-  /// line then says so rather than borrowing another event's countdown.
+  /// The soonest USD HIGH event — the only combination that pauses new signals.
+  ///
+  /// Deliberately independent of the alert bells. The blackout window exists
+  /// because gold tends to move around the release, not because the trader
+  /// wants to be told about it. Skipping silenced events here is what made the
+  /// top card appear to "swap" to another release when the bell was tapped.
   DisplayEvent? get _nextBlackout {
     for (final event in _visibleEvents) {
-      if (_isMuted(event.id)) continue;
       if (event.impact == EventImpact.high && event.currency == 'USD') {
         return event;
       }
@@ -191,10 +195,7 @@ class _EventsScreenState extends State<EventsScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(
-                width: 60,
-                child: HarborEyebrow('CCY', color: harborFaint),
-              ),
+              const SizedBox(width: 60, child: HarborEyebrow('CCY', color: harborFaint)),
               Expanded(
                 child: Wrap(
                   spacing: 6,
@@ -234,8 +235,7 @@ class _EventsScreenState extends State<EventsScreen> {
                         option.label,
                         fontSize: 10,
                         active: _minImpact == option.floor,
-                        onTap: () =>
-                            setState(() => _minImpact = option.floor),
+                        onTap: () => setState(() => _minImpact = option.floor),
                       ),
                   ],
                 ),
@@ -253,20 +253,21 @@ class _EventsScreenState extends State<EventsScreen> {
   /// blackout window it prints an honest `—` rather than borrowing one.
   Widget _guardLine() {
     final visible = _visibleEvents;
-    final armed = visible.where((e) => !_isMuted(e.id)).length;
-    final muted = visible.where((e) => _isMuted(e.id)).length;
+    final silenced = visible.where((e) => _isSilenced(e.id)).length;
+    final watching = visible.length - silenced;
     final next = _nextBlackout;
     final scope = switch (_minImpact) {
       EventImpact.high => 'HIGH ONLY',
       EventImpact.medium => 'HIGH+MED',
       EventImpact.low => 'ALL',
     };
-    final summary = StringBuffer('$scope · $armed ARMED');
-    if (muted > 0) summary.write(' · $muted MUTED');
+    // "WATCHING" counts releases whose alerts are on. The blackout countdown is
+    // reported independently, because silencing an alert does not disarm the
+    // guard.
+    final summary = StringBuffer('$scope · $watching WATCHING');
+    if (silenced > 0) summary.write(' · $silenced SILENCED');
     summary.write(
-      next == null
-          ? ' · BLACKOUT —'
-          : ' · BLACKOUT ${formatCountdown(next.startsIn)}',
+      next == null ? ' · BLACKOUT —' : ' · BLACKOUT ${formatCountdown(next.startsIn)}',
     );
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 18),
@@ -281,10 +282,7 @@ class _EventsScreenState extends State<EventsScreen> {
             width: 6,
             height: 6,
             child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: harborShort,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: harborShort, shape: BoxShape.circle),
             ),
           ),
           const SizedBox(width: 9),
@@ -338,11 +336,11 @@ class _EventsScreenState extends State<EventsScreen> {
           for (final event in events) ...[
             _EventRow(
               event: event,
-              muted: _isMuted(event.id),
-              onToggleMute: () => setState(() {
-                _isMuted(event.id)
-                    ? _muted.remove(event.id)
-                    : _muted.add(event.id);
+              // Alerts default ON. The previous flag defaulted to muted, which
+              // made the list look disabled rather than watched.
+              alertsEnabled: !_silenced.contains(event.id),
+              onToggleAlerts: () => setState(() {
+                if (!_silenced.add(event.id)) _silenced.remove(event.id);
               }),
             ),
             const SizedBox(height: 10),
@@ -363,11 +361,7 @@ class _EventsScreenState extends State<EventsScreen> {
             const SizedBox(height: 8),
             const Text(
               'Muted or filtered out — no blackout window is active.',
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 12,
-                color: harborDim,
-              ),
+              style: TextStyle(fontFamily: 'Sora', fontSize: 12, color: harborDim),
             ),
           ] else ...[
             const HarborEyebrow('Next high-impact'),
@@ -385,11 +379,7 @@ class _EventsScreenState extends State<EventsScreen> {
             const SizedBox(height: 8),
             const Text(
               'New signals paused from 30 min before until 15 min after release.',
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 12,
-                color: harborDim,
-              ),
+              style: TextStyle(fontFamily: 'Sora', fontSize: 12, color: harborDim),
             ),
           ],
         ],
@@ -481,10 +471,7 @@ class _EventsScreenState extends State<EventsScreen> {
       children: [
         const Padding(
           padding: EdgeInsets.fromLTRB(18, 0, 18, 0),
-          child: HarborEyebrow(
-            'Macro backdrop · display only',
-            color: harborFaint,
-          ),
+          child: HarborEyebrow('Macro backdrop · display only', color: harborFaint),
         ),
         const SizedBox(height: 9),
         if (themes.isEmpty)
@@ -530,75 +517,96 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 }
 
-/// One scheduled release. Impact + title + mute bell on the top line, the
-/// currency badge and the forecast/previous figures below.
+/// One scheduled release.
 ///
-/// A muted row dims to 45% (mockup `.erow.muted`) so the guard's armed count
-/// and the calendar never disagree about what is actually watched.
+/// Layout, top to bottom:
+///   * impact colour bar down the leading edge — the fastest read on the list,
+///     with the text badge as the redundant cue for anyone who cannot use
+///     colour;
+///   * title, with a country flag as a secondary cue beside the ISO code;
+///   * the outlook: expected effect on gold, or an explicit "no prediction"
+///     with the reason;
+///   * the figures the calendar actually holds, with absent ones as `—`.
 class _EventRow extends StatelessWidget {
   const _EventRow({
     required this.event,
-    required this.muted,
-    required this.onToggleMute,
+    required this.alertsEnabled,
+    required this.onToggleAlerts,
   });
 
   final DisplayEvent event;
-  final bool muted;
-  final VoidCallback onToggleMute;
+
+  /// Whether the trader wants an alert for this release. On by default.
+  final bool alertsEnabled;
+
+  final VoidCallback onToggleAlerts;
+
+  /// Leading colour for [impact]. Also the badge colour, so the two cues can
+  /// never disagree.
+  static Color impactColor(EventImpact impact) => switch (impact) {
+    EventImpact.high => harborShort,
+    EventImpact.medium => harborWarn,
+    EventImpact.low => harborFaint,
+  };
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: muted ? 0.45 : 1,
-      child: HarborCard(
-        radius: 16,
-        padding: const EdgeInsets.fromLTRB(14, 12, 12, 13),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final color = impactColor(event.impact);
+    return HarborCard(
+      radius: 16,
+      padding: EdgeInsets.zero,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                ImpactPill(impact: event.impact),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Text(
-                    event.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: 'Sora',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+            // Impact colour bar. A 4px edge reads instantly while scrolling and
+            // does not steal space from the title.
+            Container(width: 4, color: color),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 10, 13),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                event.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: 'Sora',
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.25,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              _MetaLine(event: event, color: color),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _AlertBell(
+                          enabled: alertsEnabled,
+                          title: event.title,
+                          onTap: onToggleAlerts,
+                        ),
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                    _OutlookLine(outlook: event.outlook),
+                    const SizedBox(height: 10),
+                    _FigureRow(event: event),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                _MuteBell(
-                  muted: muted,
-                  label: '${muted ? 'Unmute' : 'Mute'} ${event.title} alerts',
-                  onTap: onToggleMute,
-                ),
-              ],
-            ),
-            const SizedBox(height: 9),
-            Wrap(
-              spacing: 8,
-              runSpacing: 5,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                HarborChip(event.currency, fontSize: 8),
-                _figure('FCAST', event.forecast),
-                _figure('PREV', event.previous),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'in ${formatCountdown(event.startsIn)}',
-              style: const TextStyle(
-                fontFamily: 'Space Mono',
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: harborDim,
               ),
             ),
           ],
@@ -606,56 +614,231 @@ class _EventRow extends StatelessWidget {
       ),
     );
   }
+}
 
-  /// `KEY value`, or `KEY —` when the calendar has not published a figure.
-  /// Never a made-up number (rule 2).
-  static Widget _figure(String key, String? value) {
-    return Text(
-      '$key ${value ?? '—'}',
-      style: const TextStyle(
-        fontFamily: 'Space Mono',
-        fontSize: 10,
-        color: harborDim,
+/// Flag · currency code · countdown, on one line.
+class _MetaLine extends StatelessWidget {
+  const _MetaLine({required this.event, required this.color});
+
+  final DisplayEvent event;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final flag = event.flagEmoji;
+    return Wrap(
+      spacing: 7,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (flag != null)
+          Text(flag, style: const TextStyle(fontSize: 13))
+        else
+          Text(
+            '·',
+            style: TextStyle(color: color, fontWeight: FontWeight.w700),
+          ),
+        Text(
+          event.currency,
+          style: TextStyle(
+            fontFamily: 'Space Mono',
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: color,
+          ),
+        ),
+        HarborChip(impactLabel(event.impact), fontSize: 8),
+        Text(
+          event.isPast ? 'released' : 'in ${formatCountdown(event.startsIn)}',
+          style: const TextStyle(
+            fontFamily: 'Space Mono',
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: harborDim,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The engine's expected effect on gold, or why it declined to say.
+///
+/// Deliberately never rendered as a probability: this is a tendency, and the
+/// wording says so.
+class _OutlookLine extends StatelessWidget {
+  const _OutlookLine({required this.outlook});
+
+  final EventOutlook? outlook;
+
+  @override
+  Widget build(BuildContext context) {
+    final o = outlook;
+    if (o == null) return const SizedBox.shrink();
+
+    final (label, color) = switch (o.bias) {
+      EventBias.bullish => ('BULLISH', harborLong),
+      EventBias.bearish => ('BEARISH', harborShort),
+      EventBias.neutral => ('NEUTRAL', harborDim),
+      EventBias.none => ('NO PREDICTION', harborFaint),
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      decoration: BoxDecoration(
+        color: o.hasNoPrediction ? harborMist : color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Space Mono',
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              o.hasNoPrediction && o.confoundedBy.isNotEmpty
+                  ? 'Coincides with ${o.confoundedBy.join(', ')}'
+                  : o.explanation,
+              style: const TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 11,
+                height: 1.3,
+                color: harborDim,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Per-event mute (mockup `.bell`): a 44px bordered square holding the
-/// bundled UIcons bell, cobalt while armed and faint once muted.
-class _MuteBell extends StatelessWidget {
-  const _MuteBell({
-    required this.muted,
-    required this.label,
-    required this.onTap,
-  });
+/// Forecast / previous / actual, showing only what the calendar holds.
+///
+/// A released event shows its actual alongside the forecast it is measured
+/// against; an upcoming one has no actual yet, and prints `—` rather than a
+/// borrowed number.
+class _FigureRow extends StatelessWidget {
+  const _FigureRow({required this.event});
 
-  final bool muted;
-  final String label;
+  final DisplayEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    // Anything the calendar has not published is simply absent, and saying so
+    // is the honest row. The calendar currently holds no figures at all, so
+    // this explains itself rather than looking broken.
+    final published =
+        event.forecast != null || event.previous != null || event.actual != null;
+
+    if (!published) {
+      return const Text(
+        'No forecast, previous or actual published for this release yet',
+        style: TextStyle(
+          fontFamily: 'Space Mono',
+          fontSize: 9.5,
+          height: 1.35,
+          color: harborFaint,
+        ),
+      );
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 5,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _figure('ACTUAL', event.actual, emphasised: true),
+        _figure('FORECAST', event.forecast),
+        _figure('PREV', event.previous),
+      ],
+    );
+  }
+
+  static Widget _figure(String key, String? value, {bool emphasised = false}) {
+    return Text(
+      '$key ${value ?? '—'}',
+      style: TextStyle(
+        fontFamily: 'Space Mono',
+        fontSize: 10,
+        fontWeight: emphasised ? FontWeight.w700 : FontWeight.w400,
+        color: value == null ? harborFaint : harborDim,
+      ),
+    );
+  }
+}
+
+/// Per-event alert toggle.
+///
+/// The bell **enables** alerts. It starts armed, because a bell that begins
+/// muted reads as "this event is disabled" — the opposite of what the icon
+/// means. Turning it off silences the alert only; the row is never hidden or
+/// dimmed, so silencing one release can never be mistaken for removing it.
+class _AlertBell extends StatelessWidget {
+  const _AlertBell({required this.enabled, required this.title, required this.onTap});
+
+  final bool enabled;
+  final String title;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      checked: !muted,
-      label: label,
-      child: Material(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: const BorderSide(color: harborLine),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: SizedBox(
-            width: 44,
-            height: 44,
-            child: Icon(
-              HarborIcons.bell,
-              size: 18,
-              color: muted ? harborFaint : harborCobalt,
+      checked: enabled,
+      label: enabled
+          ? 'Alerts on for $title. Double tap to silence.'
+          : 'Alerts off for $title. Double tap to turn on.',
+      child: Tooltip(
+        message: enabled ? 'Alerts on · tap to silence' : 'Alerts off · tap to enable',
+        child: Material(
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: BorderSide(color: enabled ? harborCobalt : harborLine),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    HarborIcons.bell,
+                    size: 18,
+                    color: enabled ? harborCobalt : harborFaint,
+                  ),
+                  // A slash is the visual language for "silenced", so the state
+                  // does not depend on colour alone.
+                  if (!enabled)
+                    const Positioned.fill(
+                      child: Padding(
+                        padding: EdgeInsets.all(12),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: harborShort,
+                            shape: BoxShape.circle,
+                          ),
+                          child: SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -679,9 +862,9 @@ class _NewsCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Opens ${item.url}')),
-        ),
+        onTap: () => ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Opens ${item.url}'))),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Column(
@@ -713,11 +896,7 @@ class _NewsCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Icon(
-                    HarborIcons.arrowUpRight,
-                    size: 12,
-                    color: harborCobalt,
-                  ),
+                  const Icon(HarborIcons.arrowUpRight, size: 12, color: harborCobalt),
                   const SizedBox(width: 5),
                   const Text(
                     'OPEN ORIGINAL',
@@ -753,11 +932,7 @@ class _SilenceNote extends StatelessWidget {
       child: Text(
         message,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontFamily: 'Sora',
-          fontSize: 12,
-          color: harborFaint,
-        ),
+        style: const TextStyle(fontFamily: 'Sora', fontSize: 12, color: harborFaint),
       ),
     );
   }

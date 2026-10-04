@@ -390,7 +390,8 @@ class UpdateService extends ChangeNotifier {
   Future<void> startDownload() async {
     final release = _state.release;
     if (release == null) return;
-    await _download(release, resume: _state.received > 0);
+    _activeDownload = _download(release, resume: _state.received > 0);
+    await _activeDownload;
   }
 
   /// Aborts the download and discards partial bytes.
@@ -407,11 +408,17 @@ class UpdateService extends ChangeNotifier {
     _activeClient?.close();
     _activeClient = null;
 
-    // The writer holds the file open. It must be closed before the delete, or
-    // the removal fails on Windows (and leaves the APK behind on Android).
-    final sink = _activeSink;
+    // Wait for the download loop to unwind before touching the file. It owns the
+    // writer and closes it in its own `finally`; closing it here as well races
+    // that path and makes the delete fail intermittently on Windows while
+    // succeeding on Android. This is what made the cancel test order-dependent.
+    try {
+      await _activeDownload;
+    } catch (_) {
+      // The loop reports its own failures; cancelling is not one of them.
+    }
+    await _closeSink(_activeSink);
     _activeSink = null;
-    await _closeSink(sink);
 
     // Removal is best-effort: the download loop may have already removed or
     // never created the partial file, and "already gone" is the wanted state.
@@ -483,6 +490,10 @@ class UpdateService extends ChangeNotifier {
 
   /// The open writer, so [cancel] can release the file before deleting it.
   IOSink? _activeSink;
+
+  /// The download currently running, awaited by [cancel] so the two never
+  /// touch the same writer concurrently.
+  Future<void> _activeDownload = Future<void>.value();
 
   /// Guards [notifyListeners] after [dispose].
   bool _disposed = false;

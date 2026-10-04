@@ -192,13 +192,12 @@ class LiveRepository {
     }).toList();
   }
 
-/// DB direction text → the display enum, defaulting to neutral.
+  /// DB direction text → the display enum, defaulting to neutral.
   ///
   /// Neutral is the safe default rather than a guess: an unrecognised value
   /// means the pipeline stored something this build does not understand, and
   /// claiming a side would be inventing one.
-  static Direction directionOf(String? raw) =>
-      _direction(raw) ?? Direction.neutral;
+  static Direction directionOf(String? raw) => _direction(raw) ?? Direction.neutral;
 
   /// `4,138.16-4,143.16` from a low/high pair; `-` when either is absent.
   static String _zone(Row row, String lowKey, String highKey) {
@@ -360,7 +359,37 @@ class LiveRepository {
         .gte('starts_at', DateTime.now().toIso8601String())
         .order('starts_at', ascending: true)
         .limit(limit);
-    return (r as List).map((row) => _toEvent(row as Row)).toList();
+    return _toEvents((r as List).cast<Row>());
+  }
+
+  /// Maps rows to events, evaluating the outlook across the WHOLE window.
+  ///
+  /// Coincidence is a relationship between releases, so each row must be able
+  /// to see its siblings; evaluating one row at a time would never detect that
+  /// two high-impact releases land together.
+  List<DisplayEvent> _toEvents(List<Row> rows) {
+    final now = DateTime.now().toUtc();
+    final inputs = rows.map((r) {
+      final startsAt = DateTime.tryParse('${r['starts_at']}')?.toUtc() ?? now;
+      return ReleaseInput(
+        id: '${r['id']}',
+        title: '${r['title'] ?? 'Event'}',
+        currency: '${r['currency'] ?? 'USD'}',
+        impact: _releaseImpact('${r['impact'] ?? 'LOW'}'),
+        figures: ReleaseFigures(
+          actual: _toDouble(r['actual']),
+          forecast: _toDouble(r['forecast']),
+          previous: _toDouble(r['previous']),
+        ),
+        startsAtUtc: startsAt,
+        now: now,
+      );
+    }).toList();
+    final outs = const EventOutlookEngine().evaluateAll(inputs);
+
+    return [
+      for (var i = 0; i < rows.length; i++) _toEvent(rows[i], outlook: outs[i], now: now),
+    ];
   }
 
   /// Most recent macro digest. Empty when news-digest has not run — the
@@ -503,20 +532,29 @@ class LiveRepository {
     );
   }
 
-  DisplayEvent _toEvent(Row r) {
-    final startsAt = DateTime.tryParse('${r['starts_at']}') ?? DateTime.now();
+  DisplayEvent _toEvent(Row r, {EventOutlook? outlook, DateTime? now}) {
+    final clock = now ?? DateTime.now().toUtc();
+    final startsAt = DateTime.tryParse('${r['starts_at']}')?.toUtc() ?? clock;
     return DisplayEvent(
       id: '${r['id']}',
       title: '${r['title'] ?? 'Event'}',
       currency: '${r['currency'] ?? 'USD'}',
       impact: _impact('${r['impact'] ?? 'LOW'}'),
-      startsIn: startsAt.difference(DateTime.now()),
+      startsIn: startsAt.difference(clock),
       forecast: _numText(r['forecast']),
       previous: _numText(r['previous']),
       actual: _numText(r['actual']),
       surprise: _surprise(r['surprise'] as String?),
+      outlook: outlook,
     );
   }
+
+  /// DB impact text → the engine's tier.
+  static ReleaseImpact _releaseImpact(String raw) => switch (raw.toUpperCase()) {
+    'HIGH' => ReleaseImpact.high,
+    'MEDIUM' || 'MED' => ReleaseImpact.medium,
+    _ => ReleaseImpact.low,
+  };
 
   /// DB surprise flag → display model. `DisplayEvent.surprise` is a free-text
   /// String, so keep the DB vocabulary verbatim rather than inventing labels.

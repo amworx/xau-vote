@@ -689,7 +689,7 @@ void main() {
 
       expect(find.text('MACRO CONTEXT · NEVER VOTES'), findsOneWidget);
       expect(find.text('CPI y/y'), findsWidgets);
-      expect(find.text('HIGH+MED · 1 ARMED · BLACKOUT 12:41'), findsOneWidget);
+      expect(find.text('HIGH+MED · 1 WATCHING · BLACKOUT 12:41'), findsOneWidget);
       expect(find.text('NEXT HIGH-IMPACT'), findsOneWidget);
       // No fixture releases borrow in.
       expect(find.text('NFP — Non-Farm Payrolls'), findsNothing);
@@ -713,7 +713,7 @@ void main() {
         find.text('Muted or filtered out — no blackout window is active.'),
         findsOneWidget,
       );
-      expect(find.text('HIGH+MED · 0 ARMED · BLACKOUT —'), findsOneWidget);
+      expect(find.text('HIGH+MED · 0 WATCHING · BLACKOUT —'), findsOneWidget);
       expect(find.text('No events match these filters.'), findsOneWidget);
       expect(find.text('NFP — Non-Farm Payrolls'), findsNothing);
 

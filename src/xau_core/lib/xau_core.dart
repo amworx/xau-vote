@@ -6,6 +6,9 @@ library;
 
 export 'analysis/calendar_lock.dart';
 export 'analysis/confluence.dart';
+// Event outlook is context, never a vote (product rule 9). Exported so the
+// Events screen and the scanner share one implementation.
+export 'analysis/event_outlook.dart';
 // The consensus package already exports an `IndependenceResult` used for
 // cluster vote weighting. This module's result is hidden from the barrel so
 // callers import it explicitly, keeping the two meanings of "independence"

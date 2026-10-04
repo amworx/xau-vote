@@ -143,10 +143,14 @@ class HarborHeader extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Pulses only while the market is genuinely open; a pulsing
-                  // dot on a closed market would assert activity that is not
-                  // happening.
-                  PulseDot(color: isClosed ? harborWarn : harborLong, pulse: !isClosed),
+                  // Pulses only while the market is genuinely open, and only in a live
+                  // build. A preview has no market to be live about, and an
+                  // endlessly repeating animation would keep the frame
+                  // scheduler permanently busy.
+                  PulseDot(
+                    color: isClosed ? harborWarn : harborLong,
+                    pulse: !isClosed && !mockMode,
+                  ),
                   const SizedBox(width: 5),
                   Text(
                     status,

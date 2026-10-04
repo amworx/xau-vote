@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 
 import '../config.dart';
 import '../models/display_models.dart';
+import '../services/notification_service.dart';
 import '../services/update_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
@@ -68,11 +69,19 @@ class SettingsScreen extends StatelessWidget {
         _Group(
           title: 'Notifications · signals',
           children: [
+            // Permission is requested here, in context, rather than on cold
+            // launch: the trader is turning alerts on, which is exactly when the
+            // prompt means something.
+            const _NotificationPermission(),
             _ToggleRow(
               title: 'Consensus forming',
               subtitle: 'Developing to ready transitions',
               value: state.notifyConsensus,
-              onChanged: state.setNotifyConsensus,
+              onChanged: _askThen(
+                context,
+                state.notifyConsensus,
+                state.setNotifyConsensus,
+              ),
             ),
             _ToggleRow(
               title: 'Entry approaching',
@@ -466,6 +475,87 @@ class _UpdateControls extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Wraps a notification toggle so switching it ON asks for OS permission.
+///
+/// The toggle still flips either way: denying the permission must not stop the
+/// trader recording which alerts they want, and the row below explains that
+/// alerts cannot arrive until the permission is granted.
+ValueChanged<bool> _askThen(BuildContext context, bool current, ValueChanged<bool> set) {
+  return (value) {
+    set(value);
+    // Only ask when turning on; re-prompting on every switch would be nagging.
+    if (value && !current) _NotificationPermission.request(context);
+  };
+}
+
+/// Notification permission row and the request action.
+///
+/// Reports the real state rather than assuming: granted, not granted, or
+/// unavailable because this build has no Firebase configuration.
+class _NotificationPermission extends StatefulWidget {
+  const _NotificationPermission();
+
+  /// Asks for permission from the nearest context.
+  static Future<void> request(BuildContext context) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final service = Provider.of<NotificationService?>(
+      context,
+      listen: false,
+    ) ?? NotificationService();
+    final granted = await service.request();
+    if (!granted) {
+      messenger?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Notifications stay off. Alerts need permission — enable them in '
+            'Android Settings › Apps › XV › Notifications.',
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  State<_NotificationPermission> createState() => _NotificationPermissionState();
+}
+
+class _NotificationPermissionState extends State<_NotificationPermission> {
+  NotificationService? _service;
+  bool _granted = false;
+  bool _checked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final provided = Provider.of<NotificationService?>(context, listen: false);
+    _service = provided ?? NotificationService();
+    _read();
+  }
+
+  Future<void> _read() async {
+    final service = _service ?? NotificationService();
+    final granted = await service.isGranted();
+    if (!mounted) return;
+    setState(() {
+      _granted = granted;
+      _checked = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_checked) return const SizedBox.shrink();
+    final canDeliver = _service?.canDeliver ?? false;
+    return _SettingRow(
+      title: 'Allow notifications',
+      subtitle: canDeliver
+          ? 'Alerts can be delivered'
+          : 'Permission granted — delivery not yet enabled',
+      value: _granted ? 'ON' : 'OFF',
     );
   }
 }

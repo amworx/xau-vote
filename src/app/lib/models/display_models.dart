@@ -8,6 +8,12 @@
 /// mapper. Field names/values mirror the domain packages where possible.
 library;
 
+// The event outlook engine is pure Dart with no Flutter dependency, so the app
+// consumes it directly rather than reimplementing the rules. Imported narrowly
+// because the `xau_core` barrel also exports a Direction enum that collides
+// with the one declared below.
+import 'package:xau_core/analysis/event_outlook.dart' show EventOutlook;
+
 /// Trade direction of an idea or signal.
 enum Direction { long, short, neutral }
 
@@ -301,8 +307,7 @@ String pipsLabel(double points, {required int pipFactor}) {
 ///
 /// Only the open P/L uses this. Entry/stop/target distances keep the
 /// truncating [pipsTo] so the documented convention-B figures cannot move.
-int pipsFromMove(double points, {required int pipFactor}) =>
-    (points * pipFactor).round();
+int pipsFromMove(double points, {required int pipFactor}) => (points * pipFactor).round();
 
 /// Pip width of an entry zone (e.g. 4,275–4,280 → `500 PIPS` at
 /// convention B), rounded to the nearest pip.
@@ -312,10 +317,7 @@ int zonePips(double low, double high, {required int pipFactor}) =>
 /// Formats a Gold price with thousands separator and 2 decimals.
 String formatPrice(double value) {
   final parts = value.toStringAsFixed(2).split('.');
-  final digits = parts[0].replaceAllMapped(
-          RegExp(r'\B(?=(\d{3})+(?!\d))'),
-          (_) => ',',
-        );
+  final digits = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
 
   return '$digits.${parts[1]}';
 }
@@ -366,6 +368,8 @@ class DisplayEvent {
     this.previous,
     this.actual,
     this.surprise,
+    this.outlook,
+    this.alertsEnabled = true,
   });
 
   final String id;
@@ -384,8 +388,62 @@ class DisplayEvent {
   /// Volatility context only — never a direction.
   final String? surprise;
 
+  /// Expected effect on gold, from `xau_core`'s event outlook engine.
+  ///
+  /// Context only: it annotates a release and may suppress or delay a setup,
+  /// but it never creates one and never enters the 15M consensus (rule 9).
+  /// Null when the outlook has not been computed.
+  final EventOutlook? outlook;
+
+  /// Whether the trader wants an alert for this release.
+  ///
+  /// Defaults to **on**. A bell that starts muted reads as "this event is
+  /// disabled", which is the opposite of what a bell means.
+  final bool alertsEnabled;
+
+  /// Emoji flag for the currency's country, or null when the currency does not
+  /// map to one. Shown as a secondary cue only — the ISO code stays visible,
+  /// because an emoji flag is not a reliable identifier on every device.
+  String? get flagEmoji => currencyFlag(currency);
+
+  /// True when this release has enough figures to compare against a forecast.
+  bool get hasFigures => forecast != null && previous != null && actual != null;
+
   bool get isPast => startsIn.isNegative;
   bool get isSurprise => surprise == 'hot' || surprise == 'cold';
+}
+
+/// ISO code → country flag emoji.
+///
+/// Returns null for anything unmapped. A flag is an aid, not an identity: the
+/// code is always rendered alongside it, and several currencies legitimately
+/// map to the same flag (EUR spans many countries), so this never replaces the
+/// code.
+String? currencyFlag(String currency) {
+  const flags = <String, String>{
+    'USD': '🇺🇸',
+    'EUR': '🇪🇺',
+    'GBP': '🇬🇧',
+    'JPY': '🇯🇵',
+    'CHF': '🇨🇭',
+    'AUD': '🇦🇺',
+    'NZD': '🇳🇿',
+    'CAD': '🇨🇦',
+    'CNY': '🇨🇳',
+    'CNH': '🇨🇳',
+    'MXN': '🇲🇽',
+    'BRL': '🇧🇷',
+    'ZAR': '🇿🇦',
+    'INR': '🇮🇳',
+    'KRW': '🇰🇷',
+    'SGD': '🇸🇬',
+    'HKD': '🇭🇰',
+    'SEK': '🇸🇪',
+    'NOK': '🇳🇴',
+    'TRY': '🇹🇷',
+    'RUB': '🇷🇺',
+  };
+  return flags[currency.toUpperCase()];
 }
 
 /// USD-pressure reading per digest theme (addendum §3.2, display only).

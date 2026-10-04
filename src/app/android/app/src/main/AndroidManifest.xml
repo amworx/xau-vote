@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Required from Android 8 to hand a downloaded APK to the installer. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <!-- Android 13+ requires an explicit grant before any notification is shown. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:label="XV"
@@ -37,6 +39,19 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Receives alerts while the app is backgrounded or terminated.
+             Without this service a notification is never displayed, so asking
+             the user for permission would be asking for something the app
+             cannot honour. -->
+        <service
+            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+            android:exported="false"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
         <!-- Serves the downloaded APK to the system installer. A FileProvider is
              required from Android 7: passing a raw file:// URI throws

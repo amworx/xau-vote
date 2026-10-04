@@ -83,6 +83,9 @@ void main() {
       skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
+    // This test is about the card's levels and agreement, not the target
+    // scope, so it pins all three rather than inheriting the TP1 default.
+    await _setTargets(tester, TargetSelection.all);
 
     expect(find.text('LONG'), findsOneWidget);
     expect(find.text('updated 40s ago'), findsOneWidget);

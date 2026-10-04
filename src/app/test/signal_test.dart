@@ -6,8 +6,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:xauvote/config.dart' show mockMode;
 import 'package:xauvote/main.dart';
+import 'package:xauvote/models/display_models.dart';
+import 'package:xauvote/screens/radar_screen.dart';
+import 'package:xauvote/state/app_state.dart';
 import 'package:xauvote/widgets/harbor_widgets.dart';
 
 /// Substrings that must never appear in any rendered text (spec §7).
@@ -29,11 +33,33 @@ Future<void> _openSignal(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// Sets the target scope on the app's own [AppState].
+///
+/// The default scope is TP1, so a test that exercises anything other than the
+/// target selector must state the scope it wants rather than inherit the
+/// default. `XauVoteApp` owns its provider, so an outer one is shadowed; the
+/// state is reached through the rendered tree instead.
+///
+/// Must be called while the Radar tab is showing — the shell renders only the
+/// selected screen, so `RadarScreen` is absent once another tab is open.
+Future<void> _setTargets(WidgetTester tester, TargetSelection targets) async {
+  final state = Provider.of<AppState>(
+    tester.element(find.byType(RadarScreen)),
+    listen: false,
+  );
+  state.setTargets(targets);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('Signal shows levels, timeline, context and TP control',
       skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
+    // This test is about the setup's levels and lifecycle, not the target
+    // scope, so it pins all three rather than inheriting the TP1 default. Set
+    // before navigating: the shell renders only the selected screen.
+    await _setTargets(tester, TargetSelection.all);
     await _openSignal(tester);
 
     expect(find.text('ACTIVE SETUP · 15M LONG'), findsOneWidget);
@@ -70,6 +96,8 @@ void main() {
       skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
+    // Start from all three so this measures narrowing rather than the default.
+    await _setTargets(tester, TargetSelection.all);
     await _openSignal(tester);
 
     expect(find.text('4,340'), findsOneWidget);
