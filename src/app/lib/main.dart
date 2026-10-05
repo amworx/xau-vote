@@ -254,7 +254,14 @@ class _UpdateBannerSlotState extends State<_UpdateBannerSlot> {
         service: service,
         dismissed: _dismissed,
         onDismiss: () => setState(() => _dismissed = true),
-        onOpenSettings: widget.onOpenSettings,
+        onOpenSettings: () {
+          // Acting on the banner retires it. Leaving it up while the user is
+          // already looking at the App updates panel meant the banner covered
+          // the very control they were sent to, so it now clears on the way
+          // there rather than sitting over the destination.
+          setState(() => _dismissed = true);
+          widget.onOpenSettings();
+        },
       ),
     );
   }

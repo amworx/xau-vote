@@ -193,13 +193,51 @@ class _Badge extends StatelessWidget {
             ? const Color(0x1A0E9F6E)
             : const Color(0x1A2347F5),
       ),
-      child: Icon(
-        readyToInstall ? HarborIcons.check : HarborIcons.arrowUpRight,
-        size: 20,
-        color: colour,
+      child: Center(
+        child: readyToInstall
+            ? Icon(HarborIcons.check, size: 18, color: colour)
+            : const _ArrowUpCircle(colour: harborCobalt),
       ),
     );
   }
+}
+
+/// The reference's glyph: Lucide `ArrowUpCircle` — a circle with an arrow
+/// pointing up inside it.
+///
+/// Composed from primitives rather than substituted. The bundled icon font has
+/// `arrowUpRight` and `arrowTrendUp`, but neither is this shape, and using one
+/// of those put a diagonal arrow inside the badge, which simply read as a
+/// different icon. `Icons.keyboard_arrow_up` ships with Flutter, so this needs
+/// no new dependency and no font asset.
+class _ArrowUpCircle extends StatelessWidget {
+  const _ArrowUpCircle({required this.colour});
+
+  final Color colour;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 20,
+        height: 20,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: colour, width: 1.9),
+              ),
+              child: const SizedBox(width: 20, height: 20),
+            ),
+            Align(
+              // Nudged up so the arrow sits optically centred inside the ring
+              // rather than sitting on the circle's centre line.
+              alignment: const Alignment(0, 0.18),
+              child: Icon(Icons.keyboard_arrow_up, size: 14, color: colour),
+            ),
+          ],
+        ),
+      );
 }
 
 class _Button extends StatelessWidget {
