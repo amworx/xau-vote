@@ -17,6 +17,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:xau_core/xau_core.dart' hide Direction;
 
 import '../models/display_models.dart';
+import '../models/sentiment_layers.dart';
 
 /// Raw row shapes as returned by PostgREST (snake_case).
 typedef Row = Map<String, dynamic>;
@@ -350,6 +351,27 @@ class LiveRepository {
         .inFilter('id', ids.toList());
     final sources = (ideas as List).map((row) => '${(row as Row)['source_id']}').toSet();
     return (distinctIdeas: ids.length, distinctSources: sources.length);
+  }
+
+  /// §5.1 sentiment layers measured by the `sentiment-layers` function
+  /// (US Treasury real yields, CFTC managed money).
+  ///
+  /// Returns every row the table holds, including layers that exist but carry
+  /// no measurement, so the caller can tell "not built yet" from "reads zero".
+  /// An empty result yields [SentimentLayers.empty] rather than a partial set.
+  Future<SentimentLayers> sentimentLayers() async {
+    final r = await _client
+        .from('sentiment_layers')
+        .select(
+          'layer,horizon,weight,score,alignment,measured_at,source,source_url,stale,detail',
+        );
+    if (r.isEmpty) return const SentimentLayers.empty();
+    final rows = <SentimentLayerRow>[];
+    for (final raw in r) {
+      final parsed = SentimentLayerRow.tryParse(raw);
+      if (parsed != null) rows.add(parsed);
+    }
+    return SentimentLayers(rows);
   }
 
   /// Closed signals for the History tab.

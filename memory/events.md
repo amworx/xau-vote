@@ -500,3 +500,41 @@
 - **errors:** (1) PulseDot animated in offline previews, so every pumpAndSettle in the suite timed out - an endlessly repeating animation keeps the frame scheduler busy. (2) UpdateService.cancel closed the same IOSink as the download loop, making the cancel test order-dependent and intermittently red. (3) ReleaseInput could not be const because the engine mutates others; and my first version used a late final clock plus an identity extension over a static Map, both replaced with an injectable nullable clock and an explicit id field. (4) firebase_messaging 16 removed isGranted(); the answer now comes from getNotificationSettings().authorizationStatus. (5) Android channel creation needed firebase_messaging_platform_interface, so it was dropped rather than adding a dependency.
 - **lessons:** (1) A widget that repeats an animation forever will hang any test using pumpAndSettle - gate decorative motion on real state, not on build mode alone. (2) Two code paths touching the same resource need one owner: cancel now awaits the download rather than racing it. (3) Never fake a data feed to satisfy a UI field. The empty FCAST/PREV the trader reported is 6 fixture rows with null actual/forecast/previous, and no licensed calendar provider is specified; the outlook engine returns NO PREDICTION rather than inventing figures. (4) Ask for a permission when the user expresses the want (switching an alert on), never at cold launch - a startup prompt is the surest way to earn a permanent denial, and only ask if the app can honour it. (5) An encrypted backup nobody has decrypted is a guess. Always verify by restoring and comparing a digest before telling anyone it is safe. (6) An icon font swap is a build-tooling project, not an asset copy; do not half-migrate it.
 - **tags:** event-outlook, events, alerts, notification-permission, keystore, backup, gpg, icons-streamline, testing, race-condition
+
+---
+
+## OP-20261005-0002 - Treasury + CFTC sentiment-layer vertical slice
+
+- **id:** OP-20261005-0002
+- **timestamp:** 2026-10-05T19:00Z .. 2026-10-05T19:20Z
+- **workflow:** BUILD + RESEARCH + VERIFY
+- **project:** xau-vote
+- **objective:** implement two of the four A85.1 sentiment layers (market_implied 20%, positioning 25%) end to end on the methodology, in a Supabase Edge Function.
+- **steps:**
+  1. Validated both sources. Treasury real-yield CSV: 200, public, no key. CFTC weekly .txt: 200, no header line, fixed columns -> mapped by hand against the yearly archive header.
+  2. Discovered A81.6 needs a 156-week percentile, so a single week is not enough -> pulled three years of yearly zips and built the series.
+  3. Extracted scoring into `supabase/functions/_shared/sentiment.ts` (pure, no Deno globals) so it is unit testable with `node`, matching `_shared/engine.ts`.
+  4. Wrote `sentiment_test.ts` with fixtures taken from the LIVE publications, not invented numbers.
+  5. Created `sentiment_layers` (migration 0004) and deployed `sentiment-layers` v1.
+  6. First live run: Treasury wrote, COT 403 -> function correctly reported `positioning unavailable` and `ok:false` instead of scoring 0.
+  7. Probed CFTC endpoints: `www.cftc.gov` is behind a Cloudflare challenge from Supabase egress (403, UA spoofing does not help); `publicreporting.cftc.gov` Socrata returns 200. Moved to dataset `72hh-3qpy` (Futures Only), cross-checked against the .txt.
+  8. Found A85.3's bands contradict each other; resolved narrow-band-wins and recorded it (D-004).
+  9. Found a real timezone bug: `new Date('10/02/2026')` is local midnight, so the Treasury reading landed a day early east of UTC. Added `parseTreasuryDate`.
+  10. Scheduled cron, then found `xv_invoke_function`'s allowlist did not contain the new function -> nightly runs would have raised while cron looked healthy. Fixed (0005, D-006).
+  11. Found `updated_at` had no trigger, so it could not verify anything. Fixed (0006).
+  12. Measured per-source latency: Treasury ~18s/request, CFTC 0.7s. Cut runtime 40s -> 23s by fetching one year with a conditional fallback.
+  13. Verified the cron path end to end twice via `xv_invoke_function`; all four rows advanced `updated_at`.
+  14. Wired the app: `SentimentLayers` model + `LiveRepository.sentimentLayers()`, with macro alignment coverage-gated at 50% because `macro < 0` vetoes a trade.
+  15. Deleted the diagnostic function.
+- **duration:** ~35 min of tool time
+- **result:** all four layers persisted with real values; 24/24 Node tests, 20/20 Dart model tests, 177/177 app tests, `flutter analyze` clean.
+- **lessons:**
+  - A CFTC weekly report has NO header row; the yearly archives do. Parse archives by column name, never positionally.
+  - `www.cftc.gov` is unreadable from Supabase; its Socrata API is the same data, faster, and reaches further back.
+  - Adding a cron job proves nothing. Confirm the dispatcher can name the function, and have a timestamp column that actually moves before using it to verify.
+  - A spec whose band list overlaps will silently decide verdicts. Resolve it explicitly and record which way.
+  - Date-only strings parsed with `new Date(string)` inherit the runtime timezone. Parse the parts.
+- **reusable pattern:** scheduled ingestion on Supabase = allowlist entry + pg_net-visible side effect + a trigger-maintained `updated_at` + a failure path that writes an explicit unavailable row. All three were missing at first.
+- **files:** supabase/functions/sentiment-layers/index.ts, supabase/functions/_shared/sentiment.ts, supabase/functions/_shared/sentiment_test.ts, supabase/migrations/0004-0006, src/app/lib/models/sentiment_layers.dart, src/app/lib/data/live_repository.dart, src/app/test/sentiment_layers_test.dart, src/app/test/live_mode_test.dart
+- **errors:** CFTC 403 (worked around via Socrata); Edge Function bundle failure twice (entrypoint must keep its function directory so `../_shared/...` resolves); test fixtures I fabricated failed and were replaced with real data; a duplicate `main()` in live_mode_test.dart.
+- **open:** `net.http_timeout` still shorter than the run, so a scheduled failure would be invisible in `net._http_response` (needs an owner-level role). Policy (35) and WGC (20) layers not built. The app does not yet assemble `ConfluenceInput` from these states. pg_net keeps 3 pending rows. Service-role key pasted in chat still needs rotation.

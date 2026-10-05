@@ -87,3 +87,37 @@
 - **still valid:** the eight publisher REJECT verdicts in D-20261005-001. They rule out scraping retail signal sites, which remains correct and remains the reason none of them are enabled.
 - **licensing note:** No P0/P1 source needs authentication. A Google account was offered and **declined** - A81.1 mandates public no-account data, and login grants no redistribution rights while converting a terms question into a clearer breach. Optional free API keys (FRED, CFTC, EIA, BEA) raise rate limits only and should be requested directly if a limit is hit.
 - **status:** accepted
+---
+
+## D-20261005-004 - Sentiment-layer scoring: narrow band wins, and macro alignment is coverage-gated
+
+- **date:** 2026-10-05
+- **context:** first vertical slice of A85.1 - `sentiment-layers` Edge Function writing `sentiment_layers` from US Treasury real yields (market_implied, 20) and CFTC managed money (positioning, 25). Policy (35) and WGC (20) are written as explicit null rows, not omitted.
+- **decision 1 - A85.3 bands overlap, and the narrower band wins.** The methodology lists `0 if percentile 20-60` and `-1 if percentile 20-40`, so a reading of 32.6 satisfies both. Silently picking either changes a live verdict, so the ambiguity is resolved in favour of the NARROWER, more informative band: `<20 and 20-40 -> -1`, `40-60 -> 0`, `60-80 -> +1`, `>80 -> +1`.
+- **decision 2 - the A85.3 +/-2 extremes stay unreachable until price is read.** A85.3 attaches +/-2 to a price-trend leg and separately flags POSITIONING_DIVERGENCE. The function does not read price, so `cotScore(percentile)` never returns +/-2 and the row records `trend_confirmed: false` and `positioning_divergence: null`. Scoring +/-2 off positioning alone would invent a confirmation that did not happen.
+- **decision 3 - macro alignment is coverage-gated at 50%, sentiment is not.** `confluence.dart` L13 reads ONLY `macro.alignment` and `sentiment.alignment`; the individual impulses are stored but unused, and `macro < 0` calls `veto(v6DirectionConflict)`. Positioning is one COMPLETE A85.1 layer, so its alignment passes straight through - and a negative there only applies a confidence penalty, which is what A86 requires of a weekly reading. Macro alignment stays NULL until >=50% of macro-side weight (75) is measured; today only market_implied is, so coverage is 20/75 = 27% and alignment stays null. Letting a 27% sample veto a setup would be inventing conviction in either direction. The measured impulse is still surfaced in `MacroState.realYieldImpulse` and in `macroCoverage`, so the data is visible while it is not yet strong enough to act on.
+- **consequence:** the Treasury reading is live and displayed but deliberately cannot move a verdict yet; COT can contribute confidence. When the policy layer lands, coverage reaches 55/75 = 73% and macro alignment resolves with no code change beyond the ingest.
+- **null vs zero (unchanged, re-affirmed):** an unmeasured layer is `null`, never `0`. `0` means neutral; silence is not neutrality. The 1970 epoch the writer uses for "never measured" is mapped back to `null` in Dart so no caller can render it as a real date.
+- **status:** accepted
+---
+
+## D-20261005-005 - CFTC is read through its Socrata API, not www.cftc.gov
+
+- **date:** 2026-10-05
+- **finding:** `www.cftc.gov` serves the weekly `.txt` and yearly `.zip` files behind a bot challenge. From Supabase egress both return HTTP 403 with a Cloudflare "Just a moment" interstitial, and a spoofed browser User-Agent does NOT clear it (probed: 403 with and without UA). The first deployed run therefore wrote `market_implied` and reported `positioning unavailable` - it degraded honestly rather than scoring COT as 0.
+- **decision:** read `publicreporting.cftc.gov` (CFTC's own Socrata API) instead. Verified 200 from the same egress. Dataset `72hh-3qpy` "Disaggregated - Futures Only". Rejected: `kh3c-gbw2` "Combined" (folds options in, which A81.6 does not ask for) and `ubmb-6exi` (frozen since 2022-07-28, missing the managed-money columns).
+- **why it is also better, not just reachable:** one ~0.7s query instead of ~6.5MB of yearly archives; the FULL 156-week window A81.6 asks for (three calendar years of zips yielded only 144 weeks, because the running year is always partial); and columns selected by name so a CFTC schema change cannot silently shift a value into the wrong field.
+- **cross-check:** the Socrata row for 2026-09-29 (open interest 406456, managed money 131711 / 11393, net 120318) matches the weekly `.txt` byte for byte.
+- **latency note:** `home.treasury.gov` costs ~18s per request from Supabase egress regardless of size (a 6.8KB CSV took 18.3s). The function therefore fetches only the current year and requests the prior year only when the current one has fewer than six usable 10Y observations. FRED carries the same series (DFII5/DFII10) but did not respond at all when tried, so it is not a usable fallback.
+- **consequence:** run time 40s -> ~23s. pg_net's response timeout is still shorter than that, so a scheduled run leaves a NULL status in `net._http_response` even though the function completes and writes correctly. Raising `net.http_timeout` requires a role the SQL API does not have, so this is an owner-level follow-up. The data path itself was verified twice through `xv_invoke_function`.
+- **status:** accepted
+---
+
+## D-20261005-006 - xv_invoke_function's allowlist is a real gate
+
+- **date:** 2026-10-05
+- **finding:** `cron.schedule('xv-sentiment-layers', '21 21 * * *', ...)` succeeded and the job appeared healthy in `cron.job`, but `public.xv_invoke_function` validates its argument against a hardcoded allowlist that did not contain `sentiment-layers`. Every nightly run would have raised, while `cron.job.active` still reported true - the exact failure mode where a silent data freeze looks like a healthy schedule.
+- **decision:** add `sentiment-layers` to the allowlist (migration 0005) and verify by calling `xv_invoke_function('sentiment-layers')` and watching the rows change.
+- **secondary fix:** `sentiment_layers.updated_at` had a column default but no trigger, so it never moved on update and could not distinguish a fresh write from a frozen value. Added the trigger (migration 0006). This was found only because the first verification attempt tried to use `updated_at` as the change signal and appeared to fail.
+- **general lesson:** after adding a scheduled function, always confirm the dispatcher can name it, and always have a timestamp column that actually moves on write before using it to verify anything.
+- **status:** accepted

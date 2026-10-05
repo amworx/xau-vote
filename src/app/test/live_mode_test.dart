@@ -33,6 +33,7 @@ import 'package:xauvote/data/live_repository.dart';
 import 'package:xauvote/data/mock_fixtures.dart';
 import 'package:xauvote/main.dart' show HarborNavBar;
 import 'package:xauvote/models/display_models.dart';
+import 'package:xauvote/models/sentiment_layers.dart';
 import 'package:xauvote/screens/events_screen.dart';
 import 'package:xauvote/screens/history_screen.dart';
 import 'package:xauvote/screens/radar_screen.dart';
@@ -55,6 +56,7 @@ class _StubRepository implements LiveRepository {
     this.high,
     this.signal,
     this.historyRows = const [],
+    this.sentimentRows = const SentimentLayers.empty(),
     this.events = const [],
     this.digest = const [],
     this.failWith,
@@ -87,6 +89,8 @@ class _StubRepository implements LiveRepository {
   final double? high;
   final DisplaySignal? signal;
   final List<DisplayHistoryEntry> historyRows;
+
+  final SentimentLayers sentimentRows;
   final List<DisplayEvent> events;
   final List<DisplayDigestTheme> digest;
 
@@ -125,6 +129,12 @@ class _StubRepository implements LiveRepository {
   Future<List<DisplayHistoryEntry>> history({int limit = 50}) async {
     _guard();
     return historyRows;
+  }
+
+  @override
+  Future<SentimentLayers> sentimentLayers() async {
+    _guard();
+    return sentimentRows;
   }
 
   @override
@@ -190,6 +200,113 @@ class _StubRepository implements LiveRepository {
     _guard();
     return const [];
   }
+}
+
+/// The §5.1 layer rows as they currently stand in the database: positioning and
+/// market-implied measured, policy and WGC present but unmeasured.
+final SentimentLayers _liveSentiment = SentimentLayers([
+  SentimentLayerRow.tryParse(const {
+    'layer': 'market_implied',
+    'horizon': 'hours-days',
+    'weight': 20,
+    'score': null,
+    'alignment': -1,
+    'measured_at': '2026-10-02T00:00:00.000Z',
+    'source': 'US Treasury daily real yield curve',
+    'source_url': null,
+    'stale': false,
+    'detail': {'real10y': 2.92, 'change5d_bp': 9},
+  })!,
+  SentimentLayerRow.tryParse(const {
+    'layer': 'positioning',
+    'horizon': 'weeks',
+    'weight': 25,
+    'score': -1,
+    'alignment': -1,
+    'measured_at': '2026-09-29T00:00:00.000Z',
+    'source': 'CFTC disaggregated Commitments of Traders',
+    'source_url': null,
+    'stale': false,
+    'detail': {'percentile_156w': 37.8, 'sample_weeks': 156},
+  })!,
+  SentimentLayerRow.tryParse(const {
+    'layer': 'policy',
+    'horizon': 'days-weeks',
+    'weight': 35,
+    'score': null,
+    'alignment': null,
+    'measured_at': '1970-01-01T00:00:00.000Z',
+    'source': 'Federal Reserve FOMC statements / SEP',
+    'source_url': null,
+    'stale': true,
+    'detail': {'reason': 'ingest not implemented yet'},
+  })!,
+  SentimentLayerRow.tryParse(const {
+    'layer': 'gold_fundamentals',
+    'horizon': 'months',
+    'weight': 20,
+    'score': null,
+    'alignment': null,
+    'measured_at': '1970-01-01T00:00:00.000Z',
+    'source': 'World Gold Council gold demand data',
+    'source_url': null,
+    'stale': true,
+    'detail': {'reason': 'ingest not implemented yet'},
+  })!,
+]);
+
+/// Registered from [main] below; kept separate so this fixture stays next to the
+/// stub it feeds.
+void _sentimentLayerReadTests() {
+  group('sentiment layers read', () {
+    test('measured layers arrive and map onto the engine inputs', () async {
+      final repo = _StubRepository(sentimentRows: _liveSentiment);
+      final layers = await repo.sentimentLayers();
+
+      expect(layers.rows, hasLength(4));
+      expect(layers['positioning']?.alignment, -1);
+      expect(layers['market_implied']?.alignment, -1);
+      expect(layers['positioning']?.detail['percentile_156w'], 37.8);
+
+      // Positioning is one complete layer, so it reaches the engine directly.
+      expect(layers.sentiment.alignment, -1);
+      expect(layers.sentiment.cotStale, isFalse);
+      expect(layers.sentiment.isAvailable, isTrue);
+
+      // The real-yield impulse is surfaced...
+      expect(layers.macro.realYieldImpulse, -1);
+      // ...but macro alignment stays null at 20/75 coverage, so a single
+      // 20-weight reading cannot veto a setup.
+      expect(layers.macroCoverage, closeTo(20 / 75, 1e-9));
+      expect(layers.macro.alignment, isNull);
+      expect(layers.macro.isAvailable, isFalse);
+    });
+
+    test('unmeasured layers are reported as unmeasured, not as zero', () async {
+      final layers = await _StubRepository(
+        sentimentRows: _liveSentiment,
+      ).sentimentLayers();
+      expect(layers.isMissing('policy'), isFalse);
+      expect(layers.isUnmeasured('policy'), isTrue);
+      expect(layers['policy']?.score, isNull);
+      expect(layers['policy']?.measuredAt, isNull);
+      expect(layers['policy']?.stale, isTrue);
+    });
+
+    test('no rows yields empty layers rather than a fabricated neutral', () async {
+      final layers = await _StubRepository().sentimentLayers();
+      expect(layers.rows, isEmpty);
+      expect(layers.overallCoverage, 0);
+      expect(layers.sentiment.isAvailable, isFalse);
+      expect(layers.macro.alignment, isNull);
+    });
+
+    test('a failed read propagates instead of returning empty layers', () async {
+      // An empty read and a failed read must not look the same to the caller.
+      final repo = _StubRepository(failWith: StateError('network down'));
+      await expectLater(repo.sentimentLayers(), throwsStateError);
+    });
+  });
 }
 
 /// A live setup, chosen so every figure differs from `MockFixtures`: a test
@@ -410,6 +527,7 @@ Future<void> _openTab(WidgetTester tester, String tab) async {
 }
 
 void main() {
+  _sentimentLayerReadTests();
   // `mockMode` is a compile-time flag, so a test cannot flip the build. What
   // the screens branch on is the [LiveData] `main.dart` mounts above them for a
   // LIVE release: an offline build mounts none and they read fixtures (covered
