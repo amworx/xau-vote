@@ -275,7 +275,14 @@ class _UpdateGroupState extends State<_UpdateGroup> {
           title: 'App updates',
           children: [
             _UpdateStatus(state: state, service: service),
-            if (state.isActive || state.status == DownloadState.ready)
+            // `available` MUST be included. It is the one state where the user
+            // has just been told a new version exists and can do nothing about
+            // it: the controls used to render only while a download was already
+            // active, so DOWNLOAD never appeared and the updater could check but
+            // never download or install.
+            if (state.status == DownloadState.available ||
+                state.isActive ||
+                state.status == DownloadState.ready)
               _UpdateControls(
                 state: state,
                 service: service,
