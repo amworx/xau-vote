@@ -22,11 +22,12 @@
 ///     confidence, which is what §6 requires of a weekly reading.
 ///
 ///   * Macro alignment is left NULL until enough macro-side weight is actually
-///     measured. Today only `market_implied` (20) exists out of 75 macro-side
-///     points, so it is 27% — and letting a 27% sample veto a trade would be
-///     inventing conviction in either direction. The measured impulse is still
-///     surfaced in [MacroState.realYieldImpulse] and in [measuredCoverage], so
-///     the data is visible while it is not yet strong enough to act on.
+///     measured. Policy (35) and market-implied (20) are now both live, so macro
+///     coverage is 55 of 75 = 73% and alignment resolves. WGC (20) is the one
+///     macro-side layer still missing, and until more exists the gate is what
+///     stops a partial picture from vetoing a setup: the measured impulses are
+///     surfaced in [MacroState.realYieldImpulse] / [MacroState.policyImpulse]
+///     and in [macroCoverage] regardless.
 ///
 /// A missing layer is reported as missing, never as zero. Zero means "neutral";
 /// silence does not mean neutral.

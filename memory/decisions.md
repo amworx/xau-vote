@@ -121,3 +121,39 @@
 - **secondary fix:** `sentiment_layers.updated_at` had a column default but no trigger, so it never moved on update and could not distinguish a fresh write from a frozen value. Added the trigger (migration 0006). This was found only because the first verification attempt tried to use `updated_at` as the change signal and appeared to fail.
 - **general lesson:** after adding a scheduled function, always confirm the dispatcher can name it, and always have a timestamp column that actually moves on write before using it to verify anything.
 - **status:** accepted
+
+---
+
+## D-20261005-007 - The macro/sentiment overlay must be side-aware (correctness bug)
+
+- **date:** 2026-10-05
+- **severity:** high - would have silently destroyed the short side as soon as real macro data was wired in.
+- **finding:** `confluence.dart` step 13 read `macro.alignment` and `sentiment.alignment` WITHOUT reference to the traded direction. Every other check in the scorer is side-aware (`bull ? ... : ...`), so this was an outlier, not a design choice. Consequences: `macro < 0` called `veto(v6DirectionConflict)` on longs AND shorts, so a bearish macro would have vetoed the exact trade it favours; and a bullish macro credited longs while giving shorts no penalty at all, so the short side was systematically unrewarded and over-penalised.
+- **why it went unnoticed:** nothing ever fed `ConfluenceInput.macro` / `.sentiment`, so both were always null and the block was dead code. Wiring real data in is what made the bug reachable.
+- **decision:** each alignment is flipped for shorts before use, so what reaches the score and the veto is "does this layer agree with the trade being evaluated". `macroAgrees` / `sentimentAgrees` are exposed on `ConfluenceResult` alongside the raw `macroAlignment` / `sentimentAlignment`, because a UI must be able to say "macro: bearish" on a short rather than flipping the label to match the trade.
+- **unchanged:** macro opposing still vetoes (Rule 3); sentiment opposing still only costs confidence and never vetoes (§6).
+- **coverage added:** seven tests, including two that would have failed before the fix (bearish macro supports a short; bullish macro actively penalises a short).
+- **status:** accepted
+
+---
+
+## D-20261005-008 - Policy (35%) is built from the FOMC statement text; SEP stays unmeasured
+
+- **date:** 2026-10-05
+- **context:** policy is the largest single weight in the A85.1 vote (35) and was the reason macro coverage sat at 27%. Building it also lifts macro coverage to 55/75 = 73%, which clears the D-004 gate without weakening it.
+- **decision:** read the latest FOMC statement's own decision sentence. A85.2 asks for "only documented statements and official voting information", and that sentence IS the official record. The calendar page carries every statement as `monetaryYYYYMMDDa.htm` with the date in the URL, so "latest" is a max over those dates and needs no calendar parsing. The previous statement is fetched too, because A85.2 wants the target-rate CHANGE and that needs a baseline.
+- **rejected alternatives:** FRED `DFEDTARU` (tidy CSV, but did not respond at all when tried - timed out from two different hosts); the SEP projections (published only as PDF, which the Deno runtime cannot read).
+- **A85.2 items 4-7 (SEP median path vs previous SEP) are recorded as `sep_projection: null` with a reason**, never inferred from the target rate. Those items stay unbuilt and the layer says so.
+- **the two "unchanged" bands are deliberately not implemented.** `unchanged_but_hawkish` (-1) and `unchanged_but_dovish` (+1) require classifying free text as hawkish or dovish. A85.2's own critical rule warns that statements are inputs, not truth. An unchanged decision therefore scores 0 ("neutral/uncertain") and records `unchangedAction: true`. Reading the direction of a hold wrong is far costlier than losing one point of score.
+- **decay implemented exactly as specified:** `effective = raw * exp(-days/30)`. A 20-day-old 25bp hike reads raw -2, effective **-1.03**.
+- **schema consequence:** `sentiment_layers.score` had to widen from `smallint` to `numeric(4,2)`. The first real policy write failed with `invalid input syntax for type smallint: "-1.03"` - the decay is fractional by construction, so the column was wrong, not the value. `detail.raw_score` keeps the undamped A85.2 number. The CHECK constraint still binds -2..2.
+- **status:** accepted
+
+---
+
+## D-20261005-009 - market_implied records which of its legs are actually measured
+
+- **date:** 2026-10-05
+- **finding:** A85.1 defines market-implied as "USD + real yields + volatility". Only the real-yield leg is ingested. A row that simply reads `alignment: -1` under a source label implying all three legs would overstate what was measured.
+- **decision:** `detail.legs_measured: ["real_yields"]` and `detail.legs_missing: ["usd", "volatility"]` are written on every market_implied row, so a partial layer is self-describing instead of quietly reading as complete.
+- **status:** accepted

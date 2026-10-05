@@ -308,6 +308,86 @@ void main() {
       expect(r.macroAlignment, isNull);
       expect(r.finalScore, r.technicalScore.toDouble());
     });
+
+    // The overlay is side-aware: these four cases are the whole point of the
+    // fix. Read as "does the layer agree with the trade being evaluated".
+    test('bearish macro SUPPORTS a short instead of vetoing it', () {
+      final r = engine.evaluate(
+        build(dir: Side.short, macro: const MacroState(alignment: -1)),
+      );
+      expect(r.vetoed, isNot(contains(ReasonCode.v6DirectionConflict)),
+          reason: 'a bearish macro favours a short; vetoing it is backwards');
+      expect(r.macroAlignment, -1, reason: 'the layer reading itself is bearish');
+      expect(r.macroAgrees, 1, reason: 'but it agrees with the short');
+      expect(r.has(ReasonCode.macroSupports), isTrue);
+      expect(r.conflictPenalty, 0);
+    });
+
+    test('bullish macro CONFLICTS with a short', () {
+      final r = engine.evaluate(
+        build(dir: Side.short, macro: const MacroState(alignment: 1)),
+      );
+      expect(r.vetoed, contains(ReasonCode.v6DirectionConflict));
+      expect(r.macroAgrees, -1);
+      expect(r.conflictPenalty, 1);
+    });
+
+    test('bullish macro does not silently spare a short', () {
+      // Before the side-aware fix this was the asymmetry: a bullish macro
+      // credited longs and did nothing at all for shorts.
+      final base = engine.evaluate(build(dir: Side.short));
+      final withBullMacro = engine.evaluate(
+        build(dir: Side.short, macro: const MacroState(alignment: 1)),
+      );
+      expect(withBullMacro.finalScore, lessThan(base.finalScore));
+    });
+
+    test('bearish sentiment penalises a long but never vetoes it', () {
+      final r = engine.evaluate(
+        build(sentiment: const SentimentState(alignment: -1)),
+      );
+      expect(r.sentimentAlignment, -1);
+      expect(r.sentimentAgrees, -1);
+      expect(r.conflictPenalty, 1);
+      expect(r.vetoed, isNot(contains(ReasonCode.v6DirectionConflict)));
+    });
+
+    test('bearish sentiment supports a short without adding a penalty', () {
+      final r = engine.evaluate(
+        build(
+          dir: Side.short,
+          sentiment: const SentimentState(alignment: -1),
+        ),
+      );
+      expect(r.sentimentAgrees, 1);
+      expect(r.has(ReasonCode.sentimentSupports), isTrue);
+      expect(r.conflictPenalty, 0);
+    });
+
+    test('a stale COT reading agrees with nothing, even on the short side', () {
+      final r = engine.evaluate(
+        build(
+          dir: Side.short,
+          sentiment: const SentimentState(alignment: -1, cotStale: true),
+        ),
+      );
+      expect(r.sentimentAgrees, isNull);
+      expect(r.conflictPenalty, 0);
+      expect(r.has(ReasonCode.sentimentSupports), isFalse);
+    });
+
+    test('the raw layer reading is reported unchanged by the trade side', () {
+      // A UI showing "macro: bearish" must say bearish for a short too, not
+      // "bullish" just because the trade agreed with it.
+      final short = engine.evaluate(
+        build(dir: Side.short, macro: const MacroState(alignment: -1)),
+      );
+      final long = engine.evaluate(
+        build(dir: Side.long, macro: const MacroState(alignment: -1)),
+      );
+      expect(short.macroAlignment, long.macroAlignment);
+      expect(short.macroAgrees, isNot(long.macroAgrees));
+    });
   });
 
   group('grading (MGC §9.3)', () {

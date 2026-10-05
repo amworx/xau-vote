@@ -259,8 +259,10 @@ class ConfluenceResult {
     required this.reasonCodes,
     required this.technicalScore,
     required this.finalScore,
-    required this.macroAlignment,
-    required this.sentimentAlignment,
+required this.macroAlignment,
+  required this.sentimentAlignment,
+  required this.macroAgrees,
+  required this.sentimentAgrees,
     required this.conflictPenalty,
     required this.spreadStatus,
     required this.vetoed,
@@ -276,8 +278,22 @@ class ConfluenceResult {
   /// technical + 2×macro + sentiment − conflict penalty (§8.3).
   final double finalScore;
 
+  /// The macro layer's OWN direction: -1 leaning bearish for gold, +1 bullish,
+  /// null unmeasured. This is the reading, not a verdict — use [macroAgrees] to
+  /// know whether it agreed with the trade that was evaluated.
   final int? macroAlignment;
+
+  /// The sentiment layer's own direction, same convention as [macroAlignment].
   final int? sentimentAlignment;
+
+  /// [macroAlignment] flipped for the traded side: >0 the trade ran with the
+  /// macro read, <0 against it, null unmeasured. This is the value the score and
+  /// the `v6DirectionConflict` veto use.
+  final int? macroAgrees;
+
+  /// [sentimentAlignment] flipped for the traded side. Same reading convention.
+  final int? sentimentAgrees;
+
   final int conflictPenalty;
 
   final SpreadStatus spreadStatus;
@@ -482,25 +498,44 @@ class ConfluenceEngine {
     if (input.blockedByLevel) veto(ReasonCode.v5PoorRewardRisk);
 
     // ---- 13. Macro / sentiment overlay (§8.3) ---------------------------
-    final macro = input.macro?.alignment;
-    final sentiment = input.sentiment?.isAvailable == true ? input.sentiment!.alignment : null;
+    // SIDE-AWARE. `alignment` describes the layer's own direction (positive =
+    // it leans bullish for gold); whether that AGREES with the trade depends on
+    // which side the trade is. Reading a bearish macro as a conflict for a SHORT
+    // would veto the trade the macro actually favours, so each alignment is
+    // first flipped for shorts: what remains is "does this layer support the
+    // direction being traded".
+    //
+    // This was previously direction-blind - `macro < 0` vetoed longs AND shorts,
+    // and a bullish macro gave shorts no penalty at all - which would have
+    // silently destroyed the short side as soon as real macro data was wired in.
+    // It was invisible only because nothing fed these fields.
+    //
+    // Macro opposing the trade vetoes (Rule 3): the setup runs against the
+    // prevailing bias. Sentiment opposing only costs confidence and never vetoes,
+    // per §6 — a weekly reading may lower conviction, it may not forbid a trade.
+    final macroAlignment = input.macro?.alignment;
+    final macroAgrees = macroAlignment == null ? null : (bull ? macroAlignment : -macroAlignment);
+    final sentimentAlignment =
+        input.sentiment?.isAvailable == true ? input.sentiment!.alignment : null;
+    final sentimentAgrees =
+        sentimentAlignment == null ? null : (bull ? sentimentAlignment : -sentimentAlignment);
     var conflictPenalty = 0;
 
-    if (macro != null) {
-      if (macro > 0) credit(ReasonCode.macroSupports);
-      if (macro < 0) {
+    if (macroAgrees != null) {
+      if (macroAgrees > 0) credit(ReasonCode.macroSupports);
+      if (macroAgrees < 0) {
         conflictPenalty += 1;
         veto(ReasonCode.v6DirectionConflict);
       }
     }
-    if (sentiment != null && sentiment > 0) credit(ReasonCode.sentimentSupports);
-    if (sentiment != null && sentiment < 0) {
+    if (sentimentAgrees != null && sentimentAgrees > 0) credit(ReasonCode.sentimentSupports);
+    if (sentimentAgrees != null && sentimentAgrees < 0) {
       conflictPenalty += 1;
-      // Slow sentiment never reverses a trade, it only reduces confidence —
-      // so this is a penalty, not a veto.
+      // Slow sentiment never reverses or forbids a trade, it only reduces
+      // confidence — so this is a penalty, not a veto.
     }
 
-    final finalScore = technical + 2.0 * (macro ?? 0) + (sentiment ?? 0) - conflictPenalty;
+    final finalScore = technical + 2.0 * (macroAgrees ?? 0) + (sentimentAgrees ?? 0) - conflictPenalty;
 
     // ---- 14/15. Confluence floors (V12) ---------------------------------
     // The technical floor and the final-score floor express one idea, so the
@@ -521,8 +556,10 @@ class ConfluenceEngine {
       reasonCodes: [...reasons, ...vetoes],
       technicalScore: technical,
       finalScore: finalScore,
-      macroAlignment: macro,
-      sentimentAlignment: sentiment,
+      macroAlignment: macroAlignment,
+      sentimentAlignment: sentimentAlignment,
+      macroAgrees: macroAgrees,
+      sentimentAgrees: sentimentAgrees,
       conflictPenalty: conflictPenalty,
       spreadStatus: input.spreadStatus,
       vetoed: vetoes,

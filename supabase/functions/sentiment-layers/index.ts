@@ -61,12 +61,24 @@ import {
   dateOnly,
   type TreasuryRow,
 } from '../_shared/sentiment.ts';
+import {
+  POLICY_WEIGHT,
+  POLICY_STALE_DAYS,
+  policyScoreFor,
+  policyDecay,
+  parseFomcStatement,
+  latestStatementPaths,
+  targetChangeBp,
+  type FomcStatement,
+} from '../_shared/policy.ts';
 
 const COT_DATASET = '72hh-3qpy'; // Disaggregated - Futures Only
 const COT_API = `https://publicreporting.cftc.gov/resource/${COT_DATASET}.json`;
 
 const TREASURY_CSV =
   'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv';
+
+const FOMC_CALENDAR = 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm';
 
 interface CotRow {
   date: string;
@@ -177,6 +189,52 @@ async function readTreasury(): Promise<TreasuryRow[]> {
 
 type Row = Record<string, unknown>;
 
+/**
+ * §5.2 policy layer: the latest FOMC statement plus the one before it.
+ *
+ * Two statements, because §5.2 wants the target-rate *change* and the SEP
+ * comparison; the previous statement supplies the baseline the change is
+ * measured against. The calendar page carries every statement link with the date
+ * in the URL, so "latest" needs no calendar parsing.
+ */
+async function readPolicy(): Promise<{
+  current: FomcStatement;
+  previous: FomcStatement | null;
+  currentDate: string;
+  previousDate: string | null;
+  currentUrl: string;
+}> {
+  const calendarHtml = await getText(FOMC_CALENDAR);
+  const statements = latestStatementPaths(calendarHtml, 2);
+  if (statements.length === 0) throw new Error('no FOMC statement links on the calendar');
+
+  const [latest, prior] = statements;
+  const currentHtml = await getText(`https://www.federalreserve.gov${latest.url}.htm`);
+  const current = parseFomcStatement(currentHtml, latest.date);
+
+  let previous: FomcStatement | null = null;
+  let previousDate: string | null = null;
+  if (prior) {
+    try {
+      const previousHtml = await getText(`https://www.federalreserve.gov${prior.url}.htm`);
+      previous = parseFomcStatement(previousHtml, prior.date);
+      previousDate = prior.date;
+    } catch {
+      // The change against the prior statement is then unmeasured; the current
+      // decision verb still stands on its own.
+      previous = null;
+    }
+  }
+
+  return {
+    current,
+    previous,
+    currentDate: latest.date,
+    previousDate,
+    currentUrl: `https://www.federalreserve.gov${latest.url}.htm`,
+  };
+}
+
 Deno.serve(async () => {
   const url = Deno.env.get('SUPABASE_URL')!;
   const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -255,26 +313,68 @@ Deno.serve(async () => {
     notes.push(`positioning unavailable: ${(e as Error).message}`);
   }
 
-  // ── policy (35%) and gold_fundamentals (20%): not built yet ───────────────
-  // Written as explicit null rows rather than omitted, so the app can tell
-  // "this layer does not exist yet" from "the layer exists and reads zero".
-  for (const p of [
-    { layer: 'policy', source: 'Federal Reserve FOMC statements / SEP' },
-    { layer: 'gold_fundamentals', source: 'World Gold Council gold demand data' },
-  ] as const) {
+  // ── policy (35%) ───────────────────────────────────────────────────────
+  // The largest single weight in the §5.1 vote, and previously a null
+  // placeholder that also dragged macro coverage down to 27%.
+  try {
+    const { current, previous, currentDate, previousDate, currentUrl } = await readPolicy();
+    const raw = policyScoreFor(current.action);
+    const days = ageInDays(currentDate);
+    const effective = policyDecay(raw, days);
+    // The decayed score drives direction; the raw magnitude is kept so the UI
+    // can say "a hike, now 19 days old" instead of only "-1.06".
     layers.push({
-      layer: p.layer,
-      horizon: HORIZONS[p.layer],
-      weight: WEIGHTS[p.layer],
-      score: null,
-      alignment: null,
-      measured_at: new Date(0).toISOString(),
-      source: p.source,
-      source_url: null,
-      stale: true,
-      detail: { reason: 'ingest not implemented yet' },
+      layer: 'policy',
+      horizon: HORIZONS.policy,
+      weight: POLICY_WEIGHT,
+      score: effective,
+      alignment: alignmentOf(Math.round(effective)),
+      measured_at: currentDate + 'T00:00:00Z',
+      source: 'Federal Reserve FOMC statement',
+      source_url: currentUrl,
+      stale: days > POLICY_STALE_DAYS,
+      detail: {
+        action: current.action,
+        raw_score: raw,
+        effective_score: effective,
+        decay_days: Math.round(days),
+        // A negative effective score leans bearish for gold, which is support
+        // for a short and a conflict for a long. The confluence engine resolves
+        // that side-awareness; this layer only reports direction.
+        target_low_pct: current.targetLow,
+        target_high_pct: current.targetHigh,
+        target_change_bp: previous ? targetChangeBp(previous, current) : null,
+        previous_statement_date: previousDate,
+        previous_action: previous?.action ?? null,
+        dissents: current.dissents,
+        // §5.2 items 4-7 want the SEP median path compared with the previous SEP.
+        // The Fed publishes the projections only as PDF, which this runtime
+        // cannot read, and FRED did not respond when tried. Recorded as
+        // unmeasured rather than inferred from the target rate.
+        sep_projection: null,
+        sep_reason: 'Fed publishes SEP projections as PDF only; not parsed',
+        decision_sentence: current.decisionSentence,
+      },
     });
+  } catch (e) {
+    notes.push(`policy unavailable: ${(e as Error).message}`);
   }
+
+  // ── gold_fundamentals (20%): not built yet ─────────────────────────────────
+  // Written as an explicit null row rather than omitted, so the app can tell
+  // "this layer does not exist yet" from "the layer exists and reads zero".
+  layers.push({
+    layer: 'gold_fundamentals',
+    horizon: HORIZONS.gold_fundamentals,
+    weight: WEIGHTS.gold_fundamentals,
+    score: null,
+    alignment: null,
+    measured_at: new Date(0).toISOString(),
+    source: 'World Gold Council gold demand data',
+    source_url: null,
+    stale: true,
+    detail: { reason: 'ingest not implemented yet' },
+  });
 
   for (const row of layers) {
     const { error } = await db.from('sentiment_layers').upsert(row, { onConflict: 'layer' });

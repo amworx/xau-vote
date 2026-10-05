@@ -5,7 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 Map<String, dynamic> row({
   required String layer,
   required double weight,
-  int? score,
+  // score is numeric since §5.2 decays policy by exp(-days/30), so it is not
+  // always an integer. alignment stays a smallint.
+  num? score,
   int? alignment,
   String measuredAt = '2026-10-02T00:00:00.000Z',
   String source = 'some public source',
@@ -143,32 +145,61 @@ void main() {
   });
 
   group('macro mapping', () {
+    // Mirrors the rows actually in the database as of 2026-10-05: a 20-day-old
+    // 25bp Fed hike (policy 35, alignment -1) and a +9bp real-yield move
+    // (market_implied 20, alignment -1). WGC is still an unbuilt null row.
     SentimentLayers liveState() => SentimentLayers([
       SentimentLayerRow.tryParse(
         row(layer: 'market_implied', weight: 20, alignment: -1),
       )!,
       SentimentLayerRow.tryParse(
+        row(layer: 'policy', weight: 35, score: -1.03, alignment: -1),
+      )!,
+      SentimentLayerRow.tryParse(row(layer: 'gold_fundamentals', weight: 20))!,
+      SentimentLayerRow.tryParse(
         row(layer: 'positioning', weight: 25, score: -1, alignment: -1),
       )!,
-      SentimentLayerRow.tryParse(row(layer: 'policy', weight: 35))!,
-      SentimentLayerRow.tryParse(row(layer: 'gold_fundamentals', weight: 20))!,
     ]);
 
     test('the measured real-yield impulse is always surfaced', () {
       expect(liveState().macro.realYieldImpulse, -1);
     });
 
-    test('macro alignment stays null below the coverage threshold', () {
-      // 20/75 = 27%, under the 50% gate. The scorer vetoes on a negative macro
-      // alignment, so a 27% sample must not be able to block a setup.
-      final macro = liveState().macro;
-      expect(macro.alignment, isNull);
-      expect(macro.isAvailable, isFalse);
+    test('the policy impulse carries the decayed §5.2 score', () {
+      // score is numeric since §5.2 decays it; the engine field is an int.
+      expect(liveState().macro.policyImpulse, -1);
     });
 
-    test('policy and inflation stay null instead of defaulting to 0', () {
+    test('live macro coverage clears the gate and resolves to bearish', () {
+      final layers = liveState();
+      // policy 35 + market_implied 20 = 55 of 75 macro-side = 73%.
+      expect(layers.macroCoverage, closeTo(55 / 75, 1e-9));
+      expect(layers.macroCoverage, greaterThanOrEqualTo(SentimentLayers.macroAlignmentThreshold));
+      expect(layers.macro.alignment, -1);
+      expect(layers.macro.isAvailable, isTrue);
+    });
+
+    test('macro alignment stays null below the coverage threshold', () {
+      // Only market_implied measured: 20/75 = 27%, under the 50% gate. The
+      // scorer vetoes on a negative macro alignment, so a 27% sample must not be
+      // able to block a setup.
+      final thin = SentimentLayers([
+        SentimentLayerRow.tryParse(
+          row(layer: 'market_implied', weight: 20, alignment: -1),
+        )!,
+        SentimentLayerRow.tryParse(row(layer: 'policy', weight: 35))!,
+        SentimentLayerRow.tryParse(row(layer: 'gold_fundamentals', weight: 20))!,
+      ]);
+      expect(thin.macroCoverage, closeTo(20 / 75, 1e-9));
+      final macro = thin.macro;
+      expect(macro.alignment, isNull);
+      expect(macro.isAvailable, isFalse);
+      // The reading is still visible even while it cannot act.
+      expect(macro.realYieldImpulse, -1);
+    });
+
+    test('dollar and inflation stay null instead of defaulting to 0', () {
       final macro = liveState().macro;
-      expect(macro.policyImpulse, isNull);
       expect(macro.dollarImpulse, isNull);
       expect(macro.inflationImpulse, isNull);
     });

@@ -538,3 +538,27 @@
 - **files:** supabase/functions/sentiment-layers/index.ts, supabase/functions/_shared/sentiment.ts, supabase/functions/_shared/sentiment_test.ts, supabase/migrations/0004-0006, src/app/lib/models/sentiment_layers.dart, src/app/lib/data/live_repository.dart, src/app/test/sentiment_layers_test.dart, src/app/test/live_mode_test.dart
 - **errors:** CFTC 403 (worked around via Socrata); Edge Function bundle failure twice (entrypoint must keep its function directory so `../_shared/...` resolves); test fixtures I fabricated failed and were replaced with real data; a duplicate `main()` in live_mode_test.dart.
 - **open:** `net.http_timeout` still shorter than the run, so a scheduled failure would be invisible in `net._http_response` (needs an owner-level role). Policy (35) and WGC (20) layers not built. The app does not yet assemble `ConfluenceInput` from these states. pg_net keeps 3 pending rows. Service-role key pasted in chat still needs rotation.
+
+---
+
+## EVT-20261005-0018 - Side-aware macro overlay + policy layer (35%)
+
+- **id:** EVT-20261005-0018
+- **timestamp:** 2026-10-05T19:25Z .. 2026-10-05T20:35Z
+- **mode:** REVIEW + BUILD
+- **action:** Found and fixed a direction-blind macro/sentiment overlay, then built the policy layer.
+- **summary:**
+  1. While wiring live macro data in, noticed `confluence.dart` step 13 was the only side-unaware check in the scorer. `macro < 0` vetoed longs AND shorts; a bullish macro credited longs and did nothing for shorts. Reachable only because real data had just been wired. Fixed by flipping alignment for shorts; added `macroAgrees` / `sentimentAgrees` to the result so the UI can still show the layer's true direction. +7 tests.
+  2. Built policy (35%) from the FOMC statement's own decision sentence, per A85.2. Latest + previous statement so the target-rate change has a baseline.
+  3. Live result: 2026-09-16 was a 25bp HIKE to 3.75-4.00%, no dissents. raw -2, effective -1.03 at 20 days via A85.2's exp(-days/30). Previous (2026-07-29) was a hold at 3.50-3.75% WITH a dissent, giving target_change_bp = +25.
+  4. Rejected FRED (times out from two hosts) and the SEP projections (PDF only). A85.2 items 4-7 recorded as `sep_projection: null` with a reason.
+  5. Did not implement the hawkish/dovish bands on an unchanged decision - that needs free-text classification, and A85.2's own critical rule says statements are inputs not truth. Holds score 0 and say so.
+- **result:** macro coverage 27% -> 73%, so the D-004 alignment gate clears on merit rather than being weakened. Live macro alignment now -1, sentiment -1.
+- **errors:** the first policy write failed on `smallint` receiving -1.03; widened the column to numeric(4,2). Two of my own test assertions had wrong arithmetic (exp decay) and one used `reduce` while the parser only accepted `decrease`. My dissent parser truncated "Beth M. Hammack" to "Beth" because a middle initial is itself a period.
+- **lessons:**
+  - Dead code hides bugs. The overlay was unreachable only because nothing fed it; wiring real data is what made the defect observable.
+  - A "score" column must be typed for the value the spec produces. A85.2's decay is fractional, so smallint was wrong from the start.
+  - Regex over prose breaks on abbreviations. Names with middle initials need the sentence end found by shape, not by the next period.
+  - Widening a gate is worse than satisfying it. Building policy cleared the coverage threshold legitimately; lowering the threshold would have been a way to make a thin read look authoritative.
+- **files:** src/xau_core/lib/analysis/confluence.dart, src/xau_core/test/confluence_test.dart, supabase/functions/_shared/policy.ts, supabase/functions/_shared/policy_test.ts, supabase/functions/sentiment-layers/index.ts, supabase/migrations/0007_sentiment_layers_score_numeric.sql, src/app/lib/models/sentiment_layers.dart, src/app/test/sentiment_layers_test.dart
+- **tags:** confluence, side-awareness, policy, fomc, methodology, coverage-gate
