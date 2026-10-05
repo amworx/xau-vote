@@ -318,24 +318,37 @@ class UpdateService extends ChangeNotifier {
   ///
   /// On Android this resolves under the app cache directory, which is what
   /// `res/xml/update_paths.xml` exposes to the FileProvider.
-  Future<Directory> _targetDir() async {
-    final injected = downloadDir;
-    if (injected != null) return injected;
-    final base = await _cacheDir();
+  /// The directory the APK would be written to on this platform, ignoring any
+  /// injected override.
+  ///
+  /// Exposed so a test can assert the real Android path resolves. Every other
+  /// test injects [downloadDir], which is precisely why the environment-variable
+  /// lookup that broke the app in the first place was never covered: the
+  /// injected branch returns before the platform is ever consulted.
+  @visibleForTesting
+  Future<Directory> platformTargetDir() async {
+    final base = Directory.systemTemp;
     final dir = Directory('${base.path}${Platform.pathSeparator}updates');
     if (!await dir.exists()) await dir.create(recursive: true);
     return dir;
   }
 
-  Future<Directory> _cacheDir() async {
-    // Avoids a path_provider dependency for one call. Android's cache dir is
-    // what the FileProvider path is rooted at.
-    final env = Platform.environment;
-    final home = env['HOME'] ?? env['USERPROFILE'] ?? env['TMPDIR'];
-    if (home == null) {
-      throw StateError('cannot determine a cache directory for the download');
-    }
-    return Directory('$home${Platform.pathSeparator}.cache');
+  /// Where the APK is written.
+  ///
+  /// `Directory.systemTemp` IS the app's private cache directory on Android
+  /// (`/data/user/0/<pkg>/cache`), which is exactly what
+  /// `res/xml/update_paths.xml` exposes to the FileProvider as `<cache-path>`.
+  ///
+  /// This used to read `$HOME` / `$USERPROFILE` / `$TMPDIR` out of
+  /// `Platform.environment`. Android sets NONE of those in an app process, so
+  /// the lookup threw `StateError` before a single byte was requested — which
+  /// is exactly the reported symptom: "check for updates" worked (a plain GET)
+  /// while download did nothing at all. Even had `TMPDIR` been set, appending
+  /// `.cache` to a temp directory would not have matched `<cache-path>`.
+  Future<Directory> _targetDir() async {
+    final injected = downloadDir;
+    if (injected != null) return injected;
+    return platformTargetDir();
   }
 
   /// Fetches the manifest and compares it with what is installed.
@@ -527,7 +540,14 @@ class UpdateService extends ChangeNotifier {
       final started = resumed ? existing : 0;
       var received = started;
 
-      final sink = file.openWrite();
+      // APPEND on resume. `openWrite()` defaults to `FileMode.write`, which
+      // TRUNCATES — and the server was asked for bytes from `existing` onward,
+      // so truncating left a file holding only the tail. The download itself
+      // was fine; the SHA-256 check then failed on a resume that had actually
+      // transferred correctly.
+      final sink = file.openWrite(
+        mode: resumed ? FileMode.append : FileMode.write,
+      );
       _activeSink = sink;
       final declared = response.contentLength;
       _emit(_state.copyWith(

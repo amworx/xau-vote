@@ -171,6 +171,56 @@ void main() {
     });
   });
 
+  group('platform download directory', () {
+    // Regression guard for the bug that made the updater useless on Android:
+    // "check for updates" worked, but download threw before requesting a byte.
+    //
+    // Every other test in this file injects `downloadDir`, which short-circuits
+    // before the platform is consulted - so the broken platform path had no
+    // coverage at all. This one deliberately does not inject anything.
+    test('resolves under the system temp dir without reading the environment',
+        () async {
+      final s = UpdateService(
+        manifestUrl: Uri.parse('https://example.com/update.json'),
+      );
+      addTearDown(s.dispose);
+
+      // Must not throw. It used to: the old implementation required $HOME,
+      // $USERPROFILE or $TMPDIR, and Android sets none of them in an app
+      // process, so this threw StateError on every real device.
+      final dir = await s.platformTargetDir();
+
+      expect(await dir.exists(), isTrue,
+          reason: 'the updates directory must actually be created');
+      expect(
+        dir.path,
+        startsWith(Directory.systemTemp.path),
+        reason: 'must sit under the app cache dir that <cache-path> exposes',
+      );
+      expect(dir.path, endsWith('updates'));
+    });
+
+    test('a resume appends rather than truncating the partial file', () async {
+      // openWrite() defaults to FileMode.write, which truncates. A resumed
+      // download asked the server for bytes from `existing` onward, so
+      // truncating left only the tail and the digest check then failed.
+      final dir = await Directory.systemTemp.createTemp('xv_resume');
+      addTearDown(() async {
+        if (await dir.exists()) await dir.delete(recursive: true);
+      });
+      final partial = File('${dir.path}${Platform.pathSeparator}a.apk');
+      await partial.writeAsString('AAAA');
+
+      final sink = partial.openWrite(mode: FileMode.append);
+      sink.write('BBBB');
+      await sink.flush();
+      await sink.close();
+
+      expect(await partial.readAsString(), 'AAAABBBB',
+          reason: 'append must keep the bytes already on disk');
+    });
+  });
+
   group('download', () {
     late Directory tmp;
 
