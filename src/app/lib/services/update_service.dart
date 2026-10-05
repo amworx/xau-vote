@@ -283,9 +283,13 @@ class UpdateService extends ChangeNotifier {
     http.Client? client,
     this.downloadDir,
     this.probe,
+    UpdateState initialState = const UpdateState(),
   })  : // The manifest URL is stored normalised so an endpoint with a trailing
         // slash or whitespace cannot produce a request that silently 404s.
         _manifestUrl = _normalise(manifestUrl),
+        // Lets a test open the service in a given state without a network
+        // round trip. Production always starts idle.
+        _state = initialState,
         _clientFactory = (client == null ? _newClient : () => client);
 
   static Uri _normalise(Uri url) =>
@@ -310,7 +314,7 @@ class UpdateService extends ChangeNotifier {
 
   static http.Client _newClient() => http.Client();
 
-  UpdateState _state = const UpdateState();
+  UpdateState _state;
 
   UpdateState get state => _state;
 

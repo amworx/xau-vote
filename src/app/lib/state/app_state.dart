@@ -163,6 +163,23 @@ class AppState extends ChangeNotifier {
 
   void goToSignal() => setTab(1);
 
+  int _updatesScrollRequest = 0;
+
+  /// Increments whenever something asks the Settings screen to reveal the App
+  /// updates panel. A counter rather than a bool so two requests in a row both
+  /// register.
+  int get updatesScrollRequest => _updatesScrollRequest;
+
+  /// Asks the Settings screen to bring the updates panel into view.
+  ///
+  /// Always notifies, unlike [setTab]: the trader may already be on Settings,
+  /// and tapping the banner's "Update now" must still scroll them to the
+  /// control rather than doing nothing because the tab did not change.
+  void requestUpdatesScroll() {
+    _updatesScrollRequest++;
+    notifyListeners();
+  }
+
   void setScenario(RadarScenario scenario) {
     if (scenario == _scenario) return;
     _scenario = scenario;

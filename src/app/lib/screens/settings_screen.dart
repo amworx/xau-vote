@@ -15,7 +15,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../config.dart';
 import '../models/display_models.dart';
 import '../services/notification_service.dart';
 import '../services/update_service.dart';
@@ -24,13 +23,54 @@ import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
 import '../widgets/skeleton.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  final _scroll = ScrollController();
+
+  /// Last handled request, so the jump runs once per request rather than on
+  /// every unrelated rebuild.
+  int _handledScrollRequest = 0;
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Brings the App updates panel into view when the banner asks for it.
+  ///
+  /// Deferred to the end of the frame because the request usually arrives in
+  /// the same build that switches to this tab, before the list has been laid
+  /// out and therefore has no scroll extent to animate against.
+  void _maybeScrollToUpdates(AppState state) {
+    if (state.updatesScrollRequest == _handledScrollRequest) return;
+    _handledScrollRequest = state.updatesScrollRequest;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final target = (_scroll.position.maxScrollExtent * 0.82).clamp(
+        0.0,
+        double.infinity,
+      );
+      _scroll.animateTo(
+        target,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    _maybeScrollToUpdates(state);
     return ListView(
+      controller: _scroll,
       key: const PageStorageKey<String>('settings'),
       // Horizontal gutters belong to the shared chrome (header 18px, cards
       // 18px), so the list itself only owns the trailing space.
@@ -221,37 +261,18 @@ class _Group extends StatelessWidget {
 ///
 /// The controls deliberately stop short of installing silently: Android
 /// requires the user to approve the install, and the button says so.
-class _UpdateGroup extends StatefulWidget {
+class _UpdateGroup extends StatelessWidget {
   const _UpdateGroup();
 
   @override
-  State<_UpdateGroup> createState() => _UpdateGroupState();
-}
-
-class _UpdateGroupState extends State<_UpdateGroup> {
-  late final UpdateService? _service;
-  String? _installFailure;
-
-  @override
-  void initState() {
-    super.initState();
-    final configured = updatesConfigured
-        ? Uri.tryParse(updateManifestUrl)
-        : null;
-    _service = configured == null
-        ? null
-        : UpdateService(manifestUrl: configured);
-  }
-
-  @override
-  void dispose() {
-    _service?.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final service = _service;
+    // The service is provided at the app root rather than created here. It used
+    // to be built inside this State, which meant the update banner and this
+    // panel each drove a SEPARATE UpdateService: a download started in one was
+    // invisible to the other, and "one download path" was only ever true in
+    // principle. Reading the shared instance keeps a single source of truth.
+    final service = context.watch<UpdateService?>();
+
     if (service == null) {
       // No endpoint was supplied at build time. Say so instead of offering a
       // check that cannot succeed.
@@ -286,7 +307,9 @@ class _UpdateGroupState extends State<_UpdateGroup> {
               _UpdateControls(
                 state: state,
                 service: service,
-                installFailure: _installFailure,
+                // Install failures surface as a SnackBar from the button that
+                // triggered them, so there is no failure string to hold here.
+                installFailure: null,
               ),
           ],
         );

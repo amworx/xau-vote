@@ -19,9 +19,11 @@ import 'screens/settings_screen.dart';
 import 'screens/signal_screen.dart';
 import 'screens/sources_screen.dart';
 import 'services/backend_service.dart';
+import 'services/update_service.dart';
 import 'state/app_state.dart';
 import 'theme.dart';
 import 'widgets/pull_to_refresh.dart';
+import 'widgets/update_banner.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,13 +65,22 @@ class XauVoteApp extends StatelessWidget {
       // the screens already render, while AnalysisService runs the
       // multi-timeframe technical scan. They are kept separate so a slow or
       // failing analysis never stalls the price ticker.
-      return MultiProvider(
+return MultiProvider(
         providers: [
           ChangeNotifierProvider<LiveData>(
             create: (_) => LiveData()..startPolling(),
           ),
           ChangeNotifierProvider<AnalysisService>(
             create: (_) => AnalysisService()..startPolling(),
+          ),
+          // One UpdateService for the whole app, so the banner and the Settings
+          // panel observe the SAME download. Provided as a nullable type because
+          // an offline build has no manifest endpoint and must not be offered a
+          // check that cannot succeed.
+          Provider<UpdateService?>.value(
+            value: updatesConfigured
+                ? UpdateService(manifestUrl: Uri.parse(updateManifestUrl))
+                : null,
           ),
         ],
         child: app,
@@ -158,7 +169,7 @@ class _Shell extends StatelessWidget {
     SettingsScreen(),
   ];
 
-  @override
+@override
   Widget build(BuildContext context) {
     final tabIndex = context.watch<AppState>().tabIndex;
     return MaterialApp(
@@ -183,10 +194,67 @@ class _Shell extends StatelessWidget {
         ),
         // Rendered in `bottomNavigationBar` (not stacked over the body) so
         // the screen list is laid out above it and never scrolls underneath.
-        bottomNavigationBar: HarborNavBar(
-          selectedIndex: tabIndex,
-          onSelected: (index) => context.read<AppState>().setTab(index),
+        //
+        // The banner sits INSIDE this slot, directly above the pill, so the two
+        // stack as one bottom cluster. Overlaying the body instead would cover
+        // the last row of a list and sit under the pill's shadow.
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _UpdateBannerSlot(
+              // Dismissing lasts the session, not the build: the state lives
+              // here so switching tabs cannot resurrect the banner, and a fresh
+              // launch brings it back.
+              onOpenSettings: () => _openUpdateSettings(context),
+            ),
+            HarborNavBar(
+              selectedIndex: tabIndex,
+              onSelected: (index) => context.read<AppState>().setTab(index),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  /// Jumps to Settings and asks the screen to bring the updates panel into
+  /// view, so "Update now" lands on the control rather than the top of a long
+  /// settings list.
+  void _openUpdateSettings(BuildContext context) {
+    final app = context.read<AppState>();
+    app.setTab(5);
+    app.requestUpdatesScroll();
+  }
+}
+
+/// Holds the banner and the session-scoped dismissal flag.
+class _UpdateBannerSlot extends StatefulWidget {
+  const _UpdateBannerSlot({required this.onOpenSettings});
+
+  final VoidCallback onOpenSettings;
+
+  @override
+  State<_UpdateBannerSlot> createState() => _UpdateBannerSlotState();
+}
+
+class _UpdateBannerSlotState extends State<_UpdateBannerSlot> {
+  /// "Later" hides the banner for this session only. Not persisted: an update
+  /// the trader waved off should reappear next launch rather than vanish
+  /// forever on a device that never opens Settings.
+  bool _dismissed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final service = context.watch<UpdateService?>();
+    if (service == null) return const SizedBox.shrink();
+
+    return ListenableBuilder(
+      listenable: service,
+      builder: (context, _) => UpdateBanner(
+        service: service,
+        dismissed: _dismissed,
+        onDismiss: () => setState(() => _dismissed = true),
+        onOpenSettings: widget.onOpenSettings,
       ),
     );
   }
