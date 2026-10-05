@@ -34,3 +34,40 @@
 - **rationale:** One coherent design language beats a redesigned home screen beside five legacy screens. Adding a second CTA would duplicate navigation the tab bar already provides.
 - **consequence:** The next formal design pass should cover all six screens so navigation and the component system can be validated end-to-end, not Radar alone.
 - **status:** accepted
+
+---
+
+## D-20261005-001 - Trade-idea publisher screening: all obvious candidates REJECTED
+
+- **date:** 2026-10-05
+- **trigger:** `plans/2026-10-05_source-adapter-expert-brief.md` - production had exactly one publisher (`manual-seed`, our own), so eligible external sources = 0 and there was no consensus to reach.
+- **method:** Each candidate screened against the spec's hard gates: M5/M15 intraday ideas, automated collection, redistribution inside a consumer app, commercial use, and genuine source independence. Verdicts below are the licensing/automation review required by product rule 6.
+- **decision:** **REJECT all of the following as automated XV idea sources** under their current public terms:
+
+| Candidate | Failing gate |
+|---|---|
+| TradingView Ideas | Terms restrict to display use; prohibit processing/non-display use and products built on the content; commercial API needs permission |
+| FXStreet | No acceptable automated-ingestion permission; reproduction/redistribution requires authorization |
+| DailyForex | Has the signal content XV wants, but personal use only; redistribution/resale/commercial exploitation prohibited |
+| Investing.com | Prohibits storing, reproducing, transmitting or distributing its data without written permission |
+| FXCM | Market Information may not be redistributed |
+| FX Empire | Blocks robots/spiders/data mining; commercial use needs permission |
+| MQL5 Signals | Requires registration, prohibits automated access and third-party software that gathers Signals content |
+| Reddit | API needs identification/OAuth; commercial use needs a separate agreement - fails the current no-registration/no-contract model |
+
+- **conclusion:** A free, no-login, automatically collectible, redistributable pool of genuinely independent M5/M15 XAUUSD idea publishers is **not currently verified to exist**. The external layer stays empty. Scraping any of the above to populate it would contradict rule 6 directly.
+- **corollary (already correct in code):** `external_independent_sources = 0`, `0 / 0`, `INTERNAL_ONLY`. `manual-seed` stays classified internal and never earns independence credit.
+- **status:** accepted
+
+---
+
+## D-20261005-002 - Reposition the internal engine as an ensemble, not consensus
+
+- **date:** 2026-10-05
+- **decision:** Build internal strategy families (Trend, Mean Reversion, Breakout, Market Structure, Momentum, Volatility Regime) that each publish an **opinion**, and report their agreement as **Strategy Agreement / Internal Ensemble / Method Agreement**. Reserve **External Source Agreement** and the word "consensus" for verified external publishers only. Never say "4 sources agree" for four internal models.
+- **provenance model (four independent axes, all already present in schema):** (a) publisher/source identity -> decides the displayed external count; (b) upstream dataset (`upstream_dataset_id`) -> measures information diversity, not publisher count; (c) methodology (`methodology_id`); (d) shared event window (`event_window`) -> record NFP_2026_10_02 etc. and report event concentration separately. Do NOT collapse sources merely because they react to the same event.
+- **hard rule:** **Unknown independence never counts as independent.** Headline counts are integers only. Fractional `independence_weight` stays for ranking/contribution, never for "N independent sources".
+- **threshold:** Do not present a majority-based consensus claim until at least **3** verified independent external publishers exist (2 is truthful but not useful; 1-of-1 is not consensus).
+- **public data - context only, never votes:** CFTC COT, BLS, BEA and Federal Reserve are public domain and redistributable with attribution. **LBMA gold price is NOT** - it may require an ICE Benchmark Administration licence.
+- **rationale:** The independence machinery is built and correct; only the roster was missing. Better to be truthfully narrow than to manufacture agreement the product cannot support.
+- **status:** accepted
