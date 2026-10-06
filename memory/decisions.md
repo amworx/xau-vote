@@ -267,3 +267,19 @@
 - **CONFIRMED CLEAN by contrast:** CFTC (US government), US Treasury (US government) and FOMC statements are fine. All three live layers are genuinely public-domain government publications.
 - **weight consequence that MUST be applied:** macro-side weight is currently denominated as policy 35 + WGC 20 + market_implied 20 = **75**. With WGC permanently excluded the achievable macro-side weight is **55**, and the same measured data becomes **100%** coverage rather than 73%. The coverage denominator must be recomputed over ACHIEVABLE weight, otherwise the UI permanently implies a 27% shortfall that does not exist and the 50% gate becomes meaningless.
 - **status:** accepted
+
+---
+
+## D-20261006-005 - Three-expert review: consensus on pause-features, divergence on pause-everything
+
+- **date:** 2026-10-06
+- **context:** three independent expert reviews of `plans/2026-10-06_mvp-status-and-blocker.md`. Recorded because the convergence is strong evidence and the disagreement is narrow.
+- **ALL THREE AGREE:** the self-assessment is honest; the publisher-consensus premise is dead under the licensing gate; Path B (community) is a different business; Path A (forward record) is the only viable free route; **entry/stop/TP and the copy action must be suppressed now**, not merely badged; spread CANNOT be backfilled and must be collected forward; provenance must be structural rather than a naming convention; substantial multi-year history is required.
+- **THE DISAGREEMENT IS ONE VERB.** Expert 3 says PAUSE ("before any further engineering investment"). Experts 1 and 2 say PIVOT and keep the recorder running. Expert 2's reason is the decisive one: pausing stops the only asset that accrues value, and it is the forward record.
+- **my position:** Expert 3's diagnosis and Expert 2's cadence are compatible. Pause FEATURES, do not pause DATA COLLECTION. "Before any further engineering investment" taken literally would stop the recorder - the one action guaranteed to make the question permanently unanswerable.
+- **gap in Expert 3's reasoning:** they answered a choice set of A/B/C and concluded no viable product. But their own premise ("no legally viable source of independent ideas") is precisely the condition under which Expert 2's Path D survives - "conditions, not calls": event risk, spread, volatility regime, macro stance, with no entry/stop/target. Those are facts and need no edge to be honest. Their negative conclusion rests on an incomplete option set.
+- **Expert 3's best addition:** the record is not a moat because anyone can replicate the table - true, and the fix is immutable provenance (a signed daily digest) which makes it a reference point rather than replicable data. Expert 2 called it "trust-and-time"; Expert 3 supplied the mechanism.
+- **Expert 3's over-engineering:** signed JWT manifests, a server-side whitelist and a Merkle hash chain, all proposed for a publish path that currently has ZERO publishers. Same critique as D-20261006-002: the cheapest correct action is to DELETE the publish path, not build a Merkle tree around a dead feature. Build provenance when a licensed source actually exists.
+- **arithmetic check performed on their challenge:** `MACRO COVERAGE 73%` is 55/75 macro-side weight and reconciles. Expert 3's "80" is the all-in denominator (100 minus WGC). Their conclusion was wrong, but the criticism is VALID and important: the UI renders a percentage with no stated denominator, so a reader assumes 100. Two denominators (75 macro-side, 100 all-in) exist in the model and the display must name which one. This is a real specification defect.
+- **sample-size maths verified:** SE of mean R ~= 1/sqrt(n); n of 200-300 separates +0.15R from zero at 95%. Expert 2's figure is correct. Expert 2's additional warning is stronger: the current data is from a trending bull regime that flatters longs, and long and short must be evaluated separately.
+- **status:** pending owner decision
