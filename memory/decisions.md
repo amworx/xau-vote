@@ -662,3 +662,178 @@ deliver the same stale minute sooner - and a Postgres Changes subscription on th
 table risks shipping the restricted ladder to subscribers, since the publication
 carries whole rows. If push is ever wanted, the safe shape is a channel fed by
 `price-live`, not the evidence table.
+
+## D-20261006-016 - Gold Hunts licensing/automation review: ELIGIBLE as session view only
+
+**decided:** 2026-10-06
+
+**reviewed:** `https://goldhunts.com/api/gold-signals.json` (fetched once, read-only,
+for this review - no ingestion, no storage, no display), plus
+`https://goldhunts.com/gold-data` (endpoint catalogue and licence),
+`https://goldhunts.com/terms-of-service`, and
+`https://goldhunts.com/for/journalists` (redistribution terms).
+
+**what it is:** 121 published XAUUSD session calls (Asian / London / New York)
+with direction, entry, stop, target, sweep level, invalidation text and a scored
+outcome once the session closes - wins and losses both kept. Machine-readable
+JSON, no key, no account, CORS enabled.
+
+**licence verdict: PERMITTED with attribution.** The payload itself carries
+`"license": "Free to use, including commercially, with visible attribution to
+Gold Hunts (https://goldhunts.com)."`. The data page confirms this covers quoting
+figures, reproducing charts, embedding widgets and **redistributing the
+datasets**; the journalists page repeats it. Conditions: a visible attribution
+link wherever the data appears; never present it as a guarantee of future
+results; never resell it as a paid signal service; never strip timestamps or the
+losing calls.
+
+**the ToS question, answered:** the terms of service forbid "scraping data" from
+the Gold Hunts platform, but the data page expressly publishes these endpoints
+"so agents can call it, not just quote it". Calling a published, keyless,
+CORS-enabled JSON API is using the offered interface, not scraping the platform.
+The two are consistent as long as we call the API and never scrape the site.
+
+**automation verdict: PERMITTED.** No key, no account, no robots conflict for the
+API endpoints; hourly regeneration is the documented cadence. Poll no faster than
+the documented refresh.
+
+**two hard limits found during review:**
+
+1. **The static file is stale.** `generated_at` was 2026-09-25 with
+   `"stale": true` - eleven days old on the day of review. The data page offers a
+   live read-only endpoint returning the identical shape for sub-hourly data:
+   `https://ebhodyknnbdhdiezrtsk.supabase.co/functions/v1/refresh-gold-data?dataset=gold-signals`.
+   Any integration MUST use the live endpoint, never the static file. Serving an
+   11-day-old session call as current would be a fabrication-adjacent failure.
+2. **Session calls are not 15M setups.** These are session-level reads
+   (Asian/London/NY bias, range, sweep). Under product rule 1 they can never
+   enter the 15M consensus as votes. And as a single publisher it can never
+   satisfy the two-independent-publisher rule, so it can never produce
+   EXTERNAL_CONFIRMED.
+
+**decision:** Gold Hunts is APPROVED as an `EXTERNAL_SESSION_VIEW` source only:
+labels reproduced verbatim (BULLISH / BEARISH / RANGING / SWEEP_THEN_REVERSE),
+never mapped to XV votes, never merged into consensus, attribution visible
+wherever shown. It is NOT approved as a consensus voter, a setup trigger, or a
+confirmation input. Integration is still to build; this decision only opens the
+gate.
+
+### Addendum 2026-10-06 - superseded in part by the owner directive
+
+The owner pasted the FINAL FREE-ONLY COMPLETION DIRECTIVE, which states it
+replaces all previous free-only directives. Where this review differs from it,
+the directive wins. Three deltas:
+
+1. **Written confirmation is still outstanding.** The directive requires written
+   confirmation from the publisher before treating the service as a production
+   dependency. No request has been sent. The "APPROVED as session view" above
+   therefore covers display under the published licence only; production
+   dependency status is PENDING. The agent cannot email the publisher - the owner
+   must send or authorize the request (suggested recipient:
+   info@goldhunts.com, the address in their own terms).
+2. **Freshness rule tightened.** The directive marks STALE when `stale == true`
+   OR `now - data_as_of > 6 hours`. The 6-hour rule is adopted; the review above
+   only noted staleness qualitatively.
+3. **UI and reconciliation are specified, not open design.** Integration must use
+   the exact EXTERNAL SESSION VIEW format and the §3 outcome-reconciliation
+   cases (STOP_FIRST / TARGET_FIRST / BOTH_SAME_BAR / NEITHER / NO_OVERLAP /
+   NOT_A_TRADE_CALL), with the provider HIT treated as its own score, never as
+   proof a target was reached.
+
+## D-20261006-017 - FXScalpers review: BLOCKED, no reuse licence published
+
+**decided:** 2026-10-06
+
+**reviewed:** `https://fxscalpers.net/` homepage plus footer/disclaimer (fetched
+once, read-only, for this review). A web search for its redistribution/automation
+terms returned only name-collision services (theforexscalpers, forexscalperpro,
+fxscalperx, copyconnectfx) - none of those terms belong to fxscalpers.net and
+none are attributed to it here.
+
+**content verdict:** PASS as a candidate. Free Telegram channel, XAUUSD first,
+London/New York sessions, entry/stop/target on every call before price arrives,
+follow-ups and a weekend scorecard with losers kept visible. Methodology
+(supply & demand + market structure + liquidity sweeps, M15 confirmation, M5
+execution) is genuinely different from Gold Hunts session calls, so the
+independence requirement is satisfiable in principle.
+
+**licence verdict: BLOCKED.** The site publishes no reuse, redistribution, or
+automation licence of any kind. The only statements found are "© 2026
+FXScalpers" and a footer disclaimer that content is educational, not investment
+advice. Silence is not permission. Under product rule 5 and directive §5
+(unknown provenance does not count), FXScalpers must NOT be collected,
+ingested, stored, or displayed until a written licence exists.
+
+**the path remains what the expert brief says:** request a free written licence
+for automated collection + structured-field storage + redistribution inside XV +
+commercial use + attribution, covering symbol/timestamp/direction/entry/stop/
+target(s)/timeframe/source URL or message ID - prose and images excluded. No
+money needs to change hands. A draft request text is held with the owner; the
+agent cannot send it.
+
+**status:** NOT Voter #2. Re-review only after written permission arrives.
+
+## D-20261006-018 - Tech Kick: CC BY 4.0 research archive approved as context only; FXLeaders rejected
+
+**decided:** 2026-10-06
+
+**Tech Kick** (`https://techkick.me/about`, fetched once, read-only): the
+expert brief claimed CC BY 4.0 research. Verified with a scope correction - the
+licence covers specifically "the XAUUSD spread and volatility archive behind our
+research... with the script that reproduces it byte for byte", not the whole
+site (footer remains © all rights reserved). CC BY 4.0 permits commercial reuse
+with attribution, so the archive is usable as an independent research/context
+input with visible attribution to Tech Kick.
+
+Tech Kick states in its own words: "It is not a signal service and not copy
+trading." It is therefore approved as a research/context family member only and
+can NEVER be a consensus voter - there is no live call stream to vote with.
+Candidate future uses: spread/volatility context for cost modelling, and
+methodology cross-checks. Any use attributes Tech Kick visibly.
+
+**FXLeaders:** REJECTED. Per its published terms (as cited in the expert brief;
+not independently re-fetched because the cited prohibition is explicit and
+unambiguous): no commercial exploitation without written permission, no
+third-party automated signal-copying systems. Absent a licence that overrides
+this, it stays rejected. Re-review only if written permission arrives.
+
+## D-20261006-019 - FXScalpers said yes, but the platform says no
+
+**decided:** 2026-10-06
+
+**publisher permission: RECEIVED IN SUBSTANCE, wording not yet archived.**
+The operator replied quickly, welcomed the app, and agreed XV may use the
+channel. They will provide nothing else: no API, no structured feed, no bot,
+no technical cooperation. The exact reply wording has NOT yet been archived as
+licence evidence - the owner must paste/save the verbatim reply with its date
+before this counts as recorded permission, and it must be checked to cover
+automated collection + structured storage + redistribution + commercial use,
+not just "reading the channel".
+
+**platform verdict: BLOCKED independent of the publisher.**
+Telegram's own terms (`telegram.org/tos/content-licensing`, read 2026-10-06)
+prohibit accessing user content "for any purpose other than ordinary,
+legitimate, and intended use of the Telegram platform as its user", outside a
+narrow exception for operating a compliant client/bot/mini app. The publisher
+can license its own content but cannot waive Telegram's platform terms.
+
+Collection paths assessed:
+
+- Bot API: a bot reads channel posts only where it is admin. Requires operator
+  action they have already declined. DEAD unless they reconsider one 2-minute
+  favour (add a read-only bot as channel admin).
+- MTProto/userbot scraping: reads the channel fine and violates the platform
+  terms doing it, with temporary or permanent bans as the stated consequence.
+  REJECTED - building XV's second publisher on a ToS violation would trade a
+  licensing gate we enforce for one we break.
+- Owner-curated manual entry: a human reads the channel (ordinary use, no
+  violation) and enters structured fields with the message link as provenance.
+  LEGAL under both licences, but it is labour, it is transcription-error-prone,
+  and every hand-entered level needs an independent check before it can vote.
+  INTERIM ONLY, with a protocol, never the steady state.
+
+**status:** FXScalpers remains NOT Voter #2. Permission is provisionally
+received; usability is blocked on collection method, not on goodwill. Next:
+archive the verbatim reply, then either the 2-minute bot-admin favour or a
+manual-curation protocol - or accept there is no compliant automated path and
+stop here.

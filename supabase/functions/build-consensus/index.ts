@@ -79,33 +79,58 @@ Deno.serve(async (_req) => {
       }
     : null;
 
+  // curated_ok = true: the independent-check gate (migration 0021). Curated
+  // rows are hand-entered and transcription is error-prone, so nothing votes on
+  // the author's first pass alone - a second pass against the publisher message
+  // flips the flag. Defaults false, so omissions fail closed. Seed fixtures are
+  // false explicitly and can never vote through this flag even if their
+  // internal:// source marking were ever lost.
   const { data: ideas, error } = await db.from('trade_ideas')
     .select('*')
     .eq('symbol', 'XAUUSD')
     .eq('timeframe', 'M15')
+    .eq('curated_ok', true)
     .gte('published_at', new Date(now.getTime() - 60 * 60000).toISOString())
     .order('published_at', { ascending: false });
   if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
   const rows = (ideas ?? []) as Idea[];
 
+  // Every run leaves exactly one audit row. The NO_CONSENSUS rows carry no
+  // levels (direction neutral, strength 0) - inventing levels for a non-signal
+  // would be fabrication, and the level columns are nullable precisely so this
+  // insert is honest.
+  //
+  // The insert error is CHECKED, not ignored. On 2026-10-06 the level columns
+  // were NOT NULL and every audit write failed for ten hours while the function
+  // kept returning HTTP 200 - the outage was invisible until postgres_logs was
+  // read. A run that cannot leave its audit trail has not completed, so it
+  // fails loudly.
   const fail = async (reason: string, counts: Record<string, number>) => {
-    await db.from('consensus_signals').insert({
+    const { error: auditErr } = await db.from('consensus_signals').insert({
       symbol: 'XAUUSD', timeframe: 'M15', direction: 'neutral', strength: 0,
       status: toDbStatus('expired'), created_at: now.toISOString(), updated_at: now.toISOString(),
       expires_at: now.toISOString(),
     });
-    return Response.json({ ok: true, consensus: 'NO_CONSENSUS', reason, counts, eventContext });
+    if (auditErr) {
+      console.error(`build-consensus: audit write failed (${reason}): ${auditErr.message}`);
+      return Response.json({ ok: false, consensus: 'NO_CONSENSUS', reason, counts, eventContext, auditWritten: false, error: auditErr.message }, { status: 500 });
+    }
+    return Response.json({ ok: true, consensus: 'NO_CONSENSUS', reason, counts, eventContext, auditWritten: true });
   };
 
   if (blocker) {
     // Audit log: suppressed signal attempt → blocking event id (addendum §2).
     const b = blocker as { id: string; title: string; starts_at: string };
     console.log(`build-consensus: BLACKOUT suppressed by event ${b.id} (${b.title} @ ${b.starts_at})`);
-    await db.from('consensus_signals').insert({
+    const { error: blackoutErr } = await db.from('consensus_signals').insert({
       symbol: 'XAUUSD', timeframe: 'M15', direction: 'neutral', strength: 0,
       status: toDbStatus('expired'), created_at: now.toISOString(), updated_at: now.toISOString(),
       expires_at: now.toISOString(),
     });
+    if (blackoutErr) {
+      console.error(`build-consensus: blackout audit write failed: ${blackoutErr.message}`);
+      return Response.json({ ok: false, consensus: 'NO_CONSENSUS', reason: 'BLACKOUT', auditWritten: false, error: blackoutErr.message }, { status: 500 });
+    }
     return Response.json({
       ok: true, consensus: 'NO_CONSENSUS', reason: 'BLACKOUT',
       counts: { long: 0, short: 0, neutral: 0 },
@@ -148,25 +173,38 @@ Deno.serve(async (_req) => {
   // Sources whose url is `internal://` are the pipeline's own seed data. They
   // are excluded from the independence count so they can never stand in for an
   // external publisher, per D-20261005-001: "1-of-1 is not consensus".
-  const { data: sourceRows } = await db.from('sources').select('id, url, name');
+  //
+  // Sources with enabled = false are likewise excluded. Registration is not
+  // permission: FXScalpers is registered (migration 0020) but stays disabled
+  // until its written permission is archived (D-20261006-017), and a disabled
+  // source counts nothing even if approved idea rows somehow existed for it.
+  // Voting needs BOTH an enabled source AND curated_ok rows - either switch
+  // alone fails closed.
+  const { data: sourceRows } = await db.from('sources').select('id, url, name, enabled');
+  const srcList = ((sourceRows ?? []) as { id: string; url: string | null; enabled: boolean | null }[]);
   const internalSourceIds = new Set(
-    ((sourceRows ?? []) as { id: string; url: string | null }[])
-      .filter((s) => (s.url ?? '').startsWith('internal://'))
-      .map((s) => s.id),
+    srcList.filter((s) => (s.url ?? '').startsWith('internal://')).map((s) => s.id),
+  );
+  const disabledSourceIds = new Set(
+    srcList.filter((s) => s.enabled === false).map((s) => s.id),
   );
   const campSourceIds = new Set(camp.map((x) => x.idea.source_id));
-  const externalSourceIds = [...campSourceIds].filter((id) => !internalSourceIds.has(id));
+  const externalSourceIds = [...campSourceIds].filter((id) => !internalSourceIds.has(id) && !disabledSourceIds.has(id));
   const distinctExternalSources = externalSourceIds.length;
 
   if (distinctExternalSources < MIN_INDEPENDENT_SOURCES || domShare < MIN_DOMINANT_SHARE) {
     const reason = distinctExternalSources < MIN_INDEPENDENT_SOURCES
       ? (campSourceIds.size === 0 ? 'NO_SOURCES' : 'SINGLE_SOURCE')
       : 'DIVIDED';
-    await db.from('consensus_signals').insert({
+    const { error: noConsensusErr } = await db.from('consensus_signals').insert({
       symbol: 'XAUUSD', timeframe: 'M15', direction: 'neutral', strength: 0,
       status: toDbStatus('expired'), created_at: now.toISOString(), updated_at: now.toISOString(),
       expires_at: now.toISOString(),
     });
+    if (noConsensusErr) {
+      console.error(`build-consensus: no-consensus audit write failed (${reason}): ${noConsensusErr.message}`);
+      return Response.json({ ok: false, consensus: 'NO_CONSENSUS', reason, auditWritten: false, error: noConsensusErr.message }, { status: 500 });
+    }
     return Response.json({
       ok: true,
       consensus: 'NO_CONSENSUS',

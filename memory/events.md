@@ -864,3 +864,67 @@
      a version bump is also what makes the next decision a new key.
    - **build gotcha repeated:** `--dart-define=LIVE=true` is required or the app
      silently serves fixtures.
+
+## EVT-20261006-0214 step 5 verdict: repeated-EXPIRED claim is PARTIALLY CONFIRMED, not reproducing
+
+   - **mode:** RESEARCH
+   - **action:** Verified the "repeated EXPIRED rows every few minutes" claim per
+     directive §15 before acting on it: row timestamps, cron schedules, function
+     error logs.
+   - **evidence:** 1,067 EXPIRED rows 2026-10-02 17:55 through 2026-10-06 11:22
+     UTC, one roughly every 5 minutes, matching the still-active
+     `xv-build-consensus` schedule (`2-59/5`). Zero EXPIRED or INVALIDATED rows in
+     the last 6 hours. `build-consensus` still fires (last 19:57 UTC) with no
+     error in its logs - it simply writes nothing now.
+   - **cause of cessation:** `xv-collect-ideas` was frozen inactive around
+     11:10-11:22 UTC (matches the D-20261006 seed-freeze note: newest idea 12:09,
+     still 12:09 at 14:10 local). With the seed pipeline stopped, the consensus
+     builder had nothing fresh to turn into expiring signals. The pattern died
+     with its food supply, not by a code fix.
+   - **verdict:** PARTIALLY CONFIRMED historically, NOT REPRODUCED now. No cron
+     is currently manufacturing signals: 0 open signals, 0 new rows in 6h.
+   - **residual risk (step 6 territory):** `xv-build-consensus` still runs every
+     5 minutes. It currently emits nothing, which is the desired behaviour, but
+     nothing structural stops it from emitting again if a seeder is ever
+     re-enabled. Fixture isolation + the daily canary (§16) are what make this
+     stay true.
+   - **tags:** verification, expired-rows, cron, step-5
+
+## EVT-20261006-0215 consensus pipeline was silently broken for 10h; fixed, voter wired
+
+   - **mode:** BUILD
+   - **action:** Owner authorised FXScalpers as a voter ("green light, no further
+     communication"). Before wiring anything, verified the pipeline it would
+     feed - and found it broken.
+   - **the break:** `build-consensus` returned HTTP 200 every 5 min but wrote no
+     `consensus_signals` rows since 11:22 UTC. Root cause from postgres_logs:
+     `null value in column entry_low violates not-null constraint` on every
+     NO_CONSENSUS audit write. The fail-rows carry no levels (correctly - a
+     non-signal must not invent them) but the columns were NOT NULL, so every
+     audit insert errored; the function ignored insert errors and reported
+     success. Ten hours of silent 200s.
+   - **fixes:** migration 0019 makes entry_low/entry_high/stop_loss nullable
+     (NULL is the honest value for a non-signal; sentinels would be
+     fabrication), and build-consensus v4/v5 now checks every audit insert and
+     returns 500 on write failure. Verified: audit rows resumed (1078 -> 1080).
+   - **the voter, compliant shape:** automated Telegram collection stays
+     REJECTED (platform ToS, D-019 - the green light cannot waive Telegram`s
+     rules). Built instead: FXScalpers source row DISABLED (migration 0020),
+     `curated_ok` two-pass approval flag (migration 0021 + function filter),
+     `enabled` enforced in the independence count (v5), manual curation protocol
+     (docs/fxscalpers-curation-protocol.md). Voting needs archived permission +
+     enabled source + approved rows; any one missing fails closed.
+   - **live voter test (safe):** one clearly-marked TEST idea, enabled source,
+     invoked -> SINGLE_SOURCE with distinct_external_sources:1 - the voter
+     counts exactly as designed and consensus correctly refused. Test row
+     deleted immediately after, source re-disabled, verified zero approved rows
+     remain. The SINGLE_SOURCE audit row stays as a truthful run record.
+   - **refused, plainly:** automated scraping of the channel under "do whatever
+     it needs". Owner instruction cannot authorise violating Telegram`s terms or
+     the project`s licensing gate. Manual pipe is what the green light stretches
+     to; if hand-entry is unacceptable, there is no path and work stops here.
+   - **files:** supabase/migrations/0019_consensus_levels_nullable.sql (new),
+     0020_fxscalpers_source_row.sql (new), 0021_curated_approval_flag.sql (new),
+     supabase/functions/build-consensus/index.ts, docs/fxscalpers-curation-protocol.md (new)
+   - **deployed:** build-consensus v5.
+   - **tags:** consensus-pipeline, silent-failure, voter, fxscalpers, manual-curation
