@@ -654,3 +654,17 @@
   - Fingerprints that include `author` cannot detect divided rooms when the source controls the author field. Independence has to be anchored on `source_id`.
   - Synthetic fixtures on a production cron path will eventually be published as real output. The gate must be trustworthy even while the data is fake.
 - **tags:** sources, consensus, independence, fabricated-data, critical, correctness
+
+---
+
+## EVT-20261006-0003 - Prepared the source-architecture expert brief
+
+- **id:** EVT-20261006-0003
+- **timestamp:** 2026-10-06T14:35
+- **mode:** PLAN
+- **action:** Wrote `plans/2026-10-06_source-architecture-expert-brief.md` for external consultation, at the user's request.
+- **why an expert and not more local work:** the open decisions (product identity, whether to keep a permanently-empty headline feature, whether to reframe "sources" as macro layers, what to do with seed data) are product-strategy and licensing judgements, not code defects. They need an independent view, and they are exactly the kind of decision where a second opinion can catch a premise error.
+- **sanitization:** verified clean of credentials, project refs, hostnames and internal identifiers. Only the public domain data sources are named, which is necessary for the expert to reason about them.
+- **structure:** six numbered decision-forcing questions, each to be answered as Recommendation / Reasoning / Risks / Alternative / Confidence / Assumptions, with an explicit invitation to disagree with the stated premises.
+- **deliberately included:** the independence bug (ideas counted instead of sources) and the live-seeding problem, because both are evidence about how this product misleads and the expert's Q6 depends on them.
+- **tags:** expert-consultation, product-strategy, licensing, sources, sanitization
