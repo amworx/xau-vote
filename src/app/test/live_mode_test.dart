@@ -64,6 +64,7 @@ class _StubRepository implements LiveRepository {
     this.enabledSources = 1,
     this.provenance = const [],
     this.contributors = const [],
+    this.goldHunts = const [],
   });
 
   // Defaults are unused by the populated fixture, which supplies both
@@ -93,6 +94,10 @@ class _StubRepository implements LiveRepository {
   final SentimentLayers sentimentRows;
   final List<DisplayEvent> events;
   final List<DisplayDigestTheme> digest;
+
+  /// Gold Hunts session views. Empty by default: a stub must not invent an
+  /// external publisher the backend did not report.
+  final List<GoldHuntsSessionView> goldHunts;
 
   /// When set, every read throws — the failed-poll case.
   Object? failWith;
@@ -139,6 +144,12 @@ class _StubRepository implements LiveRepository {
   Future<DisplaySignal?> activeSignal() async {
     _guard();
     return signal;
+  }
+
+  @override
+  Future<List<GoldHuntsSessionView>> goldHuntsSessionViews({int limit = 10}) async {
+    _guard();
+    return goldHunts;
   }
 
   @override
@@ -577,7 +588,6 @@ void main() {
     });
 
     test('a halt-to-open flip notifies without any data changing', () async {
-      // Regression 2026-10-07: the market reopened after the daily halt and
       // the app kept showing MARKET CLOSED until an unrelated data poll
       // happened to rebuild the screens. The flip below moves no price, no
       // signal, no event - only the clock - and the screens must still learn.
@@ -602,6 +612,122 @@ void main() {
       // Still open: silence again.
       live.checkSession(at: DateTime.utc(2026, 10, 6, 22, 5));
       expect(notifications, 1);
+    });
+  });
+
+  group('Gold Hunts session view is separate and honest', () {
+    GoldHuntsSessionView view({
+      required String direction,
+      required String session,
+      DateTime? publishedAt,
+      DateTime? dataAsOf,
+      bool providerStale = false,
+    }) =>
+        GoldHuntsSessionView(
+          providerId: 'gh-$direction-$session',
+          direction: direction,
+          session: session,
+          publishedAt: publishedAt,
+          dataAsOf: dataAsOf,
+          providerStale: providerStale,
+        );
+
+    test('freshness follows the directive rule, not the fetch time', () {
+      final now = DateTime.utc(2026, 10, 6, 22, 30);
+      // Fresh data, provider quiet: current.
+      expect(
+        view(
+          direction: 'BEARISH',
+          session: 'NY',
+          publishedAt: now.subtract(const Duration(minutes: 40)),
+          dataAsOf: now.subtract(const Duration(minutes: 40)),
+        ).isStaleAt(now),
+        isFalse,
+      );
+      // Provider flag set: stale whatever the clock says.
+      expect(
+        view(
+          direction: 'BEARISH',
+          session: 'NY',
+          publishedAt: now.subtract(const Duration(minutes: 5)),
+          dataAsOf: now.subtract(const Duration(minutes: 5)),
+          providerStale: true,
+        ).isStaleAt(now),
+        isTrue,
+      );
+      // Older than 6 hours: stale.
+      expect(
+        view(
+          direction: 'RANGING',
+          session: 'LONDON',
+          publishedAt: now.subtract(const Duration(hours: 8)),
+          dataAsOf: now.subtract(const Duration(hours: 8)),
+        ).isStaleAt(now),
+        isTrue,
+      );
+      // No timestamp at all: stale, never current by default.
+      expect(
+        view(direction: 'RANGING', session: 'LONDON').isStaleAt(now),
+        isTrue,
+      );
+    });
+
+    testWidgets('session view renders verbatim and never votes', (tester) async {
+      final now = DateTime.now().toUtc();
+      final live = LiveData(
+        repository: _StubRepository(
+          goldHunts: [
+            view(
+              direction: 'SWEEP_THEN_REVERSE',
+              session: 'ASIAN',
+              publishedAt: now.subtract(const Duration(minutes: 40)),
+              dataAsOf: now.subtract(const Duration(minutes: 40)),
+            ),
+            view(
+              direction: 'BEARISH',
+              session: 'NY',
+              publishedAt: now.subtract(const Duration(hours: 8)),
+              dataAsOf: now.subtract(const Duration(hours: 8)),
+            ),
+          ],
+        ),
+      );
+      addTearDown(live.dispose);
+      await _pumpLive(tester, live);
+      await tester.tap(find.byKey(const ValueKey('nav-SOURCES')));
+      await tester.pumpAndSettle();
+
+      // The provider's labels, verbatim, with sessions and attribution.
+      expect(find.text('Label: SWEEP_THEN_REVERSE'), findsOneWidget);
+      expect(find.textContaining('Session: ASIAN'), findsOneWidget);
+      expect(find.text('Label: BEARISH'), findsOneWidget);
+      expect(find.text('Gold Hunts'), findsOneWidget);
+      expect(find.textContaining('goldhunts.com'), findsOneWidget);
+      // Never mapped to a trade direction.
+      expect(find.text('Label: LONG'), findsNothing);
+      expect(find.text('Label: SHORT'), findsNothing);
+      // The separation is stated, not implied.
+      expect(find.textContaining('Not a vote'), findsOneWidget);
+      // Staleness is per-row and section-wide: the 8-hour call is marked, and
+      // the section carries the banner because one of its rows is stale.
+      expect(find.text('STALE'), findsNWidgets(2));
+      // The voter headline is untouched by the session view: still no signal,
+      // still no invented agreement.
+      expect(
+        find.text('No active signal — nothing to attribute yet'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('an empty feed says so instead of borrowing rows', (tester) async {
+      final live = LiveData(repository: _StubRepository());
+      addTearDown(live.dispose);
+      await _pumpLive(tester, live);
+      await tester.tap(find.byKey(const ValueKey('nav-SOURCES')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No open session calls reported.'), findsOneWidget);
+      expect(find.text('Label: BEARISH'), findsNothing);
     });
   });
   // `mockMode` is a compile-time flag, so a test cannot flip the build. What

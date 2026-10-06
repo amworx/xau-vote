@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:xau_core/xau_core.dart';
 import 'package:xauvote/data/analysis_service.dart';
 import 'package:xauvote/data/live_repository.dart';
+import 'package:xauvote/models/display_models.dart';
 import 'package:xauvote/models/sentiment_layers.dart';
 
 /// A repository stub that returns a controlled series, so the service can be
@@ -38,6 +39,9 @@ class _Repo implements LiveRepository {
 
   @override
   Future<List<EconomicEvent>> analysisEvents({int hoursAhead = 24}) async => const [];
+
+  @override
+  Future<List<GoldHuntsSessionView>> goldHuntsSessionViews({int limit = 10}) async => const [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>
@@ -592,6 +596,10 @@ class _ThrowingRepo implements LiveRepository {
 
   @override
   Future<List<EconomicEvent>> analysisEvents({int hoursAhead = 24}) async =>
+      throw StateError('backend down');
+
+  @override
+  Future<List<GoldHuntsSessionView>> goldHuntsSessionViews({int limit = 10}) async =>
       throw StateError('backend down');
 
   @override

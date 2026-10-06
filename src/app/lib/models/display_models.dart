@@ -423,6 +423,59 @@ class DisplayEvent {
   bool get isSurprise => surprise == 'hot' || surprise == 'cold';
 }
 
+/// One Gold Hunts open session call, labels only (D-20261006-016).
+///
+/// EXTERNAL SESSION VIEW, never a vote: the provider's direction/session label
+/// is reproduced verbatim and must never be mapped to LONG/SHORT, merged into
+/// consensus, or described as agreement with XV. There are deliberately no
+/// level fields here - no entry, stop, target, range, or headline - because
+/// headlines embed prices and the directive forbids supplying XV levels from
+/// provider levels. The view that feeds this model carries no such columns, so
+/// a level cannot arrive even by accident.
+class GoldHuntsSessionView {
+  const GoldHuntsSessionView({
+    required this.providerId,
+    required this.direction,
+    required this.session,
+    this.sessionDate,
+    this.publishedAt,
+    this.dataAsOf,
+    this.providerStale = false,
+    this.status = 'open',
+  });
+
+  /// Provider call id. Traceability only - never displayed as content.
+  final String providerId;
+
+  /// The provider's own label, verbatim: BULLISH, BEARISH, RANGING,
+  /// SWEEP_THEN_REVERSE. Any other string is rejected upstream, never mapped.
+  final String direction;
+
+  /// The provider's own session: ASIAN, LONDON, NY (their spelling kept).
+  final String session;
+
+  final DateTime? sessionDate;
+  final DateTime? publishedAt;
+
+  /// What the provider's data was current as of. Null means unknown, which
+  /// reads as stale - an undated call must never present as current.
+  final DateTime? dataAsOf;
+
+  /// The provider's own stale flag, when set.
+  final bool providerStale;
+
+  final String status;
+
+  /// Directive §2 freshness rule: STALE when the provider says so, or when
+  /// the data is older than 6 hours, or when its age is unknown at all.
+  bool isStaleAt(DateTime now) {
+    if (providerStale) return true;
+    final asOf = dataAsOf;
+    if (asOf == null) return true;
+    return now.toUtc().difference(asOf.toUtc()).inSeconds > 6 * 3600;
+  }
+}
+
 /// ISO code → country flag emoji.
 ///
 /// Returns null for anything unmapped. A flag is an aid, not an identity: the

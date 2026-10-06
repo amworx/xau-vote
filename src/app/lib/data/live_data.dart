@@ -104,6 +104,15 @@ class LiveData extends ChangeNotifier {
   List<DisplayEvent> _events = const [];
   List<DisplayDigestTheme> _digest = const [];
 
+  /// Gold Hunts open session calls, labels only (D-20261006-016).
+  ///
+  /// Read-only context for the Sources screen's EXTERNAL SESSION VIEW section.
+  /// Nothing here votes, confirms, or feeds the agreement math - it is a
+  /// separate publisher's published read, shown with attribution, and the
+  /// staleness decision travels with each row rather than being recomputed
+  /// from a fetch timestamp the UI never sees.
+  List<GoldHuntsSessionView> _goldHunts = const [];
+
   /// Publishers behind the active signal's ideas.
   List<DisplaySource> _contributors = const [];
 
@@ -144,6 +153,10 @@ class LiveData extends ChangeNotifier {
   List<DisplaySource> get contributors => _contributors;
   List<DisplayEvent> get events => _events;
   List<DisplayDigestTheme> get digest => _digest;
+
+  /// Gold Hunts open session calls for the Sources screen's external session
+  /// view. Context only - never an input to agreement, confirmation, or votes.
+  List<GoldHuntsSessionView> get goldHunts => _goldHunts;
 
   // --------------------------------------------------------------- polling
 
@@ -333,6 +346,10 @@ class LiveData extends ChangeNotifier {
         _history = await _repo.history();
         _events = await _repo.upcomingEvents();
         _digest = await _repo.latestDigest();
+        // External session view, same slow cadence: the provider regenerates
+        // hourly, so reading it faster only rebuilds the section against
+        // unchanged rows.
+        _goldHunts = await _repo.goldHuntsSessionViews();
         changed = true;
       }
 

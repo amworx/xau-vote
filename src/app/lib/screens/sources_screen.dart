@@ -136,6 +136,15 @@ class SourcesScreen extends StatelessWidget {
             ),
           ),
         ),
+        // EXTERNAL SESSION VIEW (directive §2, D-20261006-016). A separate
+        // publisher's published read, shown with attribution - never a vote,
+        // never merged into the agreement math above, which this section does
+        // not touch. Offline builds show nothing here: there are no fixtures
+        // for someone else's published calls.
+        if (live != null) ...[
+          const SizedBox(height: 13),
+          _GoldHuntsSection(views: live.goldHunts),
+        ],
       ],
     );
   }
@@ -572,6 +581,165 @@ class _IndependenceNote extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// EXTERNAL SESSION VIEW - Gold Hunts (directive §2, D-20261006-016).
+///
+/// A separate publisher's published read, shown with attribution. This section
+/// is display-only by construction: it reads a label-only view, carries no
+/// levels, and nothing here touches the agreement math, the voter count, or
+/// the consensus state above. The provider's label is reproduced verbatim and
+/// never mapped to LONG/SHORT; calling it agreement with XV is forbidden, so
+/// the section says what it is not.
+class _GoldHuntsSection extends StatelessWidget {
+  const _GoldHuntsSection({required this.views});
+
+  final List<GoldHuntsSessionView> views;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now().toUtc();
+    final stale = views.isEmpty || views.any((v) => v.isStaleAt(now));
+    return HarborCard(
+      radius: 16,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const HarborEyebrow('External session view'),
+              const Spacer(),
+              if (stale)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: harborWarnSoft,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                    child: const Text(
+                      'STALE',
+                      style: TextStyle(
+                        fontFamily: 'Space Mono',
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        color: harborWarn,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Gold Hunts',
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (views.isEmpty)
+              const Text(
+                'No open session calls reported.',
+                style: TextStyle(
+                  fontFamily: 'Sora',
+                  fontSize: 12,
+                  color: harborDim,
+                ),
+              )
+            else
+              for (final v in views.take(3)) ...[
+                _GoldHuntsRow(view: v, now: now),
+                const SizedBox(height: 8),
+              ],
+            const Text(
+              'Not a vote · not merged into consensus · never a confirmation.',
+              style: TextStyle(
+                fontFamily: 'Space Mono',
+                fontSize: 9,
+                color: harborFaint,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Data: Gold Hunts (goldhunts.com) · educational research, not advice.',
+              style: TextStyle(
+                fontFamily: 'Space Mono',
+                fontSize: 9,
+                color: harborFaint,
+              ),
+            ),
+          ],
+        ),
+      );
+  }
+}
+
+class _GoldHuntsRow extends StatelessWidget {
+  const _GoldHuntsRow({required this.view, required this.now});
+
+  final GoldHuntsSessionView view;
+  final DateTime now;
+
+  static String _ago(DateTime? t, DateTime now) {
+    if (t == null) return 'time unknown';
+    final m = now.difference(t.toUtc()).inMinutes;
+    if (m < 1) return 'just now';
+    if (m < 60) return '${m}m ago';
+    final h = m ~/ 60;
+    if (h < 24) return '${h}h ${m % 60}m ago';
+    return '${h ~/ 24}d ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final v = view;
+    final stale = v.isStaleAt(now);
+    final stamp = v.publishedAt;
+    final asOf = v.dataAsOf;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                // Verbatim provider label. Never mapped, never translated.
+                'Label: ${v.direction}',
+                style: const TextStyle(
+                  fontFamily: 'Sora',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            if (stale)
+              const Text(
+                'STALE',
+                style: TextStyle(
+                  fontFamily: 'Space Mono',
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  color: harborWarn,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        Text(
+          'Session: ${v.session}'
+          '${stamp != null ? ' · Published ${_ago(stamp, now)}' : ''}'
+          '${asOf != null ? ' · Data as of ${_ago(asOf, now)}' : ' · Data as of unknown'}',
+          style: const TextStyle(
+            fontFamily: 'Space Mono',
+            fontSize: 10,
+            color: harborDim,
+          ),
+        ),
+      ],
     );
   }
 }

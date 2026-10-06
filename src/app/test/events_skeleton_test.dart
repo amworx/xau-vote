@@ -171,6 +171,9 @@ class _SlowRepository implements LiveRepository {
   Future<DisplaySignal?> activeSignal() async => null;
 
   @override
+  Future<List<GoldHuntsSessionView>> goldHuntsSessionViews({int limit = 10}) async => const [];
+
+  @override
   Future<List<DisplayHistoryEntry>> history({int limit = 50}) async => const [];
 
   @override

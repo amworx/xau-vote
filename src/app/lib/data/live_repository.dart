@@ -917,6 +917,48 @@ class LiveRepository {
     );
   }
 
+  /// Open Gold Hunts session calls, labels only (D-20261006-016).
+  ///
+  /// Reads `goldhunts_session_view`, the only client-readable surface, which
+  /// carries no level columns by construction. Unknown direction labels are
+  /// dropped here as a second net behind the sync function: the UI must never
+  /// render a label it was not taught, because an untaught label invites
+  /// inventing a meaning for it.
+  Future<List<GoldHuntsSessionView>> goldHuntsSessionViews({int limit = 10}) async {
+    final r = await _client
+        .from('goldhunts_session_view')
+        .select('*')
+        .order('published_at', ascending: false)
+        .limit(limit);
+
+    const known = {'BULLISH', 'BEARISH', 'RANGING', 'SWEEP_THEN_REVERSE'};
+    final out = <GoldHuntsSessionView>[];
+    for (final row in (r as List).cast<Row>()) {
+      final direction = '${row['direction'] ?? ''}';
+      if (!known.contains(direction)) continue;
+      DateTime? dateOnly(String? v) {
+        if (v == null || v.isEmpty) return null;
+        final d = DateTime.tryParse(v);
+        return d == null ? null : DateTime.utc(d.year, d.month, d.day);
+      }
+
+      DateTime? stamp(String? v) => v == null || v.isEmpty
+          ? null
+          : DateTime.tryParse(v)?.toUtc();
+      out.add(GoldHuntsSessionView(
+        providerId: '${row['provider_id']}',
+        direction: direction,
+        session: '${row['session'] ?? '?'}',
+        sessionDate: dateOnly(row['session_date'] as String?),
+        publishedAt: stamp(row['published_at'] as String?),
+        dataAsOf: stamp(row['data_as_of'] as String?),
+        providerStale: row['provider_stale'] == true,
+        status: '${row['status'] ?? 'open'}',
+      ));
+    }
+    return out;
+  }
+
   /// Calendar events for the event gate, mapped to the analysis tier model.
   Future<List<EconomicEvent>> analysisEvents({int hoursAhead = 24}) async {
     final now = DateTime.now().toUtc();
