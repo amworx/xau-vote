@@ -928,3 +928,15 @@
      supabase/functions/build-consensus/index.ts, docs/fxscalpers-curation-protocol.md (new)
    - **deployed:** build-consensus v5.
    - **tags:** consensus-pipeline, silent-failure, voter, fxscalpers, manual-curation
+
+## EVT-20261006-0216 FXScalpers source enabled; gate rests on zero approved rows
+
+   - **mode:** BUILD
+   - **action:** Owner asserted permission settled and instructed activation.
+     Verified zero approved/votable rows first, then set sources.enabled = true
+     for FXScalpers. Post-flip invoke: NO_SOURCES, audit row written (total
+     1080 -> 1084 with cron runs). Enabling with no rows changes nothing - the
+     fails-closed property holds through the third switch.
+   - **open:** verbatim reply still not archived. The licence file closes when
+     the owner pastes it. No row may be approved before that filing.
+   - **tags:** fxscalpers, activation, licence-evidence

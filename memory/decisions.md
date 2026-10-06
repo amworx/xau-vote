@@ -837,3 +837,17 @@ received; usability is blocked on collection method, not on goodwill. Next:
 archive the verbatim reply, then either the 2-minute bot-admin favour or a
 manual-curation protocol - or accept there is no compliant automated path and
 stop here.
+
+### Status change 2026-10-06 ~21:20 UTC - source ENABLED, evidence still open
+
+Owner instructed activation, asserting the permission is settled ("we are in the
+safe side"). `sources.enabled` for FXScalpers is now true. Verified safe at
+flip time: zero `curated_ok` rows, zero votable rows - enabling changed nothing
+(it cannot; no approved rows exist to count). Next consensus run confirmed
+NO_SOURCES with its audit row written.
+
+The licence file remains OPEN: the verbatim reply is still not archived. The
+gate now rests entirely on the third switch - no approved rows. The day anyone
+approves the first curated row, the reply text must already be filed, or that
+approval violates D-20261006-017. Owner to paste the reply; ten seconds of work
+that closes the last open item on this source.
