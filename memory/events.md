@@ -637,3 +637,20 @@
   - "Waiting for enough history" was a false statement about the database. Error text that asserts a cause must not be shown when the cause is unknown.
 - **open:** the in-app install path itself is STILL unverified - 1.0.8 is the newest build and is now installed, so there is no update to offer. The permission fix (canRequestPackageInstalls + ACTION_MANAGE_UNKNOWN_APP_SOURCES + ClipData + needs_permission) is in place but untested end to end. Service-role key still needs rotating, and 1.0.8 is still unpublished.
 - **tags:** release, adb, install-permission, credential, hardware-verification, core-function
+
+---
+
+## EVT-20261006-0002 - CRITICAL: one seed source was passing as multi-source consensus
+
+- **id:** EVT-20261006-0002
+- **timestamp:** 2026-10-06T14:20 .. 2026-10-06T14:30
+- **mode:** REVIEW + BUILD
+- **trigger:** user redirected from the release to "more important things, like the sources".
+- **finding:** `sources` held exactly one row, `manual-seed` (`internal://manual-seed`). `collect-ideas` seeds 636 hard-coded fixture ideas every 15 min with templated reasoning under three fake author names, all sharing one `source_id`. `build-consensus` compared `camp.length` (distinct FINGERPRINTS) against `MIN_INDEPENDENT_SOURCES`, so one publisher posting 9-11 variants passed a "2 independent sources" gate and emitted a live DEVELOPING LONG, strength 86-87, with entry/SL/TP and a COPY LEVELS button. Verified in the DB and on the phone screenshot.
+- **fix:** count distinct `source_id`; exclude `internal://` sources from the independence count; score independence in sources too. Deployed and verified.
+- **result:** `NO_CONSENSUS / SINGLE_SOURCE`, independence `{ideas:10, distinct_sources:1, distinct_external_sources:0, internal_seed_sources:1}`. Expired the one open setup. Phone shows NO CONSENSUS with no levels.
+- **lessons:**
+  - A guard named `MIN_INDEPENDENT_SOURCES` compared against the wrong quantity is worse than no guard: it manufactures false assurance. Name and implementation must match.
+  - Fingerprints that include `author` cannot detect divided rooms when the source controls the author field. Independence has to be anchored on `source_id`.
+  - Synthetic fixtures on a production cron path will eventually be published as real output. The gate must be trustworthy even while the data is fake.
+- **tags:** sources, consensus, independence, fabricated-data, critical, correctness

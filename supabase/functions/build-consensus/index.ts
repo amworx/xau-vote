@@ -30,6 +30,7 @@ import {
 
 interface Idea {
   id: string;
+  source_id: string;
   direction: Direction;
   entry_low: number;
   entry_high: number;
@@ -132,8 +133,55 @@ Deno.serve(async (_req) => {
   const domShare = Math.max(longW, shortW) / totalW;
   const camp = eligible.filter((x) => x.idea.direction === direction);
 
-  if (camp.length < MIN_INDEPENDENT_SOURCES || domShare < MIN_DOMINANT_SHARE) {
-    return fail(camp.length < MIN_INDEPENDENT_SOURCES ? 'SINGLE_SOURCE' : 'DIVIDED', counts);
+  // INDEPENDENCE IS COUNTED IN SOURCES, NOT IN IDEAS.
+  //
+  // This previously compared `camp.length` against MIN_INDEPENDENT_SOURCES. That
+  // count is DISTINCT FINGERPRINTS, not publishers, so one source emitting nine
+  // differently-worded ideas satisfied "at least two independent sources" and
+  // produced a live DEVELOPING setup with entry/SL/TP and a COPY LEVELS button.
+  // Observed live 2026-10-06: 11 ideas, 1 distinct source_id, strength 86.
+  //
+  // Fingerprints include `author`, so a single source that labels its rows
+  // "desk-a", "desk-b", "desk-c" defeats a fingerprint check entirely — which is
+  // exactly the divided-room case spec §5 tells us to collapse.
+  //
+  // Sources whose url is `internal://` are the pipeline's own seed data. They
+  // are excluded from the independence count so they can never stand in for an
+  // external publisher, per D-20261005-001: "1-of-1 is not consensus".
+  const { data: sourceRows } = await db.from('sources').select('id, url, name');
+  const internalSourceIds = new Set(
+    ((sourceRows ?? []) as { id: string; url: string | null }[])
+      .filter((s) => (s.url ?? '').startsWith('internal://'))
+      .map((s) => s.id),
+  );
+  const campSourceIds = new Set(camp.map((x) => x.idea.source_id));
+  const externalSourceIds = [...campSourceIds].filter((id) => !internalSourceIds.has(id));
+  const distinctExternalSources = externalSourceIds.length;
+
+  if (distinctExternalSources < MIN_INDEPENDENT_SOURCES || domShare < MIN_DOMINANT_SHARE) {
+    const reason = distinctExternalSources < MIN_INDEPENDENT_SOURCES
+      ? (campSourceIds.size === 0 ? 'NO_SOURCES' : 'SINGLE_SOURCE')
+      : 'DIVIDED';
+    await db.from('consensus_signals').insert({
+      symbol: 'XAUUSD', timeframe: 'M15', direction: 'neutral', strength: 0,
+      status: toDbStatus('expired'), created_at: now.toISOString(), updated_at: now.toISOString(),
+      expires_at: now.toISOString(),
+    });
+    return Response.json({
+      ok: true,
+      consensus: 'NO_CONSENSUS',
+      reason,
+      counts,
+      eventContext,
+      // Reported so the UI and the logs can say WHY, instead of leaving a
+      // "0 of 0 sources" number that looks like an absence rather than a refusal.
+      independence: {
+        ideas: camp.length,
+        distinct_sources: campSourceIds.size,
+        distinct_external_sources: distinctExternalSources,
+        internal_seed_sources: campSourceIds.size - distinctExternalSources,
+      },
+    });
   }
 
   const entry = clusterRanges(camp.map((x) => ({ low: x.idea.entry_low, high: x.idea.entry_high })));
@@ -157,7 +205,10 @@ Deno.serve(async (_req) => {
     const ageMin = (now.getTime() - new Date(x.idea.published_at).getTime()) / 60000;
     return s + (ageMin < 15 ? 1 : ageMin < 30 ? 0.66 : 0.33);
   }, 0) / camp.length;
-  const indepW = Math.min(1, camp.length / 4);
+  // Independence is scored in SOURCES. Using the idea count here would let one
+  // publisher posting nine variants reach full marks on the independence
+  // component of the score.
+  const indepW = Math.min(1, distinctExternalSources / 4);
   const score = Math.round(
     dirAgree * dirWeight.long + entryAgree * dirWeight.entry + slAgree * dirWeight.stopLoss +
     tpAgree * dirWeight.takeProfit + withReason * dirWeight.reasoning +

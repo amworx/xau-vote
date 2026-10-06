@@ -228,3 +228,28 @@
 - **correct value:** `sb_publishable_RQuuxcbF5SyyDC0bkn0ZdQ_2jrrBfT6` (project "default"). Readable from the MCP tool `supabase_get_publishable_keys` - the publishable key is NOT a secret and does not need to be pasted, rotated, or withheld. Only the service-role key does.
 - **rule added:** before installing or publishing an APK, verify the feed answers 200 with the exact credential used in the build. A key is a build input like any other and is verified, not assumed.
 - **status:** accepted
+
+---
+
+## D-20261006-002 - Independence must be counted in SOURCES (critical correctness bug)
+
+- **date:** 2026-10-06
+- **severity:** critical. The app was presenting fabricated trade setups as multi-source consensus, with a COPY LEVELS button.
+- **what was happening:** `collect-ideas` runs every 15 minutes and seeds HARD-CODED fixture ideas with templated reasoning ("Bounce off the shelf; momentum turning up."), all under `source_id = manual-seed` (`url = internal://manual-seed`), attributed to three fake authors `desk-a` / `desk-b` / `desk-c`. 636 such ideas existed.
+- **the bug:** `build-consensus` compared `camp.length` against `MIN_INDEPENDENT_SOURCES`. `camp.length` is the count of DISTINCT FINGERPRINTS, not publishers. The fingerprint includes `author`, so one source labelling its rows desk-a/b/c defeats the check entirely - exactly the divided-room case spec §5 says to collapse. Live evidence before the fix: a `DEVELOPING` LONG, strength 86-87, with real entry/stop/TP, built from 9-11 ideas whose `distinct_sources` was **1**.
+- **fix (three parts):**
+  1. The guard now counts DISTINCT `source_id` in the dominant camp, and compares that to `MIN_INDEPENDENT_SOURCES`.
+  2. Sources whose `url` begins `internal://` are excluded from the independence count entirely, so pipeline seed data can never stand in for an external publisher (D-20261005-001: "1-of-1 is not consensus").
+  3. The score's independence component (`indepW`) was also `camp.length / 4`; it now uses distinct external sources, so one publisher posting nine variants cannot score full marks on independence.
+- **verified live after deploy:** `NO_CONSENSUS / SINGLE_SOURCE` with `{ideas:10, distinct_sources:1, distinct_external_sources:0, internal_seed_sources:1}`. The single open DEVELOPING setup was expired; the phone now shows NO CONSENSUS with no levels and no COPY LEVELS button.
+- **the response now reports the independence breakdown** so "0 of 0 sources" is legible as a refusal rather than an absence.
+- **status:** accepted
+
+---
+
+## D-20261006-003 - Seed data must never reach a published setup
+
+- **date:** 2026-10-06
+- **consequence of D-20261006-002:** the consensus path now correctly refuses. That leaves the product with no published setups at all until real publishers exist, which is the honest state, but it means `collect-ideas` is now only producing data that can never be published.
+- **decision:** leaving the seed generator running is acceptable and deliberate for now - it keeps the pipeline exercised and visible - but nothing it produces may ever satisfy the independence gate. The gate is the enforcement; the generator is not trusted.
+- **open:** decide whether `collect-ideas` should stop entirely, or be relabelled in the UI as a demo fixture so a trader can never mistake seeded rows for a publisher view. Relabelling is the better answer and is a UI change requiring prototype + approval.
