@@ -93,68 +93,69 @@ void main() {
     expect(find.text('15M Consensus Setup'), findsOneWidget);
     expect(find.text('STRONG · 4 / 5'), findsOneWidget);
 
-    // Entry spans the grid, then Stop + the three targets in two columns.
-    final levels = find.byType(VerdictLevelGrid);
-    Finder inLevels(String text) =>
-        find.descendant(of: levels, matching: find.text(text));
-    expect(inLevels('ENTRY'), findsOneWidget);
-    expect(inLevels('4,275-4,280'), findsOneWidget);
-    expect(inLevels('market zone'), findsOneWidget);
-    expect(inLevels('STOP'), findsOneWidget);
-    expect(inLevels('4,262'), findsOneWidget);
-    // Subs are price distances, not pip counts.
-    expect(inLevels('−15.50'), findsOneWidget);
-    expect(inLevels('4,295'), findsOneWidget);
-    expect(inLevels('4,315'), findsOneWidget);
-    expect(inLevels('4,340'), findsOneWidget);
-    expect(inLevels('+17.50'), findsOneWidget);
+    // Levels are withheld. The verdict, the agreement split and the source chips
+    // still render - only the numbers are gone. Absence is asserted on values
+    // that appear nowhere else on the card: the stop figure is also rendered in
+    // the "Watch" pill, so a global assertion on it would be wrong.
+    expect(find.byType(VerdictLevelGrid), findsNothing);
+    expect(find.text('ENTRY, STOP AND TARGETS WITHHELD'), findsOneWidget);
+    for (final level in [
+      'ENTRY',
+      'market zone',
+      '−15.50',
+      '4,295',
+      '4,315',
+      '4,340',
+      '+17.50',
+      'R:R',
+      '1:5.0',
+    ]) {
+      expect(
+        find.text(level),
+        findsNothing,
+        reason: '$level must not be published before validation',
+      );
+    }
 
     expect(find.text('4 of 5 sources agree'), findsOneWidget);
     expect(find.text('Source A ✓'), findsOneWidget);
     expect(find.text('Source D ×'), findsOneWidget);
-    expect(find.text('R:R'), findsOneWidget);
-    expect(find.text('1:5.0'), findsOneWidget);
 
-    expect(find.text('COPY LEVELS'), findsOneWidget);
-    expect(find.text('↗ SHARE'), findsOneWidget);
+    expect(find.text('COPY LEVELS'), findsNothing);
+    expect(find.text('↗ SHARE'), findsNothing);
   });
 
-  testWidgets('Target scope narrows the visible targets', skip: !mockMode,
+  testWidgets('Target scope no longer narrows anything, because no targets show',
+      skip: !mockMode,
       (tester) async {
-    // Start from all three so the test measures narrowing, not the default.
+    // The target selector stays in place so the control does not silently
+    // disappear from under a returning user, but with every target withheld it
+    // must not reveal one on selection.
     await _pumpApp(tester);
     await _setTargets(tester, TargetSelection.all);
 
-    expect(find.text('4,340'), findsOneWidget);
-    final tp1 = find.widgetWithText(TextButton, 'TP1');
-    await tester.ensureVisible(tp1);
-    await tester.pumpAndSettle();
-    await tester.tap(tp1);
-    await tester.pumpAndSettle();
-
-    final levels = find.byType(VerdictLevelGrid);
-    expect(
-      find.descendant(of: levels, matching: find.text('4,340')),
-      findsNothing,
-    );
-    expect(
-      find.descendant(of: levels, matching: find.text('4,295')),
-      findsOneWidget,
-    );
-    expect(find.text('1:1.5'), findsOneWidget);
+    expect(find.byType(VerdictLevelGrid), findsNothing);
+    for (final level in ['4,295', '4,315', '4,340']) {
+      expect(find.text(level), findsNothing,
+          reason: '$level must stay hidden under every target scope');
+    }
+    expect(find.text('1:1.5'), findsNothing,
+        reason: 'the R:R readout is derived from withheld targets');
   });
 
-  testWidgets('COPY LEVELS copies the setup to the clipboard', skip: !mockMode,
+  // Levels are withheld, so there is no clipboard affordance left to reach them
+  // with. This replaces the former "COPY LEVELS copies the setup" test: the
+  // absence is the requirement now, and a copy path must not reappear silently.
+  testWidgets('no copy affordance publishes levels', skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
 
-    final copy = find.widgetWithText(InkWell, 'COPY LEVELS');
-    await tester.ensureVisible(copy);
-    await tester.pumpAndSettle();
-    await tester.tap(copy);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Levels copied'), findsOneWidget);
+    expect(find.widgetWithText(InkWell, 'COPY LEVELS'), findsNothing);
+    expect(find.widgetWithText(InkWell, '↗ SHARE'), findsNothing);
+    expect(find.textContaining('COPY LEVELS'), findsNothing);
+    // The reason is stated rather than the card silently losing content.
+    expect(find.text('ENTRY, STOP AND TARGETS WITHHELD'), findsOneWidget);
+    expect(find.byType(VerdictLevelGrid), findsNothing);
   });
 
   testWidgets('Radar divided preview shows NO CONSENSUS, never a signal',
@@ -208,7 +209,7 @@ void main() {
     );
     expect(find.text('15M Consensus Setup'), findsOneWidget);
     expect(find.text('3 of 5 sources agree'), findsOneWidget);
-    expect(find.text('COPY LEVELS'), findsOneWidget);
+    expect(find.text('COPY LEVELS'), findsNothing);
   });
 
   testWidgets('Bottom nav routes from Radar to the Signal tab', skip: !mockMode,

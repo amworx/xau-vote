@@ -134,7 +134,10 @@ class AnalysisVerdictCard extends StatelessWidget {
           _ScoreRow(scan: s),
           if (hasLevels) ...[
             const SizedBox(height: 14),
-            _LevelGrid(plan: plan),
+            // Withheld. The stop plan is computed and validated internally, but
+            // publishing entry/stop/TP would present an unmeasured estimate as a
+            // trade parameter. The verdict, the scores and the reasons stay.
+            const _LevelsWithheldNote(),
           ],
           if (layers != null) ...[
             const SizedBox(height: 14),
@@ -313,8 +316,11 @@ class _ScoreCell extends StatelessWidget {
   }
 }
 
-class _LevelGrid extends StatelessWidget {
-  const _LevelGrid({required this.plan});
+/// The grid is retained so the stop-plan formatting stays testable; it is not
+/// rendered.
+@visibleForTesting
+class LevelGrid extends StatelessWidget {
+  const LevelGrid({super.key, required this.plan});
 
   final StopPlan plan;
 
@@ -540,3 +546,30 @@ String _humanCode(ReasonCode c) => switch (c) {
       ReasonCode.v14RsiExhausted => 'RSI exhausted',
       ReasonCode.v15ExtendedEntry => 'Entry too extended',
     };
+
+/// Replaces the level grid wherever a valid stop plan exists.
+///
+/// The plan is computed and range-checked, but it is not published: there is no
+/// forward record yet, and a badge does not stop a number being acted on. The
+/// verdict, score decomposition, macro layers and reasons are unaffected.
+class _LevelsWithheldNote extends StatelessWidget {
+  const _LevelsWithheldNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      decoration: BoxDecoration(
+        color: harborWarnSoft,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: harborLine),
+      ),
+      child: const Text(
+        'Entry, stop and targets withheld — not yet validated against a forward '
+        'record. The verdict and its reasons are shown instead.',
+        style: TextStyle(fontSize: 10.5, height: 1.45, color: harborInk),
+      ),
+    );
+  }
+}

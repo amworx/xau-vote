@@ -119,6 +119,10 @@ const _prose = {
   'The scan runs on closed bars only. Waiting for enough history to evaluate '
       'the 1H regime.',
   'XV does not execute trades.',
+  // The withheld-levels panel. Explanatory copy, allowed to wrap.
+  'No forward record yet shows these levels were ever right. The verdict and its',
+  'XV does not publish entry, stop or targets. No out-of-sample record exists yet',
+  'Entry, stop and targets withheld — not yet validated against a forward',
   // The History bento hero caption. Explanatory copy that carries the hit-rate
   // denominator, and is designed to wrap to two lines. The constant
   // `Closed signals: ` prefix lets it be skipped whatever the counts are.
@@ -173,10 +177,6 @@ void main() {
       const s = MockFixtures.strongLong;
       expect(formatLevel(s.entryLow), '4,275');
       expect(formatLevel(s.entryHigh), '4,280');
-      expect(formatLevel(s.stopLoss), '4,262');
-      expect(formatLevel(s.tp1!), '4,295');
-      expect(formatLevel(s.tp2!), '4,315');
-      expect(formatLevel(s.tp3!), '4,340');
       expect(formatPrice(s.price), '4,278.30');
       expect(
         riskReward(
@@ -226,15 +226,10 @@ void main() {
       await _openTab(tester, 'SIGNAL');
 
       expect(find.text('+1700 PIPS'), findsOneWidget);
-      expect(find.text('−1600 pips · risk 15.5'), findsOneWidget);
-      expect(find.text('500-pip zone'), findsOneWidget);
       expect(find.text('IN-PROFIT +30 PIPS'), findsOneWidget);
       // Prices and the R:R are convention-independent.
-      expect(find.text('4,275-4,280'), findsOneWidget);
-      expect(find.text('4,262'), findsOneWidget);
-      expect(find.text('+6200 · 1:5.0'), findsOneWidget);
 
-      expect(wrappedTexts(tester), isEmpty,
+      expect(wrappedTexts(tester, skip: _prose), isEmpty,
           reason: 'no Signal text may wrap at 390px');
 
       await _openTab(tester, 'HISTORY');
@@ -260,17 +255,9 @@ void main() {
 
       await _openTab(tester, 'SIGNAL');
       expect(find.text('+170 PIPS'), findsOneWidget);
-      expect(find.text('−160 pips · risk 15.5'), findsOneWidget);
-      expect(find.text('50-pip zone'), findsOneWidget);
       expect(find.text('IN-PROFIT +3 PIPS'), findsOneWidget);
       // Unchanged by the convention: the levels and the R:R.
-      expect(find.text('4,275-4,280'), findsOneWidget);
-      expect(find.text('4,262'), findsOneWidget);
-      expect(find.text('4,295'), findsOneWidget);
-      expect(find.text('4,315'), findsOneWidget);
-      expect(find.text('4,340'), findsOneWidget);
-      expect(find.text('+620 · 1:5.0'), findsOneWidget);
-      expect(wrappedTexts(tester), isEmpty,
+      expect(wrappedTexts(tester, skip: _prose), isEmpty,
           reason: 'the shorter A figures must still be one line');
 
       await _openTab(tester, 'HISTORY');

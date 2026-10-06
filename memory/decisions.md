@@ -317,3 +317,22 @@
 - **unchanged and still required:** cluster overlapping setups within one gold move into a single observation before quoting any sample size (D-20261006-006); prospective spread collection, because historical spread aggregates are not this venue's cost.
 - **unverified claim flagged:** "historical spread underestimates cost by 20-60%" is plausible and directionally right but I have not verified the magnitude. Treat as a hypothesis to measure, not a planning constant.
 - **status:** accepted
+
+---
+
+## D-20261006-008 - Suppress levels and the copy action; freeze the seeder (executed)
+
+- **date:** 2026-10-06
+- **owner authorisation:** explicit, after seven expert reviews. Scoped to exactly two items.
+- **ITEM 1 - seed generator frozen, not deleted.** `cron.alter_job(11, active := false)` on `xv-collect-ideas`. The schedule `*/15 * * * *` is preserved so it resumes with one statement, and the function stays deployed for fixtures. The 652 existing `trade_ideas` rows are RETAINED as engineering test fixtures rather than purged. Verified: newest idea 12:09, still 12:09 at 14:10 - two hours with zero new rows.
+- **ITEM 2 - entry, stop, targets and the clipboard action are no longer rendered.**
+  - Radar setup card: level grid replaced by `_LevelsWithheldPanel`, which states the refusal. `COPY LEVELS` and `SHARE` removed, and the dead `_publish` / `_summary` helpers deleted.
+  - Signal tab: `_levelsCard` now renders a `WITHHELD` explanation instead of the grid.
+  - Analysis card: the stop-plan grid is replaced by `_LevelsWithheldNote` wherever a valid plan exists.
+  - **R:R was also removed.** It is derived from the withheld targets, so publishing the ratio while hiding its inputs would let a reader reconstruct the levels it replaces. Caught by a test rather than by review.
+  - Level-grid builders are retained as `@visibleForTesting` helpers (`withheldLevelGrid`, `levelGrid`, `LevelGrid`) so the formatting stays covered for the day levels return.
+- **tests: the assertions FLIPPED, they were not deleted.** Roughly 40 assertions across `live_mode_test`, `radar_test`, `signal_test` and `pip_convention_test` now assert levels are ABSENT, and `radar_test` gained a test that no copy affordance exists. Absence is asserted only on strings that appear nowhere else: the stop figure is also rendered in the "Watch" pill, so a global assertion on it would have been wrong.
+- **prose wrapping:** the new panel copy is explanatory and legitimately wraps at 390px, so it joins the existing `_prose` skip set in the pip-convention layout guard. Numeric and label strings must still fit one line.
+- **database state verified:** zero rows in any actionable state. The 11 non-EXPIRED rows are all `INVALIDATED`, which is a terminal lifecycle state and therefore legitimate History data, NOT live setups - expiring them would destroy history.
+- **verified on hardware:** 1.0.8 installed via adb, Radar shows NO CONSENSUS with no levels and no copy action, analysis card still live.
+- **status:** accepted

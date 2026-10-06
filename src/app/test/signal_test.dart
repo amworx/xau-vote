@@ -67,9 +67,13 @@ void main() {
     // Direction is the HarborPill badge (trend glyph + label), not a text mark.
     expect(find.text('LONG'), findsOneWidget);
     expect(find.text('▲ LONG'), findsNothing);
-    expect(find.text('4,275-4,280'), findsOneWidget);
-    expect(find.text('4,262'), findsOneWidget);
-    expect(find.text('4,295'), findsOneWidget);
+      // Levels are withheld; the verdict and lifecycle still render.
+      expect(find.text('WITHHELD'), findsOneWidget);
+      expect(find.text('4,275-4,280'), findsNothing);
+      expect(find.text('4,262'), findsNothing);
+      expect(find.text('4,295'), findsNothing);
+      expect(find.text('4,262'), findsNothing);
+      expect(find.text('4,295'), findsNothing);
 
     // Lifecycle timeline (spec §14).
     expect(find.text('DEVELOPING'), findsOneWidget);
@@ -101,7 +105,8 @@ void main() {
     await _setTargets(tester, TargetSelection.all);
     await _openSignal(tester);
 
-    expect(find.text('4,340'), findsOneWidget);
+      expect(find.text('4,340'), findsNothing,
+          reason: 'target levels stay withheld until validated');
     await tester.scrollUntilVisible(find.text('TP1 + 2 + 3'), 300);
     await tester.pumpAndSettle();
     // The scope control is the shared HarborPill row, not a SegmentedButton.
@@ -114,7 +119,7 @@ void main() {
     await tester.tap(tp1);
     await tester.pumpAndSettle();
     expect(find.text('4,340'), findsNothing);
-    expect(find.text('4,295'), findsOneWidget);
+      expect(find.text('4,295'), findsNothing);
   });
 
   testWidgets('No rendered text frames agreement as a forecast',

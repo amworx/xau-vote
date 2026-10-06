@@ -20,10 +20,8 @@
 ///     on top and the failure is one quiet line beneath them.
 library;
 
-import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:xau_core/analysis/independence.dart';
 // Session calendar only; the barrel also exports a Direction enum that collides
@@ -369,75 +367,17 @@ class _RadarScreenState extends State<RadarScreen> {
               ],
             ),
             const SizedBox(height: 14),
-            _levelGrid(signal, state.targets),
+            const _LevelsWithheldPanel(),
             const SizedBox(height: 9),
             const TargetScopePills(),
             _agreeRow(signal, state.targets, independence: independence, chips: chips),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: HarborActionButton(
-                    label: 'COPY LEVELS',
-                    onTap: () =>
-                        _publish(context, signal, state.targets, 'Levels copied'),
-                  ),
-                ),
-                const SizedBox(width: 7),
-                Expanded(
-                  child: HarborActionButton(
-                    label: '↗ SHARE',
-                    primary: false,
-                    onTap: () => _publish(
-                      context,
-                      signal,
-                      state.targets,
-                      'Setup text copied — paste to share',
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _levelGrid(DisplaySignal signal, TargetSelection selection) {
-    final tps = {1: signal.tp1, 2: signal.tp2, 3: signal.tp3};
-    final cells = <Widget>[
-      VerdictLevelCell(
-        label: 'Stop',
-        value: formatLevel(signal.stopLoss),
-        sub: levelDistance(signal.entryMid, signal.stopLoss),
-      ),
-    ];
-    for (final n in visibleTps(selection)) {
-      final tp = tps[n];
-      if (tp == null) continue;
-      cells.add(
-        VerdictLevelCell(
-          label: 'TP$n',
-          value: formatLevel(tp),
-          sub: levelDistance(signal.entryMid, tp),
-        ),
-      );
-    }
-    return VerdictLevelGrid(
-      entry: VerdictLevelCell(
-        label: 'Entry',
-        value:
-            '${formatLevel(signal.entryLow)}-'
-            '${formatLevel(signal.entryHigh)}',
-        sub: 'market zone',
-        highlighted: true,
-      ),
-      cells: cells,
-    );
-  }
-
-  Widget _agreeRow(
+Widget _agreeRow(
     DisplaySignal signal,
     TargetSelection selection, {
     IndependenceResult? independence,
@@ -474,74 +414,22 @@ class _RadarScreenState extends State<RadarScreen> {
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: 10),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'R:R',
-                style: TextStyle(fontFamily: 'Sora', fontSize: 9, color: harborDim),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                bestRrValue(signal, selection),
-                style: const TextStyle(
-                  fontFamily: 'Space Mono',
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: harborDim,
-                ),
-              ),
-            ],
-          ),
+),
+          // Reward:risk is derived from the withheld targets, so it is withheld
+          // with them: publishing a ratio whose inputs are hidden would let a
+          // reader reconstruct the levels it is meant to replace.
         ],
       ),
     );
   }
-
-  /// Copy/share the setup. The MVP has no platform share channel (no extra
-  /// packages), so both paths hand the summary to the clipboard and confirm
-  /// with the same toast the Signal screen's copy action uses. The toast is
-  /// raised synchronously so the feedback never waits on the clipboard.
-  void _publish(
-    BuildContext context,
-    DisplaySignal signal,
-    TargetSelection selection,
-    String toast,
-  ) {
-    unawaited(Clipboard.setData(ClipboardData(text: _summary(signal, selection))));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(toast)));
-  }
-
-  String _summary(DisplaySignal signal, TargetSelection selection) {
-    final direction = signal.direction == Direction.short ? 'SHORT' : 'LONG';
-    final lines = <String>[
-      'XAUUSD 15M $direction — ${bandLabel(signal.band)} '
-          '${signal.agreeCount}/${signal.totalCount}',
-      'Entry ${formatLevel(signal.entryLow)}-${formatLevel(signal.entryHigh)}'
-          ' (market zone)',
-      'Stop ${formatLevel(signal.stopLoss)} '
-          '(${levelDistance(signal.entryMid, signal.stopLoss)})',
-    ];
-    final tps = {1: signal.tp1, 2: signal.tp2, 3: signal.tp3};
-    for (final n in visibleTps(selection)) {
-      final tp = tps[n];
-      if (tp == null) continue;
-      lines.add('TP$n ${formatLevel(tp)} (${levelDistance(signal.entryMid, tp)})');
-    }
-    lines.add('R:R ${bestRrValue(signal, selection)}');
-    return lines.join('\n');
-  }
 }
 
-/// Live spot hero: the real quote, or the honest "no tick yet" state.
-///
-/// Deliberately not [SpotPriceBlock]: that widget prints the day's move and a
-/// percentage derived from it, and the live feed publishes neither — handing it
-/// the model's defaults would put `+12.40` and `+0.29%` in front of a live
-/// trader. Everything else (eyebrow, mono hero, gutter, wrap meta) is the same
-/// Harbor language, and the day move is simply absent rather than derived.
+  /// Live spot hero: the real quote, or the honest "no tick yet" state.
+  /// Deliberately not [SpotPriceBlock]: that widget prints the day's move and a
+  /// percentage derived from it, and the live feed publishes neither — handing it
+  /// the model's defaults would put `+12.40` and `+0.29%` in front of a live
+  /// trader. Everything else (eyebrow, mono hero, gutter, wrap meta) is the same
+  /// Harbor language, and the day move is simply absent rather than derived.
 class _LiveQuoteHero extends StatelessWidget {
   const _LiveQuoteHero({required this.live});
 
@@ -866,4 +754,92 @@ class _NoConsensusCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Stands in for the level grid on every card that would otherwise publish
+/// entry, stop and targets.
+///
+/// The engine still computes those levels; they are simply not shown. The panel
+/// states that explicitly rather than leaving a gap, because a missing card
+/// reads as a bug while a stated refusal reads as a decision.
+class _LevelsWithheldPanel extends StatelessWidget {
+  const _LevelsWithheldPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: harborWarnSoft,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: harborLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'ENTRY, STOP AND TARGETS WITHHELD',
+            style: TextStyle(
+              fontFamily: 'Space Mono',
+              fontSize: 9.5,
+              letterSpacing: .8,
+              fontWeight: FontWeight.w700,
+              color: harborWarn,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'No forward record yet shows these levels were ever right. The '
+            'verdict and its reasons are shown; the numbers are not, because an '
+            'unvalidated estimate is not a trade parameter.',
+            style: TextStyle(
+              fontSize: 11,
+              height: 1.45,
+              color: harborInk,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The level grid, retained for fixtures and for validation work once a forward
+/// record exists. Intentionally not rendered: publishing entry/stop/targets
+/// before there is an out-of-sample record would present an unvalidated
+/// estimate as a trade parameter, and an UNVALIDATED badge does not stop a
+/// number from being acted on.
+@visibleForTesting
+Widget withheldLevelGrid(DisplaySignal signal, TargetSelection selection) {
+  final tps = {1: signal.tp1, 2: signal.tp2, 3: signal.tp3};
+  final cells = <Widget>[
+    VerdictLevelCell(
+      label: 'Stop',
+      value: formatLevel(signal.stopLoss),
+      sub: levelDistance(signal.entryMid, signal.stopLoss),
+    ),
+  ];
+  for (final n in visibleTps(selection)) {
+    final tp = tps[n];
+    if (tp == null) continue;
+    cells.add(
+      VerdictLevelCell(
+        label: 'TP$n',
+        value: formatLevel(tp),
+        sub: levelDistance(signal.entryMid, tp),
+      ),
+    );
+  }
+  return VerdictLevelGrid(
+    entry: VerdictLevelCell(
+      label: 'Entry',
+      value:
+          '${formatLevel(signal.entryLow)}-'
+          '${formatLevel(signal.entryHigh)}',
+      sub: 'market zone',
+      highlighted: true,
+    ),
+    cells: cells,
+  );
 }

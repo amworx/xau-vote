@@ -560,20 +560,23 @@ void main() {
       expect(find.text('+12.40'), findsNothing);
       expect(find.text('4,300.10 — 4,320.90'), findsOneWidget);
 
-      // Verdict card levels.
-      final levels = find.byType(VerdictLevelGrid);
-      Finder inLevels(String text) =>
-          find.descendant(of: levels, matching: find.text(text));
-      expect(inLevels('ENTRY'), findsOneWidget);
-      expect(inLevels('4,310-4,315'), findsOneWidget);
-      expect(inLevels('STOP'), findsOneWidget);
-      expect(inLevels('4,295'), findsOneWidget);
-      // TP1 is the default target scope, so TP2 and TP3 are withheld. This
-      // asserts the user's requested default rather than the old "show all".
-      expect(inLevels('4,330'), findsOneWidget);
-      expect(inLevels('4,350'), findsNothing);
-      expect(inLevels('4,370'), findsNothing);
-      expect(inLevels('4,275-4,280'), findsNothing);
+      // Verdict levels are WITHHELD. The engine still computes a stop plan,
+      // but nothing publishes entry/stop/TP while there is no forward record to
+      // validate them against, and a badge does not stop a number being acted
+      // on. What must still render is the verdict, the score and the reasons.
+      expect(find.byType(VerdictLevelGrid), findsNothing);
+      expect(find.text('ENTRY, STOP AND TARGETS WITHHELD'), findsOneWidget);
+      for (final level in [
+        'ENTRY',
+        '4,310-4,315',
+        '4,330',
+      ]) {
+        expect(
+          find.text(level),
+          findsNothing,
+          reason: '$level must not be published before validation',
+        );
+      }
 
       // Agreement is a split, and the offline source chips do not exist here.
       expect(find.text('15M Consensus Setup'), findsOneWidget);
@@ -591,12 +594,9 @@ void main() {
         reason: 'alternate direction and 5M confirmation are unreported',
       );
 
-      // Copy/share stay available in both modes.
-      expect(find.text('COPY LEVELS'), findsOneWidget);
-      await tester.tap(find.widgetWithText(InkWell, 'COPY LEVELS'));
-      await tester.pump();
-      await tester.pump();
-      expect(find.text('Levels copied'), findsOneWidget);
+      // There is no copy or share affordance left to reach levels with.
+      expect(find.text('COPY LEVELS'), findsNothing);
+      expect(find.text('↗ SHARE'), findsNothing);
     });
 
     testWidgets('the demo state switcher is offline-only', (tester) async {
@@ -654,7 +654,7 @@ void main() {
       // With no observed snapshots there is no session range either.
       expect(find.text('—'), findsWidgets);
       // The setup still renders — only the quote is missing.
-      expect(find.text('4,310-4,315'), findsOneWidget);
+      expect(find.text('15M Consensus Setup'), findsOneWidget);
     });
 
     testWidgets('events annotate the card but never vote (rule 9)', (tester) async {
@@ -684,7 +684,7 @@ void main() {
       expect(find.textContaining('network unreachable'), findsOneWidget);
       // The screen is not replaced: the trader still sees what he had.
       expect(find.text('4,312.45'), findsOneWidget);
-      expect(find.text('4,310-4,315'), findsOneWidget);
+      expect(find.text('15M Consensus Setup'), findsOneWidget);
     });
   });
 
@@ -698,14 +698,14 @@ void main() {
       expect(find.text('ACTIVE SETUP · 15M LONG'), findsOneWidget);
       // Quote from the poller, agreement label (never a forecast).
       expect(find.textContaining('4,312.45 · STRONG 88'), findsOneWidget);
-      expect(find.text('4,310-4,315'), findsOneWidget);
-      expect(find.text('4,295'), findsOneWidget);
-      expect(find.text('4,330'), findsOneWidget);
-      expect(find.text('4,275-4,280'), findsNothing);
+      // Levels are withheld; the verdict and lifecycle still render.
+      expect(find.text('WITHHELD'), findsOneWidget);
+      for (final level in ['4,310-4,315', '4,330', '4,275-4,280']) {
+        expect(find.text(level), findsNothing,
+            reason: '$level must not be published before validation');
+      }
 
       // Pip readouts derived from the live levels at convention B.
-      expect(find.text('−1800 pips · risk 17.5'), findsOneWidget);
-      expect(find.text('500-pip zone'), findsOneWidget);
 
       // Unreported context reads `—`: the offline SUPPORTIVE / CONFIRMED /
       // in-profit words are claims the pipeline has not made.

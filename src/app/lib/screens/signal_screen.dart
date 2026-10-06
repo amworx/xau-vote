@@ -332,13 +332,36 @@ class SignalScreen extends StatelessWidget {
   }
 
   Widget _levelsCard(DisplaySignal signal, List<int> show, int pipFactor) {
+    // Entry, stop and targets are no longer published. The engine still
+    // computes them, but no forward record shows they were ever right, and an
+    // UNVALIDATED badge does not stop a number from being traded. The screen
+    // keeps the verdict, the reasons and the observed spread, and states here
+    // that the numbers are withheld rather than showing a gap that reads as a
+    // rendering fault.
     return HarborCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const HarborEyebrow('Levels'),
-          const SizedBox(height: 12),
-          _levelGrid(signal, show, pipFactor),
+          const SizedBox(height: 10),
+          Text(
+            'WITHHELD',
+            style: TextStyle(
+              fontFamily: 'Space Mono',
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: .8,
+              color: harborWarn,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'XV does not publish entry, stop or targets. No out-of-sample record '
+            'exists yet showing a level of this kind was ever right, and a '
+            'label does not stop a number being acted on. Levels return only '
+            'once that record exists.',
+            style: TextStyle(fontSize: 11.5, height: 1.5, color: harborInk),
+          ),
         ],
       ),
     );
@@ -347,7 +370,10 @@ class SignalScreen extends StatelessWidget {
   /// Entry zone spans the grid, then stop + the selected targets in two
   /// columns — the Radar level language, with the Signal sub-lines (pip
   /// distance, per-TP R:R) kept in the cell's sub slot.
-  Widget _levelGrid(DisplaySignal signal, List<int> show, int pipFactor) {
+  ///
+  /// Retained for fixtures and for the day levels return. Not rendered.
+  @visibleForTesting
+  Widget levelGrid(DisplaySignal signal, List<int> show, int pipFactor) {
     final tps = {1: signal.tp1, 2: signal.tp2, 3: signal.tp3};
     final cells = <Widget>[
       VerdictLevelCell(
