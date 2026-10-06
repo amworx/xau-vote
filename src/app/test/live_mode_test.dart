@@ -110,6 +110,22 @@ class _StubRepository implements LiveRepository {
     return (price: p, at: DateTime(2026, 10, 2, 12, 0));
   }
 
+  /// Stubbed as live so tests exercise the real path. The provider is never
+  /// called from a unit test; a test that wants the fallback sets [livePrice]
+  /// false.
+  @override
+  Future<({double? price, DateTime? at, bool live})> directSpotPrice({
+    Duration timeout = const Duration(seconds: 6),
+  }) async {
+    _guard();
+    final p = price;
+    if (p == null) return (price: null, at: null, live: false);
+    return (price: p, at: DateTime(2026, 10, 2, 12, 0), live: livePrice);
+  }
+  /// Whether [directSpotPrice] reports a live read. False exercises the
+  /// stored-snapshot fallback.
+  bool livePrice = true;
+
   @override
   Future<({double low, double high})?> sessionRange() async {
     _guard();
@@ -521,6 +537,33 @@ Future<void> _openTab(WidgetTester tester, String tab) async {
 
 void main() {
   _sentimentLayerReadTests();
+
+  // The price is fetched straight from the provider so it moves with the market
+  // instead of the once-a-minute cron. When that call fails the app falls back to
+  // the stored snapshot, and the distinction has to survive: a number that has
+  // stopped being refreshed must not be presented as live, because rule 2 is
+  // about freshness as much as about fabrication.
+  group('price freshness is reported honestly', () {
+    test('a direct provider read is marked live', () async {
+      final live = LiveData(repository: _StubRepository(price: 4175.30));
+      addTearDown(live.dispose);
+      await live.refresh();
+      expect(live.price, 4175.30);
+      expect(live.priceIsLive, isTrue);
+    });
+
+    test('a provider outage falls back to the stored snapshot and says so', () async {
+      final repo = _StubRepository(price: 4170.66)..livePrice = false;
+      final live = LiveData(repository: repo);
+      addTearDown(live.dispose);
+      await live.refresh();
+
+      // The stale value is still better than an empty screen, but it must not be
+      // dressed up as live.
+      expect(live.price, 4170.66);
+      expect(live.priceIsLive, isFalse);
+    });
+  });
   // `mockMode` is a compile-time flag, so a test cannot flip the build. What
   // the screens branch on is the [LiveData] `main.dart` mounts above them for a
   // LIVE release: an offline build mounts none and they read fixtures (covered

@@ -438,6 +438,7 @@ class _LiveQuoteHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final price = live.price;
+  final priceIsLive = live.priceIsLive;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 14),
       child: Column(
@@ -471,9 +472,15 @@ class _LiveQuoteHero extends StatelessWidget {
             ),
           const SizedBox(height: 8),
           Text(
+            // Say where the number actually came from. The price is read live
+            // from the provider, so describing it as a "stored snapshot" would be
+            // wrong; and when the provider is unreachable the number IS a stored
+            // snapshot, so claiming otherwise would be worse.
             price == null
                 ? 'No market snapshot stored yet — the first tick appears here.'
-                : 'Latest stored snapshot for XAUUSD.',
+                : priceIsLive
+                    ? 'Live from the price provider.'
+                    : 'Provider unreachable — showing the latest stored snapshot.',
             style: const TextStyle(fontFamily: 'Sora', fontSize: 11, color: harborFaint),
           ),
           const SizedBox(height: 8),

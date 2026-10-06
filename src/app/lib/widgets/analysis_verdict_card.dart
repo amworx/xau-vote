@@ -489,9 +489,11 @@ class _SpreadRow extends StatelessWidget {
     final s = scan.spread;
     // UNAVAILABLE is stated explicitly. It is not a pass: the spread vetoes did
     // not run, and the user should know that.
-    final label = s.isGenuine
-        ? 'VENUE SPREAD ${s.value?.toStringAsFixed(2)} USD · ${s.source ?? 'unknown'}'
-        : 'SPREAD UNAVAILABLE · SPREAD VETOES UNEVALUATED';
+final label = !s.isAcceptable
+        ? 'SPREAD UNAVAILABLE · SPREAD VETOES UNEVALUATED'
+        : s.isUndisclosed
+            ? 'VENUE SPREAD MEASURED · WITHIN LIMITS · RATE WITHHELD (LICENCE)'
+            : 'VENUE SPREAD ${s.value?.toStringAsFixed(2)} USD · ${s.source ?? 'unknown'}';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

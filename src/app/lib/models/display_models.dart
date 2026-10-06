@@ -106,7 +106,6 @@ class DisplaySignal {
     required this.totalCount,
     this.price = 4278.30,
     this.dayMove = 12.40,
-    this.spread = 0.35,
     this.dayLow,
     this.dayHigh,
   });
@@ -125,7 +124,18 @@ class DisplaySignal {
   final int totalCount;
   final double price;
   final double dayMove;
-  final double spread;
+
+  // NOTE: there is deliberately no `spread` field here.
+  //
+  // It used to exist and default to 0.35, and nothing ever assigned it — so the
+  // Radar meta row printed a hardcoded "Spread 0.35" for every signal. That was
+  // a fabricated venue spread on the primary screen, which product rule 2
+  // forbids outright, and separately a licence problem: the only real spread
+  // source (OANDA fxTrade practice) permits internal use only.
+  //
+  // A display model must never invent a measurement. Spread now lives on
+  // ScanResult.spread as a VenueSpread, where "measured but undisclosed" is
+  // representable. See VenueSpread.undisclosed and D-20261006-013.
 
   /// Session low/high for the day-move bar (mockup `.day` RANGE).
   ///

@@ -107,12 +107,27 @@ class AnalysisService extends ChangeNotifier {
 
       // Freshness gate: a stale spread must not be treated as current.
       final spreadStatus =
-          spread.isGenuine && spreadRow.ageSeconds <= 300 ? SpreadStatus.available : SpreadStatus.unavailable;
+          spread.isAcceptable && spreadRow.ageSeconds <= 300 ? SpreadStatus.available : SpreadStatus.unavailable;
 
-      var qualityNote = spreadStatus == SpreadStatus.unavailable
+      // Never print the number. The spread provider grants internal use only,
+      // and this string is surfaced in the app, so a rate here is a
+      // redistribution. The three states are kept distinct because they mean
+      // different things and the user must be able to tell them apart:
+      //   - unavailable        -> the measurement itself could not be trusted
+      //   - undisclosed        -> measured and acceptable, rate withheld
+      //   - (numeric case)     -> no longer reachable for this provider
+      // The note must key off the SAME freshness gate as spreadStatus, not off the
+      // spread object alone. Otherwise a stale measurement reports "unavailable"
+      // in one field while the note still prints its number — the two would
+      // disagree, and the stale number is the one the user reads.
+      final spreadNote = spreadStatus == SpreadStatus.unavailable
           ? 'spread UNAVAILABLE: spread-based vetoes UNEVALUATED'
-          : 'venue spread ${spread.value?.toStringAsFixed(2)} USD '
-              '(${spreadRow.ageSeconds.toStringAsFixed(0)}s old, ${spread.source})';
+          : spread.isUndisclosed
+              ? 'venue spread measured and within limits '
+                  '(${spreadRow.ageSeconds.toStringAsFixed(0)}s old); rate withheld '
+                  'under provider licence'
+              : 'venue spread ${spread.value?.toStringAsFixed(2)} USD '
+                  '(${spreadRow.ageSeconds.toStringAsFixed(0)}s old, ${spread.source})';
 
       // Say which layers actually carried weight. A scan that silently ignored
       // macro because nothing was measured must not look identical to one that
@@ -169,7 +184,7 @@ class AnalysisService extends ChangeNotifier {
         sentimentAlignment: scan.sentimentAlignment,
         conflictPenalty: scan.conflictPenalty,
         spread: spread,
-        dataQuality: [qualityNote, layerNote, ...scan.dataQuality],
+        dataQuality: [spreadNote, layerNote, ...scan.dataQuality],
         lockSummary: scan.lockSummary,
         stopPlan: scan.stopPlan,
         atr5m: scan.atr5m,
@@ -193,7 +208,7 @@ class AnalysisService extends ChangeNotifier {
           candidateDirection: direction,
           currentPrice: currentPrice,
           effectiveSpreadStatus: spreadStatus,
-          effectiveSpreadNote: qualityNote,
+          effectiveSpreadNote: spreadNote,
           inputBars: bars,
         ),
       );

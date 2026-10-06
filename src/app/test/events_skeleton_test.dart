@@ -158,6 +158,11 @@ class _SlowRepository implements LiveRepository {
   Future<({double price, DateTime at})?> latestPrice() async => null;
 
   @override
+  Future<({double? price, DateTime? at, bool live})> directSpotPrice({
+    Duration timeout = const Duration(seconds: 6),
+  }) async =>
+      (price: null, at: null, live: false);
+  @override
   Future<({double low, double high})?> sessionRange() async => null;
 
   /// No active signal, so the independence and contributor reads are never

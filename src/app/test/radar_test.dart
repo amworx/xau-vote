@@ -59,7 +59,13 @@ void main() {
     expect(find.text('XAUUSD · SPOT GOLD'), findsOneWidget);
     expect(find.text('4,278.30'), findsOneWidget);
     expect(find.text('+0.29%'), findsOneWidget);
-    expect(find.text('Spread 0.35'), findsOneWidget);
+    // The spread tile used to be asserted here as `Spread 0.35`. That was a
+    // hardcoded default on DisplaySignal that nothing ever assigned, so the Radar
+    // presented an invented venue spread as if it were measured. Asserting its
+    // presence locked the fabrication into the suite. It must now be absent:
+    // the ladder is internal-use-only (D-20261006-013) and the app has no
+    // publishable number to show.
+    expect(find.textContaining('Spread'), findsNothing);
 
     // Day bar: real day move plus the session range supplied by the feed.
     // A range-less signal must fall back to the neutral `—` placeholder

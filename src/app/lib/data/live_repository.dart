@@ -13,21 +13,51 @@
 /// shows its honest empty state. No placeholder price, no invented level.
 library;
 
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:xau_core/xau_core.dart' hide Direction;
 
 import '../models/display_models.dart';
 import '../models/sentiment_layers.dart';
+import '../config.dart' as config;
 
 /// Raw row shapes as returned by PostgREST (snake_case).
 typedef Row = Map<String, dynamic>;
 
 /// XV live data, read-only from the app's perspective.
 class LiveRepository {
-  LiveRepository([SupabaseClient? client]) : _client = client ?? Supabase.instance.client;
+  LiveRepository([SupabaseClient? client, http.Client? httpClient])
+      : _client = client ?? Supabase.instance.client,
+        _http = httpClient ?? _sharedHttp();
 
   final SupabaseClient _client;
+
+  /// Used only for the direct spot-price read. Injected in tests so no network
+  /// call escapes a unit test.
+  final http.Client _http;
+
+  /// One client for the whole app, created on first use.
+  ///
+  /// Deliberately not per-repository and deliberately not closed. The price is
+  /// polled every few seconds, so a shared client keeps one warm connection
+  /// instead of re-handshaking constantly, and several repositories may exist
+  /// (AnalysisService builds its own). A client that nobody closes would be a
+  /// leak if it were per-instance; making it app-scoped is what removes the need
+  /// to close it at all.
+  static http.Client? _shared;
+  static http.Client _sharedHttp() => _shared ??= http.Client();
+
+  /// Edge Functions base for this project, from the build-time URL.
+  static String get _supabaseFunctionsUrl {
+    if (config.supabaseUrl.isEmpty) return '';
+    return '${config.supabaseUrl}/functions/v1';
+  }
+
+  static String get _anonKey => config.supabasePublishableKey;
 
   // ---------------------------------------------------------------- market
 
@@ -784,45 +814,102 @@ class LiveRepository {
         Tf.h1 => '1h',
       };
 
-  /// Newest genuine venue spread, or an explicit UNAVAILABLE state.
+  /// Live spot price, via the server-side cache.
   ///
-  /// Ratified option (a): a spread is only ever the execution venue's
-  /// Ask − Bid. A missing or stale row yields [VenueSpread.unavailable], never
-  /// a difference between two price sources.
+  /// WHY THIS GOES THROUGH AN EDGE FUNCTION
+  ///
+  /// `tick` writes a snapshot once a minute and pg_cron cannot run sub-minute, so
+  /// polling the database faster than that cannot beat a producer that only moves
+  /// once a minute. A price that refreshes on a timer the data cannot beat is not
+  /// a live price.
+  ///
+  /// Fetching upstream directly from the phone does not work either, and this was
+  /// measured rather than assumed: the provider rate-limits by client IP. Sixteen
+  /// requests at 4s spacing from a workstation all returned 200, while the same
+  /// cadence from the phone returned 429 every time. A design that only works on
+  /// the developer's connection fails for most real users.
+  ///
+  /// So `price-live` holds a shared cache: upstream is contacted at most once per
+  /// window from our own infrastructure, and any number of clients read that one
+  /// result. See migration 0018 and D-20261006-015.
+  ///
+  /// HONEST LIMITS
+  ///
+  /// The provider republishes on roughly a 30-second cycle, so that is the real
+  /// ceiling on how live this number can be. The app reports the age the
+  /// function returns rather than implying tick-level freshness.
+  ///
+  /// If this call fails, the stored snapshot is still better than an empty
+  /// screen, but it is NOT live and is reported as such (product rule 2).
+  Future<({double? price, DateTime? at, bool live})> directSpotPrice({
+    Duration timeout = const Duration(seconds: 6),
+  }) async {
+    try {
+      final res = await _http
+          .get(Uri.parse('$_supabaseFunctionsUrl/price-live'),
+              headers: {'apikey': _anonKey})
+          .timeout(timeout);
+      if (res.statusCode != 200) throw StateError('HTTP ${res.statusCode}');
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      final price = _toDouble(body['price']);
+      if (price == null || price <= 0) throw StateError('no usable price');
+      final live = body['live'] == true;
+      final at = DateTime.tryParse('${body['measuredAt']}')?.toUtc() ??
+          DateTime.now().toUtc();
+      return (price: price, at: at, live: live);
+    } catch (err) {
+      // Log the reason rather than swallowing it. A bare `catch (_)` here is
+      // what made a real on-device failure look like a design decision: the app
+      // fell back to the stored snapshot and nothing anywhere said why.
+      // debugPrint matches how the rest of this app reports failures, and the
+      // string carries nothing sensitive.
+      debugPrint('directSpotPrice: live read failed, using stored snapshot: $err');
+      final stored = await latestPrice();
+      return (price: stored?.price, at: stored?.at, live: false);
+    }
+  }
+
+  /// Whether the venue spread is currently acceptable — WITHOUT the rate.
+  ///
+  /// Ratified option (a) holds: a spread is only ever the execution venue's
+  /// Ask − Bid. That is still true, and it is still how the number in
+  /// `market_snapshots` was produced. What changed is that the number may not be
+  /// delivered to this app.
+  ///
+  /// The OANDA fxTrade PRACTICE licence grants INTERNAL USE ONLY and forbids
+  /// transmitting FXTrade rates to any third party. XV is a public app, so the
+  /// ladder itself is revoked from the client roles at the database level
+  /// (migration 0016) and cannot be queried at all. See D-20261006-013.
+  ///
+  /// So the app reads `spread_gate`, which answers the only question the engine
+  /// actually needs — is the spread inside its own acceptability limit — and
+  /// carries no price. The engine still applies its veto honestly; nobody learns
+  /// the rate.
+  ///
+  /// This is NOT a cross-source difference and NOT a synthesised spread. When the
+  /// gate cannot vouch, the honest answer is UNAVAILABLE and the engine says its
+  /// spread veto was UNEVALUATED rather than inventing a number.
   Future<({VenueSpread spread, double ageSeconds})> venueSpread({
     Duration maxAge = const Duration(minutes: 5),
   }) async {
-    final r = await _client
-        .from('market_snapshots')
-        .select('bid,ask,source,timestamp')
-        .eq('symbol', 'XAUUSD')
-        .not('bid', 'is', null)
-        .not('ask', 'is', null)
-        .order('timestamp', ascending: false)
-        .limit(1);
+    final r = await _client.from('spread_gate').select('status,age_seconds').limit(1);
 
     if (r.isEmpty) {
       return (spread: const VenueSpread.unavailable(), ageSeconds: double.infinity);
     }
-    final row = r.first;
-    final bid = _toDouble(row['bid']);
-    final ask = _toDouble(row['ask']);
-    final at = DateTime.tryParse('${row['timestamp']}')?.toUtc();
-    final age = at == null
-        ? double.infinity
-        : DateTime.now().toUtc().difference(at).inMilliseconds / 1000.0;
 
-    // A stale measurement is not a current spread. Reporting it as available
-    // would be as misleading as reporting nothing.
-    if (bid == null || ask == null || age > maxAge.inSeconds) {
+    final row = r.first;
+    final status = '${row['status'] ?? 'UNAVAILABLE'}';
+    final age = num.tryParse('${row['age_seconds']}')?.toDouble() ?? double.infinity;
+
+    if (status != 'AVAILABLE_FOR_INTERNAL_USE' || age > maxAge.inSeconds) {
       return (spread: const VenueSpread.unavailable(), ageSeconds: age);
     }
+
+    // Acceptable, but undisclosed. No bid, no ask, no width — the engine's
+    // veto sees "measured and inside limits" while the number stays server-side.
     return (
-      spread: VenueSpread.available(
-        bid: bid,
-        ask: ask,
-        source: '${row['source'] ?? 'unknown'}',
-      ),
+      spread: const VenueSpread.undisclosed(source: 'venue-internal'),
       ageSeconds: age,
     );
   }

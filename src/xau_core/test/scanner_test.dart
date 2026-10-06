@@ -146,6 +146,56 @@ void main() {
       expect(crossed.isGenuine, isFalse);
     });
 
+    // ---- undisclosed spread (rate withheld under provider licence) ---------
+    //
+    // The provider permits internal use only, so the ladder cannot reach the app
+    // (D-20261006-013). That must change what the app can SHOW without changing
+    // whether a setup is reachable. If it silently started vetoing every setup as
+    // SPREAD_UNEVALUATED, a licensing constraint would masquerade as a technical
+    // one and XV would lose its setup capability for a reason that has nothing to
+    // do with the market.
+
+    test('an undisclosed spread is acceptable but carries no number', () {
+      const s = VenueSpread.undisclosed(source: 'venue-internal');
+      expect(s.status, SpreadStatus.available);
+      expect(s.isAcceptable, isTrue);
+      expect(s.isUndisclosed, isTrue);
+      expect(s.value, isNull, reason: 'the rate must not be recoverable');
+      expect(s.bid, isNull);
+      expect(s.ask, isNull);
+      expect(s.source, 'venue-internal');
+    });
+
+    test('an undisclosed spread is context, not an unevaluated gap', () {
+      final r = scanner.scan(
+        req(spread: const VenueSpread.undisclosed(source: 'venue-internal')),
+      );
+      // Measured and acceptable, so the spread veto is genuinely evaluated and
+      // must not be reported as UNEVALUATED.
+      expect(r.reasonCodes, isNot(contains(ReasonCode.v2SpreadUnevaluated)));
+      expect(r.spread.status, SpreadStatus.available);
+    });
+
+    test('an undisclosed spread never widens the stop buffer', () {
+      // With no number in hand the buffer must stay on the ATR-only term. This
+      // is the conservative direction: a wider buffer costs more room to reach
+      // target, so guessing here would quietly distort every R:R figure.
+      final r = scanner.scan(
+        req(spread: const VenueSpread.undisclosed(source: 'venue-internal')),
+      );
+      expect(r.stopPlan?.bufferSource ?? '', isNot(contains('spread')));
+    });
+
+    test('an UNAVAILABLE spread stays distinguishable from an undisclosed one', () {
+      // This is the whole reason the two states are separate. If both collapsed
+      // to the same output there would be no way to tell "we are not allowed to
+      // look" apart from "there was nothing to look at", and the first would
+      // silently start costing setups the way the second legitimately does.
+      final r = scanner.scan(req(spread: const VenueSpread.unavailable()));
+      expect(r.reasonCodes, contains(ReasonCode.v2SpreadUnevaluated));
+      expect(r.spread.isAcceptable, isFalse);
+    });
+
     test('override can force UNAVAILABLE after a feed outage', () {
       final r = scanner.scan(
         req(

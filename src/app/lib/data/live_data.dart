@@ -31,6 +31,15 @@ class LiveData extends ChangeNotifier {
   /// Fast cadence: quote, range, active signal.
   Timer? _fastTimer;
 
+  /// Price-only cadence, deliberately faster than [_fastTimer].
+  ///
+  /// The price now comes straight from the provider, which publishes with no
+  /// rate limit, so it is the one value that genuinely benefits from a short
+  /// interval. Everything else still moves on the order of minutes and stays on
+  /// [_fastTimer], because re-reading those tables more often only rebuilds the
+  /// same widgets against unchanged data.
+  Timer? _priceTimer;
+
   /// Slow cadence: calendar, history, news digest.
   Timer? _slowTimer;
 
@@ -40,6 +49,10 @@ class LiveData extends ChangeNotifier {
 
   double? _price;
   DateTime? _priceAt;
+
+  /// False when the price came from the stored snapshot because the provider was
+  /// unreachable. The UI must not present a stale number as live.
+  bool _priceIsLive = false;
   double? _sessionLow;
   double? _sessionHigh;
   DisplaySignal? _signal;
@@ -72,6 +85,10 @@ class LiveData extends ChangeNotifier {
   DateTime? get lastUpdated => _lastUpdated;
   double? get price => _price;
   DateTime? get priceAt => _priceAt;
+
+  /// True when [price] came straight from the provider this poll rather than
+  /// from the once-a-minute stored snapshot.
+  bool get priceIsLive => _priceIsLive;
   double? get sessionLow => _sessionLow;
   double? get sessionHigh => _sessionHigh;
 
@@ -92,12 +109,13 @@ class LiveData extends ChangeNotifier {
 
   // --------------------------------------------------------------- polling
 
-  /// Start polling. One timer only — a second `Timer.periodic` would replace
-  /// the first (each call returns a new timer and the previous would still be
-  /// pending), which is an easy way to silently double the request rate.
+  /// Start polling. Each timer is cancelled before being replaced — a second
+  /// `Timer.periodic` would otherwise leave the previous one pending, which is an
+  /// easy way to silently double the request rate.
   void startPolling({int seconds = 15}) {
     _fastTimer?.cancel();
     _slowTimer?.cancel();
+    _priceTimer?.cancel();
     _fastTimer = Timer.periodic(Duration(seconds: seconds), (_) => _pollFast());
     // Scheduled calendar and history rows change on the order of minutes to
     // hours. Re-reading them on every price tick was the cause of the Events
@@ -105,11 +123,39 @@ class LiveData extends ChangeNotifier {
     // rows with fresh objects, so every countdown re-pinned and the whole list
     // rebuilt for data that had not moved.
     _slowTimer = Timer.periodic(_slowInterval, (_) => _pollSlow());
+    _priceTimer =
+        Timer.periodic(_priceInterval, (_) => _pollPrice());
     _pollFast();
     _pollSlow();
   }
 
   static const _slowInterval = Duration(minutes: 5);
+
+  /// Price-only refresh interval. One HTTPS GET against a provider that places
+  /// no limit on the real-time endpoint, so this is cheap and stays independent
+  /// of how often the database-backed sections are read.
+  static const _priceInterval = Duration(seconds: 5);
+
+  /// Updates the price alone.
+  ///
+  /// Deliberately does not go through [_refresh]: that would drag the signal,
+  /// session range and independence numbers along on every 5s tick and rebuild
+  /// screens whose data has not changed.
+  Future<void> _pollPrice() async {
+    final price = await _repo.directSpotPrice();
+    if (price.price == null) return;
+    if (price.price != _price) {
+      _price = price.price;
+      _priceAt = price.at;
+      _priceIsLive = price.live;
+      notifyListeners();
+    } else {
+      // Same price, but freshness is still a fact worth recording: a value that
+      // held steady for a minute is different evidence from a value that has
+      // not been re-confirmed in a minute.
+      _priceIsLive = price.live;
+    }
+  }
 
   Future<void> _pollFast() =>
       _refresh(includeSlowSections: false, manual: false);
@@ -122,6 +168,8 @@ class LiveData extends ChangeNotifier {
     _fastTimer = null;
     _slowTimer?.cancel();
     _slowTimer = null;
+    _priceTimer?.cancel();
+    _priceTimer = null;
   }
 
   /// Full read, used by pull-to-refresh and by the slow poll.
@@ -146,12 +194,16 @@ class LiveData extends ChangeNotifier {
     _loading = _signal == null && _price == null;
     var changed = false;
     try {
-      final price = await _repo.latestPrice();
-      if (price != null && price.price != _price) {
+      // Direct provider read, so the price moves with the market rather than
+      // with the once-a-minute cron. Falls back to the stored snapshot inside
+      // directSpotPrice, which reports `live: false` so the UI can say so.
+      final price = await _repo.directSpotPrice();
+      if (price.price != null && price.price != _price) {
         _price = price.price;
         _priceAt = price.at;
         changed = true;
       }
+      _priceIsLive = price.live;
 
       final range = await _repo.sessionRange();
       if (range != null && (range.low != _sessionLow || range.high != _sessionHigh)) {

@@ -503,7 +503,6 @@ class SpotPriceBlock extends StatelessWidget {
             runSpacing: 2,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              _MetaPair(label: 'Spread', value: signal.spread.toStringAsFixed(2)),
               const _MetaPair(label: 'Session', value: 'NY'),
               _MetaPair(label: 'Updated', value: clockLabel()),
             ],

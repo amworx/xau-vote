@@ -73,19 +73,40 @@ class VenueSpread {
       : status = SpreadStatus.available,
         source = source; // ignore: prefer_initializing_formals
 
-  /// No trustworthy measurement. The spread vetoes stay UNEVALUATED.
+/// No trustworthy measurement. The spread vetoes stay UNEVALUATED.
   const VenueSpread.unavailable()
       : status = SpreadStatus.unavailable,
         bid = null,
         ask = null,
         source = 'NONE';
 
+  /// Measured at the venue and inside its acceptability limit, but the RATE IS
+  /// NOT PUBLISHABLE.
+  ///
+  /// The provider's licence grants internal use only and forbids transmitting its
+  /// rates to third parties, so the number may not reach the public app. The
+  /// price columns are revoked from the client roles in the database (migration
+  /// 0016) precisely so this state cannot be worked around by querying harder.
+  ///
+  /// This is deliberately NOT [SpreadStatus.unavailable]. The measurement really
+  /// does exist and really is acceptable, so the engine may apply its veto
+  /// honestly; what is missing is a number the app is allowed to see.
+  ///
+  /// [value] is therefore null and [isGenuine] is false: nothing in this class
+  /// pretends to know the width.
+  const VenueSpread.undisclosed({required this.source})
+      : status = SpreadStatus.available,
+        bid = null,
+        ask = null;
+
   final SpreadStatus status;
   final double? bid;
   final double? ask;
   final String? source;
 
-  /// Spread in USD, or null when unmeasured. Never derived cross-source.
+  /// Spread in USD, or null when unmeasured or undisclosed.
+  ///
+  /// Never derived cross-source, and never derived from a withheld rate.
   double? get value {
     final b = bid;
     final a = ask;
@@ -95,6 +116,18 @@ class VenueSpread {
   }
 
   bool get isGenuine => status == SpreadStatus.available && value != null;
+
+  /// True when a venue measurement exists and passed its own limit, whether or
+  /// not the number itself may be shown.
+  ///
+  /// The engine's spread veto keys off this, not off [isGenuine]. Keying off
+  /// [isGenuine] would make an undisclosed-but-acceptable spread read as absent,
+  /// which would veto every setup as UNAVAILABLE — an accuracy loss caused purely
+  /// by a licensing constraint.
+  bool get isAcceptable => status == SpreadStatus.available;
+
+  /// True when the rate exists but is withheld from this client.
+  bool get isUndisclosed => status == SpreadStatus.available && bid == null;
 }
 
 /// Everything one scan needs. Time is injected; nothing here reads a clock.
@@ -448,9 +481,13 @@ macroAlignment: null,
       atr5m: atr5m,
       swingLow: low?.price,
       swingHigh: high?.price,
-      spreadStatus: req.spread.isGenuine ? SpreadStatus.available : SpreadStatus.unavailable,
-      // Only a genuine venue spread may widen the buffer.
-      genuineSpread: req.spread.isGenuine ? req.spread.value : null,
+// The stop buffer may only widen against a spread NUMBER we actually hold, so
+      // `value` stays the gate here and not `status` — an undisclosed-but-acceptable
+      // spread correctly contributes nothing to the buffer. `status` is passed
+      // through unchanged so the audit trail records what was true (a live
+      // measurement existed) rather than flattening it to UNAVAILABLE.
+      spreadStatus: req.spread.status,
+      genuineSpread: req.spread.value,
       config: stopConfig,
     );
   }

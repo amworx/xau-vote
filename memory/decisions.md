@@ -567,3 +567,98 @@ estimated. Recent hourly means sit near 0.45-0.51.
   build. Recorded here; the UI change is not part of steps 1-4.
 - Internal research use of the OANDA spread remains permitted and continues to
   feed the outcome ledger, where it is never published.
+
+## D-20261006-014 - The spread is measured, withheld, and that is a distinct state
+
+**decided:** 2026-10-06
+
+**context:** The OANDA fxTrade PRACTICE licence is internal-use-only (D-20261006-013),
+so the ladder must not reach the public app. The instinct was to make the spread
+UNAVAILABLE, which would have been a category error: UNAVAILABLE means "there was
+nothing trustworthy to measure", and using it for "measured and fine, but you are
+not allowed to see the number" would misreport an accuracy failure as a licence
+fact.
+
+**decision:** Three states, and the middle one is new.
+
+| state | meaning | engine | shown |
+|---|---|---|---|
+| `VenueSpread.unavailable` | nothing trustworthy measured | vetoes UNEVALUATED | "SPREAD UNAVAILABLE" |
+| `VenueSpread.undisclosed` | measured and inside limits, rate withheld | vetoes EVALUATED | "MEASURED � WITHIN LIMITS � RATE WITHHELD" |
+| `VenueSpread.available` | rate held and publishable | vetoes EVALUATED | the number |
+
+**consequences:**
+
+- The spread veto is still evaluated for an undisclosed spread. Keying it off
+  `isGenuine` (which needs a number) would have turned a licensing constraint into
+  a blanket veto - XV would stop producing setups for a reason that has nothing to
+  do with the market.
+- The stop buffer is NOT widened, because that term needs the number. ATR-only is
+  the conservative side of that trade: a wider buffer shrinks the reward side.
+- The stop plan records `status` unchanged so the audit trail says a measurement
+  existed, rather than flattening it to UNAVAILABLE.
+- Freshness outranks the accommodation: an hour-old undisclosed spread is
+  UNAVAILABLE again.
+
+**the load-bearing change is not in Dart, it is in Postgres.** The licence
+obligation is enforced by REVOKE, so the number cannot arrive at all:
+
+- `market_snapshots` - SELECT on (id, symbol, price, timestamp, source) only.
+- `spread_gate` - SELECT; carries status and age, never a price.
+- No client write access anywhere. `spread_gate` runs with owner security because a
+  security_invoker view cannot read columns the invoker lacks.
+
+The rule to remember: **a permission is not a control if the caller can write the
+inputs.** Revoking the read while leaving the write open would have left the gate
+answering questions about numbers anyone could invent.
+
+**display rule:** the Radar meta row now shows no spread tile at all. There was a
+`DisplaySignal.spread` defaulting to `0.35` that nothing ever assigned, so the
+primary screen presented an invented venue spread. It is removed rather than
+defaulted, and the test that asserted `Spread 0.35` now asserts its absence.
+
+## D-20261006-015 - The Radar price reads a cached Edge Function, not the provider
+
+**decided:** 2026-10-06
+
+**context:** The price was polled from `market_snapshots`, but `tick` writes that
+table once a minute and pg_cron cannot run sub-minute. Polling the database every
+5s therefore bought nothing - it is a fast poll of a slow feed, and the screen
+lagged the market by up to a minute.
+
+**first attempt, and why it failed:** read `https://api.gold-api.com/price/XAU`
+directly from the app. It worked on the workstation and 429'd on the phone.
+Measured, not assumed: 16 requests at 4s spacing from the workstation all
+returned 200; the same cadence from the phone returned 429 on every attempt. The
+provider rate-limits by client IP, so any design that calls upstream per client
+works on a developer's connection and fails for most real users. A swallowed
+`catch (_)` made this look like a working design with a stale fallback for a full
+build cycle - the on-device caption was the only thing that gave it away. Lesson:
+log why a fallback fired, and test on the device, not just the desktop.
+
+**decision:** a `price-live` Edge Function holding a shared cache
+(`live_price_cache`, one row, migration 0018). Upstream is contacted at most once
+per 10s window from our own infrastructure; any number of clients read that one
+result, so upstream volume is independent of the user count.
+
+**honest limits, which matter more than the mechanism:**
+
+- The provider republishes on roughly a **30-second** cycle (verified by watching
+  its own `updatedAt` advance in 30s steps). That is the real ceiling on how live
+  this number can be. Polling faster than that cannot produce a newer value, so
+  "real time on tick" is not achievable with this feed and is not claimed.
+- `ageSeconds` is derived from the **provider's** timestamp, never from the fact
+  that we just made the call. A fresh fetch can still return a 30s-old number.
+- The cache TTL is 10s, not 5s, for that reason - a tighter window spends quota to
+  re-read the same value.
+- The UI states the source: "Live from the price provider" versus "Provider
+  unreachable - showing the latest stored snapshot", driven by `priceIsLive`.
+- Stored snapshots remain the evidence base for bars, the ledger and settlement.
+  A display refresh must never be allowed to rewrite what was recorded.
+
+**not chosen:** adding `market_snapshots` to the Realtime publication. It would
+not have helped - the producer is still once a minute, so a push channel would
+deliver the same stale minute sooner - and a Postgres Changes subscription on that
+table risks shipping the restricted ladder to subscribers, since the publication
+carries whole rows. If push is ever wanted, the safe shape is a channel fed by
+`price-live`, not the evidence table.

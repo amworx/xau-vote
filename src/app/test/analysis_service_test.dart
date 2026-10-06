@@ -344,8 +344,49 @@ void main() {
       // UNEVALUATED rather than relying on an hour-old number.
       expect(r!.spread.isGenuine, isTrue);
       expect(r.dataQuality.join(' '), contains('UNAVAILABLE'));
-      expect(s.hasGenuineSpread, isTrue);
-    });
+expect(s.hasGenuineSpread, isTrue);
+      });
+
+      test('an undisclosed fresh spread evaluates the veto but prints no rate', () async {
+        final s = AnalysisService(repository: _Repo(
+          bars: full(),
+          spread: const VenueSpread.undisclosed(source: 'venue-internal'),
+          ageSeconds: 30,
+        ));
+        final r = await s.refresh();
+
+        // The measurement is real and acceptable, so the spread veto must be
+        // evaluated. If this reported UNAVAILABLE instead, a licensing
+        // constraint would silently turn into an accuracy loss by vetoing every
+        // setup as though no spread had been measured.
+        expect(r!.spread.status, SpreadStatus.available);
+        expect(r.dataQuality.join(' '), isNot(contains('UNAVAILABLE')));
+
+        // ...and the note must say the rate is withheld rather than print it.
+        final note = r.dataQuality.join(' ');
+        expect(note, contains('withheld'));
+        expect(note, isNot(contains('USD')));
+
+        // Nothing anywhere in the reported result may carry a spread number.
+        expect(r.spread.value, isNull);
+        expect(r.spread.bid, isNull);
+        expect(r.spread.ask, isNull);
+        expect(r.spread.isUndisclosed, isTrue);
+      });
+
+      test('a stale undisclosed spread is UNAVAILABLE, not merely withheld', () async {
+        final s = AnalysisService(repository: _Repo(
+          bars: full(),
+          spread: const VenueSpread.undisclosed(source: 'venue-internal'),
+          ageSeconds: 3600,
+        ));
+        final r = await s.refresh();
+
+        // Freshness outranks the licensing accommodation: an hour-old
+        // measurement describes a market that has since moved.
+        expect(r!.dataQuality.join(' '), contains('UNAVAILABLE'));
+        expect(r.dataQuality.join(' '), isNot(contains('withheld')));
+      });
 
     test('no spread reports UNAVAILABLE and names it as a data-quality note', () async {
       final s = AnalysisService(repository: _Repo(bars: full()));

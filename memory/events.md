@@ -728,3 +728,109 @@
   supabase/migrations/0011_outcome_recorder_settlement_cron.sql,
   supabase/functions/outcome-recorder/index.ts (v6)
 - **tags:** outcome-recorder, stale-data, postgrest-row-cap, regression-guard
+
+## EVT-20261006-0213 spread licence breach closed; found the gate was WRITABLE
+
+   - **mode:** BUILD / REVIEW
+   - **action:** Removed the OANDA spread from the client path and made the Radar
+     price read live from the provider, as instructed.
+   - **outcome:** The display breach is closed, but closing it surfaced a worse
+     hole underneath it, and the record below is the point of this entry.
+   - **critical - the gate was forgeable:**
+     - 0016 revoked `SELECT (bid, ask)` only. A read of the ladder correctly
+       failed with 42501 and the work looked finished.
+     - It never revoked INSERT/UPDATE/DELETE. A publishable key ships inside the
+       app, so it is public. Verified with a VALID JSON body: anon could INSERT a
+       row with an invented bid/ask, and PATCH/DELETE existing snapshots.
+     - That is worse than the original leak. `spread_gate` would have reported
+       "measured and within limits" on the strength of an invented number, and
+       the engine's spread veto would have consumed it as genuine.
+     - An earlier note claimed "synthetic insert blocked (400)". **That was
+       wrong** - the 400 was a JSON parse failure from a malformed test body, not
+       a permission denial. Lesson: a 4xx is not evidence of denial; read the
+       body, and re-test writes with well-formed JSON.
+   - **second read path:** `analysis_scans` and `latest_analysis` each carry their
+     own `spread_bid` / `spread_ask` / `spread_value`. Revoking
+     `market_snapshots` does not retract a copy written elsewhere. `analysis_scans`
+     also granted anon full INSERT/UPDATE/DELETE/TRUNCATE. Nothing in the app or
+     in any Edge Function reads these tables and all are empty, so access control
+     was the right lever and dropping columns would only have destroyed the
+     internal audit record.
+   - **fixes applied:**
+     - `0017_spread_gate_privileges.sql` (new): table-level revoke on
+       `market_snapshots`, then re-grant SELECT on (id, symbol, price, timestamp,
+       source) only; recreate `spread_gate` with OWNER security; revoke the four
+       unused derived tables; grant writes to `service_role` only.
+     - Why owner security: with `security_invoker = true` the view evaluated
+       `bid is not null AND ask is not null` as `anon`, which no longer holds
+       those columns, so the view could not work at all.
+     - Test rows from the forgery probes were deleted; the genuine feed was
+       re-checked afterwards (12,685 rows, 5,607 with ladder, still live).
+   - **verified by probe, not assumed:** price ALLOWED; bid/ask 42501; gate
+     ALLOWED carrying no price; analysis_scans / latest_analysis / spread_status
+     42501; forge INSERT, forge scan INSERT, PATCH and DELETE all 42501.
+   - **third finding - a fabricated spread on the main screen:** `DisplaySignal`
+     had `spread` defaulting to `0.35` and nothing ever assigned it, so Radar
+     printed "Spread 0.35" as though measured. The field is removed. Two tests
+     were asserting that 0.35 was present, i.e. the fabrication was pinned by the
+     suite; one now asserts the opposite.
+   - **engine model:** added `VenueSpread.undisclosed` - acceptable but with no
+     number. The veto is still evaluated, so a licensing constraint does not
+     silently masquerade as a technical one and cost setups. The stop buffer is
+     NOT widened without a number, which is the conservative direction.
+   - **self-inflicted:** the first `spreadNote` keyed off the spread object while
+     `spreadStatus` keyed off freshness, so a stale spread printed a number and
+     claimed UNAVAILABLE in the other field. Caught by an existing test. Always
+     derive a note and its status from the same gate.
+   - **self-inflicted:** asserted `v2SpreadUnevaluated` in `vetoes`; it is emitted
+     into `reasonCodes`. The existing test at scanner_test.dart:136 has the same
+     weakness - it asserts against `vetoes` and would pass even if the code were
+     broken.
+   - **key confusion:** the publishable key in circulation notes was mistranscribed
+     (`RQuUTHF5Syy` vs the real `RQuuxcbF5Syy`), so every probe returned 401 and
+     looked like a permissions problem. `memory/decisions.md` already warns about
+     this; the summary had drifted. The key is not a secret and needs no rotation
+     - only the service-role key does.
+   - **files:** supabase/migrations/0017_spread_gate_privileges.sql (new),
+     src/app/lib/data/live_repository.dart, src/app/lib/data/live_data.dart,
+     src/app/lib/data/analysis_service.dart, src/app/lib/models/display_models.dart,
+     src/app/lib/widgets/harbor_widgets.dart,
+     src/app/lib/widgets/analysis_verdict_card.dart,
+     src/xau_core/lib/analysis/scanner.dart, src/xau_core/test/scanner_test.dart,
+     src/app/test/analysis_service_test.dart, src/app/test/radar_test.dart,
+     src/app/test/live_mode_test.dart, src/app/test/events_skeleton_test.dart
+   - **tests:** xau_core 285 pass; app 257 pass (was 255); both analyzers clean.
+   - **tags:** licensing, least-privilege, forgery, never-fabricate, price-freshness
+
+   - **price path, corrected after the first attempt:** a direct client read of
+     gold-api.com worked on the workstation and returned HTTP 429 on the phone at
+     the same cadence (16/16 succeeded from the workstation, every attempt 429
+     from the phone). The provider rate-limits by client IP, so calling upstream
+     per client would fail for most real users. Replaced with a `price-live` Edge
+     Function holding a shared single-row cache (`0018_live_price_cache.sql`);
+     upstream is hit at most once per 10s regardless of user count.
+   - **why this was nearly missed:** `catch (_)` swallowed the 429 and logged
+     nothing, so the build looked finished and the app simply fell back to the
+     stored snapshot. Only the honesty caption I had just added ("Provider
+     unreachable - showing the latest stored snapshot") revealed it on the device.
+     Lesson: a fallback that hides why it fired is a defect, and a design verified
+     only on the workstation is not verified.
+   - **honest limit, recorded rather than papered over:** the provider
+     republishes on a ~30s cycle (its own `updatedAt` advances in 30s steps), so
+     tick-level "real time" is not achievable with this feed and is not claimed.
+     `ageSeconds` is derived from the provider's timestamp, not from the call.
+   - **verified on the device (release build, LIVE=true):** price 4,170.30 then
+     4,170.40 across 50s, matching upstream exactly at both instants, caption
+     "Live from the price provider"; analysis card shows "venue spread measured
+     and within limits (16s old); rate withheld under provider licence" and
+     "VENUE SPREAD MEASURED - WITHIN LIMITS - RATE WITHHELD (LICENCE)". No spread
+     number anywhere, and NO TRADE comes from macro conflict, not a spread gap -
+     so setup capability is preserved.
+   - **build gotcha:** a release build without `--dart-define=LIVE=true` silently
+     falls back to fixtures (`mockMode = !LIVE`). A first "verification" build
+     showed the fixture price 4,278.30 and DEMO STATE chips and proved nothing.
+   - **files (continued):** supabase/migrations/0018_live_price_cache.sql (new),
+     supabase/functions/price-live/index.ts (new, deployed v2),
+     src/app/lib/screens/radar_screen.dart
+   - **deployed:** spread_gate_privileges (0017), live_price_cache (0018),
+     price-live v2.
