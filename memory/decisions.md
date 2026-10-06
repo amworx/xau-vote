@@ -177,3 +177,17 @@
 - **UI:** the INSTALL action now offers an `ALLOW` action that opens the system screen. This is a functional snackbar action reusing the existing visual language, NOT a new designed surface - a proper first-class permission explainer is still available and would go through the browser-prototype-then-approval route first.
 - **verification:** 12 new tests across the MethodChannel contract (granted / not granted / cannot-tell, and each error code mapping). The Kotlin compile caught a wrong constant - `ACTION_MANAGE_INSTALL_PERMISSIONS` does not exist; it is `ACTION_MANAGE_UNKNOWN_APP_SOURCES`. Built APK verified with aapt2: `1.0.8`/code 9, `REQUEST_INSTALL_PACKAGES` present.
 - **status:** accepted
+
+---
+
+## D-20261005-011 - Thread the 5.1 layers into ConfluenceInput (the core gap)
+
+- **date:** 2026-10-05
+- **finding:** `ScanRequest` had NO `macro` or `sentiment` fields. `MarketScanner.scan()` therefore built a `ConfluenceInput` without them, so both were permanently null and every term of the 8.3 overlay - the `macroSupports` credit, the `v6DirectionConflict` veto, the `sentimentSupports` credit, the confidence penalty, and the `2.0 * macro` score term - was dead code regardless of what the database held.
+- **consequence:** the entire 5.1 sentiment architecture was decorative. Building the layers (D-006/008) changed nothing a trader would ever see. This, not the layer ingest, was the actual core-function gap.
+- **decision:** add nullable `MacroState macro` / `SentimentState sentiment` to `ScanRequest`, thread them into `ConfluenceInput`, and have `AnalysisService.refresh()` read `sentiment_layers` and pass `layers.macro` / `layers.sentiment`. `ScanResult` now also carries `macroAgrees` / `sentimentAgrees` so a UI can show the layer's own direction AND whether it agreed with the trade, instead of one number that conflates them.
+- **null stays meaningful:** a caller that supplies nothing gets exactly the previous behaviour - no macro weight, not a fabricated neutral. Pinned by a test.
+- **honest reporting:** each scan now carries a data-quality note naming the measured layers and the macro coverage percentage, so a scan that weighed nothing cannot be mistaken for a clean one. It says `sentiment layers: none measured` when there are none.
+- **two denominators on purpose:** macro coverage counts only macro-side layers (policy, WGC, market-implied = 75 points). Positioning (25) is sentiment and is excluded from the macro gate but included in overall coverage. A test pins that policy + positioning alone is 47% and therefore still gated, which is unintuitive enough to be worth asserting.
+- **coverage added:** 7 scanner tests (including that the real live three-layer read blocks a long) and 4 service tests (unmeasured / thin / gated / live).
+- **status:** accepted

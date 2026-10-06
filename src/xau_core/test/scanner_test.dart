@@ -52,6 +52,8 @@ ScanRequest req({
   double? price,
   bool duplicate = false,
   SpreadStatus? override,
+  MacroState? macro,
+  SentimentState? sentiment,
 }) =>
     ScanRequest(
       direction: dir,
@@ -68,6 +70,8 @@ ScanRequest req({
       currentPrice: price,
       duplicate: duplicate,
       spreadStatusOverride: override,
+      macro: macro,
+      sentiment: sentiment,
     );
 
 void main() {
@@ -303,6 +307,96 @@ void main() {
       ));
       final without = scanner.scan(req(price: 4100));
       expect(withSpread.verdict, without.verdict);
+    });
+  });
+
+  // ScanRequest had no macro/sentiment fields at all, so every 8.3 macro and
+  // sentiment term was dead code no matter how much layer data existed. These
+  // pin that a supplied layer actually moves the verdict.
+  group('sentiment layers reach the verdict', () {
+    test('a bearish macro vetoes a long', () {
+      final r = scanner.scan(
+        req(dir: Side.long, macro: const MacroState(alignment: -1)),
+      );
+      expect(r.vetoes, contains(ReasonCode.v6DirectionConflict));
+      expect(r.verdict, Verdict.noTrade);
+      expect(r.macroAlignment, -1);
+      expect(r.macroAgrees, -1, reason: 'macro runs against the long');
+    });
+
+    test('that same bearish macro does not veto a short', () {
+      final r = scanner.scan(
+        req(dir: Side.short, macro: const MacroState(alignment: -1)),
+      );
+      expect(r.vetoes, isNot(contains(ReasonCode.v6DirectionConflict)));
+      expect(r.macroAgrees, 1, reason: 'macro agrees with the short');
+      expect(r.reasonCodes, contains(ReasonCode.macroSupports));
+    });
+
+    test('bullish macro supports a long and conflicts with a short', () {
+      final bull = scanner.scan(
+        req(dir: Side.long, macro: const MacroState(alignment: 1)),
+      );
+      expect(bull.vetoes, isNot(contains(ReasonCode.v6DirectionConflict)));
+      expect(bull.reasonCodes, contains(ReasonCode.macroSupports));
+
+      final bear = scanner.scan(
+        req(dir: Side.short, macro: const MacroState(alignment: 1)),
+      );
+      expect(bear.vetoes, contains(ReasonCode.v6DirectionConflict));
+    });
+
+    test('bearish sentiment penalises a long but never vetoes it', () {
+      // Section 6: a weekly reading may lower conviction, not forbid the trade.
+      final r = scanner.scan(
+        req(dir: Side.long, sentiment: const SentimentState(alignment: -1)),
+      );
+      expect(r.vetoes, isNot(contains(ReasonCode.v6DirectionConflict)));
+      expect(r.conflictPenalty, 1);
+      expect(r.sentimentAlignment, -1);
+      expect(r.sentimentAgrees, -1);
+    });
+
+    test('a stale COT reading contributes nothing at all', () {
+      final r = scanner.scan(
+        req(
+          dir: Side.long,
+          sentiment: const SentimentState(alignment: -1, cotStale: true),
+        ),
+      );
+      expect(r.conflictPenalty, 0);
+      expect(r.sentimentAgrees, isNull);
+    });
+
+    test('omitting the layers leaves the scan exactly as before', () {
+      // A caller that knows nothing about 5.1 gets no macro weight, not a
+      // fabricated neutral.
+      final r = scanner.scan(req(dir: Side.long));
+      expect(r.macroAlignment, isNull);
+      expect(r.macroAgrees, isNull);
+      expect(r.sentimentAlignment, isNull);
+      expect(r.conflictPenalty, 0);
+    });
+
+    test('the real live read reaches a long as a conflict', () {
+      // The live state on 2026-10-05: the Fed hiked (macro -1) and COT sits at
+      // the 37.8th percentile (sentiment -1).
+      final r = scanner.scan(
+        req(
+          dir: Side.long,
+          macro: const MacroState(
+            alignment: -1,
+            policyImpulse: -1,
+            realYieldImpulse: -1,
+          ),
+          sentiment: const SentimentState(alignment: -1),
+        ),
+      );
+      expect(r.macroAlignment, -1);
+      expect(r.sentimentAlignment, -1);
+      expect(r.vetoes, contains(ReasonCode.v6DirectionConflict));
+      expect(r.conflictPenalty, 2, reason: 'macro veto plus the sentiment penalty');
+      expect(r.verdict, Verdict.noTrade);
     });
   });
 }

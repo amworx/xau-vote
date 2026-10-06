@@ -116,6 +116,8 @@ class ScanRequest {
     this.currentPrice,
     this.blockedByLevel = false,
     this.spreadStatusOverride,
+    this.macro,
+    this.sentiment,
   });
 
   /// Candidate direction, established elsewhere. Null means no candidate.
@@ -143,6 +145,19 @@ class ScanRequest {
   /// Forces a reported spread status, used when a caller knows better (for
   /// example a UI that wants to show UNAVAILABLE after a feed outage).
   final SpreadStatus? spreadStatusOverride;
+
+  /// §5.1 macro regime. Null means no macro layer could be measured, which is
+  /// NOT the same as a neutral reading — the engine treats null as "nothing to
+  /// weigh", never as support.
+  ///
+  /// These two fields were absent, which meant `ConfluenceInput.macro` and
+  /// `.sentiment` were permanently null and every macro/sentiment term in §8.3
+  /// was dead code no matter how much layer data existed.
+  final MacroState? macro;
+
+  /// §5.1 positioning, already carrying its own staleness flag so a stale
+  /// weekly reading cannot act as current.
+  final SentimentState? sentiment;
 }
 
 /// Full result of a scan, including the data-quality notes.
@@ -154,8 +169,10 @@ class ScanResult {
     required this.vetoes,
     required this.technicalScore,
     required this.finalScore,
-    required this.macroAlignment,
+required this.macroAlignment,
+    required this.macroAgrees,
     required this.sentimentAlignment,
+    required this.sentimentAgrees,
     required this.conflictPenalty,
     required this.spread,
     required this.dataQuality,
@@ -170,8 +187,21 @@ class ScanResult {
   final List<ReasonCode> vetoes;
   final int technicalScore;
   final double finalScore;
+/// The macro layer's OWN direction: -1 leaning bearish for gold, +1 bullish,
+  /// null unmeasured. This is the reading, not a verdict.
   final int? macroAlignment;
+
+  /// [macroAlignment] flipped for the traded side: >0 the trade ran with the
+  /// macro read, <0 against it. This is what the score and the
+  /// `v6DirectionConflict` veto used.
+  final int? macroAgrees;
+
+  /// The sentiment layer's own direction, same convention as [macroAlignment].
   final int? sentimentAlignment;
+
+  /// [sentimentAlignment] flipped for the traded side, same reading convention.
+  final int? sentimentAgrees;
+
   final int conflictPenalty;
 
   /// Measured spread, including UNAVAILABLE status. Never a proxy.
@@ -266,8 +296,10 @@ class MarketScanner {
         vetoes: const [ReasonCode.v10ConfirmationLow],
         technicalScore: 0,
         finalScore: 0,
-        macroAlignment: null,
+macroAlignment: null,
+        macroAgrees: null,
         sentimentAlignment: null,
+        sentimentAgrees: null,
         conflictPenalty: 0,
         spread: req.spread,
         dataQuality: ['no candidate direction: indicators never initiate a trade', ...quality],
@@ -322,6 +354,10 @@ class MarketScanner {
         duplicate: req.duplicate,
         currentPrice: req.currentPrice,
         blockedByLevel: req.blockedByLevel,
+        // The §5.1 layers. Null whenever a caller has not supplied them, which
+        // is why the overlay contributed nothing before this was threaded.
+        macro: req.macro,
+        sentiment: req.sentiment,
       ),
     );
 
@@ -349,7 +385,9 @@ class MarketScanner {
           technicalScore: confluence.technicalScore,
           finalScore: confluence.finalScore,
           macroAlignment: confluence.macroAlignment,
+          macroAgrees: confluence.macroAgrees,
           sentimentAlignment: confluence.sentimentAlignment,
+          sentimentAgrees: confluence.sentimentAgrees,
           conflictPenalty: confluence.conflictPenalty,
           spread: req.spread,
           dataQuality: quality,
@@ -368,7 +406,9 @@ class MarketScanner {
       technicalScore: confluence.technicalScore,
       finalScore: confluence.finalScore,
       macroAlignment: confluence.macroAlignment,
+      macroAgrees: confluence.macroAgrees,
       sentimentAlignment: confluence.sentimentAlignment,
+      sentimentAgrees: confluence.sentimentAgrees,
       conflictPenalty: confluence.conflictPenalty,
       spread: req.spread,
       dataQuality: quality,

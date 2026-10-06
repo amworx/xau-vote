@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:xau_core/xau_core.dart';
 
 import 'live_repository.dart';
+import '../models/sentiment_layers.dart';
 
 /// Runs the multi-timeframe analysis on demand and caches the result.
 ///
@@ -57,6 +58,13 @@ class AnalysisService extends ChangeNotifier {
       final spreadRow = await _repo.venueSpread();
       final events = await _repo.analysisEvents();
 
+      // §5.1 layers, measured server-side by the `sentiment-layers` function.
+      // Read here so the scan can actually weigh them: the Fed's policy decision,
+      // CFTC managed money, and the Treasury real-yield impulse. A layer that
+      // could not be measured arrives as null, which the engine treats as
+      // "nothing to weigh" rather than as support.
+      final layers = await _repo.sentimentLayers();
+
       final h1Bars = bars[Tf.h1];
       final m30Bars = bars[Tf.m30] ?? const TimeframeBars(timeframe: Tf.m30, bars: [], allDegraded: false);
       final m15Bars = bars[Tf.m15] ?? const TimeframeBars(timeframe: Tf.m15, bars: [], allDegraded: false);
@@ -79,6 +87,21 @@ class AnalysisService extends ChangeNotifier {
           : 'venue spread ${spread.value?.toStringAsFixed(2)} USD '
               '(${spreadRow.ageSeconds.toStringAsFixed(0)}s old, ${spread.source})';
 
+      // Say which layers actually carried weight. A scan that silently ignored
+      // macro because nothing was measured must not look identical to one that
+      // weighed a live reading.
+      final measured = SentimentLayers.expectedWeights.keys
+          .where((l) => layers[l]?.alignment != null)
+          .toList();
+      final unmeasured = SentimentLayers.expectedWeights.keys
+          .where((l) => layers[l] == null || layers[l]!.alignment == null)
+          .toList();
+      final layerNote = measured.isEmpty
+          ? 'sentiment layers: none measured (${unmeasured.join(', ')})'
+          : 'sentiment layers: ${measured.join(', ')} '
+              '(macro coverage ${(layers.macroCoverage * 100).toStringAsFixed(0)}%'
+              '${unmeasured.isEmpty ? '' : ', missing ${unmeasured.join(', ')}'})';
+
       final scan = _scanner.scan(
         ScanRequest(
           direction: direction,
@@ -92,6 +115,10 @@ class AnalysisService extends ChangeNotifier {
           now: now,
           currentPrice: m5Bars.bars.isNotEmpty ? m5Bars.bars.last.close : h1Bars?.bars.lastOrNull?.close,
           sessionOpen: isSessionOpen(now),
+          // The two §5.1 inputs the §8.3 overlay consumes. Supplying them is
+          // what makes the overlay reachable at all.
+          macro: layers.macro,
+          sentiment: layers.sentiment,
         ),
       );
 
@@ -107,10 +134,12 @@ class AnalysisService extends ChangeNotifier {
         sentimentAlignment: scan.sentimentAlignment,
         conflictPenalty: scan.conflictPenalty,
         spread: spread,
-        dataQuality: [qualityNote, ...scan.dataQuality],
+        dataQuality: [qualityNote, layerNote, ...scan.dataQuality],
         lockSummary: scan.lockSummary,
         stopPlan: scan.stopPlan,
         atr5m: scan.atr5m,
+        macroAgrees: scan.macroAgrees,
+        sentimentAgrees: scan.sentimentAgrees,
       );
       _cachedAt = DateTime.now();
       // Notify after the state is fully written so a listener never observes a

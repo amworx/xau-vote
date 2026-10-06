@@ -579,3 +579,19 @@
   - A `bool` return collapses "you can fix this" and "you cannot" into the same branch. The return type was part of the bug.
 - **tags:** updater, android, permissions, fileprovider, release-1.0.8
 - **open:** publishing 1.0.8 is blocked - SUPABASE_SERVICE_ROLE_KEY is not in the environment and must not be pasted in chat again. Asked the user to set it locally.
+
+---
+
+## EVT-20261005-0020 - Wire the 5.1 layers into the scan (core function)
+
+- **id:** EVT-20261005-0020
+- **timestamp:** 2026-10-05T22:00Z .. 2026-10-05T22:40Z
+- **mode:** RESEARCH + BUILD
+- **action:** Closed the core-function gap: `ScanRequest` -> `ConfluenceInput` now carries macro and sentiment, and `AnalysisService` feeds the live layers in.
+- **result:** The 8.3 overlay is reachable for the first time. With the live read (Fed hike, macro -1 at 73% coverage; COT 37.8th pctile, -1), longs now take `v6DirectionConflict` and shorts receive `macroSupports` + `sentimentSupports`. 281 xau_core tests, 196 app tests, 42 Node tests, both analyzers clean.
+- **errors:** `noSuchMethod` in two test repository stubs threw on the new `sentimentLayers()` call, silently failing 11 app tests until the stub was taught the method. Two of my own assertions were wrong rather than the code: one expected `macroAlignment` from a 27%-coverage read (the gate correctly returns null), and another expected macro to resolve from policy+positioning, which is 47% macro-side because positioning is a sentiment layer. Also had to redo a file after PowerShell 5.1 wrote UTF-8 test content as ANSI and corrupted it.
+- **lessons:**
+  - An input class missing a field makes every downstream consumer of that concept dead code. Trace from the UI backwards to the raw data to find where a chain is broken, not forwards from the newest feature.
+  - Test stubs that throw from `noSuchMethod` will turn any new repository call into a silently failing suite.
+  - Two weight denominators existing in one system (macro-side 75, all-in 100) is correct but needs a test, because it surprises.
+- **tags:** core-function, confluence, scanner, sentiment-layers, wiring

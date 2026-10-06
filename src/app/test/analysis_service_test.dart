@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:xau_core/xau_core.dart';
 import 'package:xauvote/data/analysis_service.dart';
 import 'package:xauvote/data/live_repository.dart';
+import 'package:xauvote/models/sentiment_layers.dart';
 
 /// A repository stub that returns a controlled series, so the service can be
 /// driven into every state the UI has to render.
@@ -12,14 +13,22 @@ class _Repo implements LiveRepository {
     this.bars = const {},
     this.spread = const VenueSpread.unavailable(),
     this.ageSeconds = double.infinity,
+    this.layers = const SentimentLayers.empty(),
   });
 
   Map<Tf, TimeframeBars> bars;
   VenueSpread spread;
   double ageSeconds;
 
+  /// §5.1 layers. Defaults to "nothing measured" so the pre-existing tests keep
+  /// asserting exactly what they asserted before the overlay was wired.
+  SentimentLayers layers;
+
   @override
   Future<Map<Tf, TimeframeBars>> analysisBars({int maxPerTimeframe = 600}) async => bars;
+
+  @override
+  Future<SentimentLayers> sentimentLayers() async => layers;
 
   @override
   Future<({VenueSpread spread, double ageSeconds})> venueSpread({
@@ -99,6 +108,159 @@ void main() {
       await s.refresh();
       expect(s.result, isNull);
       expect(s.error, isNotNull);
+    });
+
+    // The service used to fetch bars, spread and events and nothing else, so
+    // ConfluenceInput.macro / .sentiment were permanently null and every 5.1
+    // layer was inert no matter what the database held.
+    group('§5.1 layers reach the scan', () {
+      SentimentLayers layer({
+        required String layer,
+        required double weight,
+        int? alignment,
+        num? score,
+      }) => SentimentLayers([
+            SentimentLayerRow.tryParse({
+              'layer': layer,
+              'horizon': 'hours-days',
+              'weight': weight,
+              'score': score,
+              'alignment': alignment,
+              'measured_at': '2026-10-02T00:00:00.000Z',
+              'source': 'test',
+              'source_url': null,
+              'stale': false,
+              'detail': <String, dynamic>{},
+            })!,
+          ]);
+
+      test('unmeasured layers contribute nothing and say so', () async {
+        final s = AnalysisService(repository: _Repo());
+        final r = await s.refresh();
+        expect(r, isNotNull);
+        expect(r!.macroAlignment, isNull);
+        expect(r.sentimentAlignment, isNull);
+        expect(r.conflictPenalty, 0);
+        expect(
+          r.dataQuality.join(' '),
+          contains('sentiment layers: none measured'),
+          reason: 'a scan that weighed nothing must not look like a clean one',
+        );
+      });
+
+      test('a measured layer is reported and counted in coverage', () async {
+        // Uses full() because the scanner returns early - with null macro - when
+        // there is no candidate direction, which is a different code path.
+        final s = AnalysisService(
+          repository: _Repo(
+            bars: full(),
+            layers: layer(layer: 'market_implied', weight: 20, alignment: -1),
+          ),
+        );
+        final r = await s.refresh();
+        // 20 of 75 macro-side points: below the gate, so alignment stays null
+        // even though the impulse is measured.
+        expect(r!.macroAlignment, isNull);
+        expect(
+          r.dataQuality.join(' '),
+          allOf(contains('market_implied'), contains('macro coverage 27%')),
+        );
+      });
+
+      test('policy plus market-implied clears the gate and resolves macro', () async {
+        final s = AnalysisService(
+          repository: _Repo(
+            bars: full(),
+            layers: SentimentLayers([
+              SentimentLayerRow.tryParse({
+                'layer': 'market_implied',
+                'horizon': 'hours-days',
+                'weight': 20,
+                'score': null,
+                'alignment': -1,
+                'measured_at': '2026-10-05T00:00:00.000Z',
+                'source': 'US Treasury',
+                'source_url': null,
+                'stale': false,
+                'detail': <String, dynamic>{'legs_missing': ['usd', 'volatility']},
+              })!,
+              SentimentLayerRow.tryParse({
+                'layer': 'policy',
+                'horizon': 'days-weeks',
+                'weight': 35,
+                'score': -1.03,
+                'alignment': -1,
+                'measured_at': '2026-09-16T00:00:00.000Z',
+                'source': 'FOMC',
+                'source_url': null,
+                'stale': false,
+                'detail': <String, dynamic>{'action': 'raise'},
+              })!,
+            ]),
+          ),
+        );
+        final r = await s.refresh();
+        expect(r!.macroAlignment, -1, reason: '73% coverage resolves macro');
+        expect(r.dataQuality.join(' '), contains('macro coverage 73%'));
+      });
+
+      SentimentLayerRow row(String layer, double weight, int alignment,
+          {String measuredAt = '2026-10-05T00:00:00.000Z', num? score}) =>
+          SentimentLayerRow.tryParse({
+            'layer': layer,
+            'horizon': 'hours-days',
+            'weight': weight,
+            'score': score,
+            'alignment': alignment,
+            'measured_at': measuredAt,
+            'source': 'test',
+            'source_url': null,
+            'stale': false,
+            'detail': <String, dynamic>{},
+          })!;
+
+      test('positioning alone stays out of the macro gate', () async {
+        // policy 35 + positioning 25 is only 35/75 = 47% macro-side, because
+        // positioning is a sentiment layer, not a macro one. Macro therefore
+        // stays null while sentiment is still measured - the two are counted
+        // from different denominators on purpose.
+        final s = AnalysisService(
+          repository: _Repo(
+            bars: full(),
+            layers: SentimentLayers([
+              row('policy', 35, -1, score: -1.03),
+              row('positioning', 25, -1, measuredAt: '2026-09-29T00:00:00.000Z'),
+            ]),
+          ),
+        );
+        final r = await s.refresh();
+        expect(r!.macroAlignment, isNull);
+        expect(r.dataQuality.join(' '), contains('macro coverage 47%'),
+            reason: 'policy 35 of 75 macro-side; positioning is not macro');
+        expect(r.sentimentAlignment, -1, reason: 'positioning still reaches sentiment');
+      });
+
+      test('the live three-layer read is weighed on both sides', () async {
+        // Mirrors the database on 2026-10-05: Fed hiked (policy -1), real yields
+        // up (market_implied -1), COT at the 37.8th percentile (-1).
+        final s = AnalysisService(
+          repository: _Repo(
+            bars: full(),
+            layers: SentimentLayers([
+              row('policy', 35, -1, score: -1.03),
+              row('positioning', 25, -1, measuredAt: '2026-09-29T00:00:00.000Z'),
+              row('market_implied', 20, -1),
+            ]),
+          ),
+        );
+        final r = await s.refresh();
+        expect(r!.macroAlignment, -1);
+        expect(r.sentimentAlignment, -1);
+        expect(r.macroAgrees, isNotNull,
+            reason: 'a resolved macro must resolve to an agreement sign');
+        expect(r.sentimentAgrees, isNotNull);
+        expect(r.dataQuality.join(' '), contains('macro coverage 73%'));
+      });
     });
 
     test('a scan caches and exposes a timestamp', () async {
@@ -381,6 +543,10 @@ class _ThrowingRepo implements LiveRepository {
 
   @override
   Future<List<EconomicEvent>> analysisEvents({int hoursAhead = 24}) async =>
+      throw StateError('backend down');
+
+  @override
+  Future<SentimentLayers> sentimentLayers() async =>
       throw StateError('backend down');
 
   @override
