@@ -465,3 +465,33 @@
   still lists four layers. That document is authoritative for the METHOD and has
   not been edited; this decision records the deviation and its reason. Reconciling
   the document is the owner's call.
+
+---
+
+## D-20261006-012 - The event calendar was approximate dates, not a calendar
+
+- **date:** 2026-10-06
+- **status:** accepted
+- **trigger:** the owner reported that the Events tab did not match a real daily
+  calendar and showed releases far in the future. Both were correct.
+- **root cause:** `fetch-events` defaulted to `ManualSeed`, which COMPUTES
+  approximate release dates from rules like "NFP is the first Friday" and "CPI is
+  monthly around the 12th". Six such rows were in `economic_events`, the next one
+  12 Oct - six days out, with nothing inside the app's 7-day window.
+- **why it was not merely cosmetic:** every fixture row carried `impact: HIGH`.
+  The event guard treats high-impact releases as real enough to hold back a
+  setup. So invented dates were load-bearing in the analysis path, not decoration.
+  The "(approx. fixture)" suffix was enough for a developer reading the database
+  and not enough for anyone looking at the screen.
+- **removed the fallback entirely.** `fetch-events` now has NO default provider.
+  With Gate G5 unsatisfied (no FMP_ENABLED, no API key, no licensing review) it
+  returns `upserted: 0` and reports an empty calendar, which is exactly what the
+  app's existing honest empty state is built to show. The six fixture rows are
+  deleted and the hourly job is disabled so nothing recreates them.
+- **`ManualSeed` retained in the file but unreachable**, so its date arithmetic
+  stays tested, with a comment explaining why it must not be wired back as a
+  fallback. A missing calendar is recoverable silence; invented dates are not.
+- **lesson, and the one that matters here:** I verified this subsystem by reading
+  the database, never by looking at the app. A green test suite and correct row
+  counts said nothing about whether the screen was right. Checking the product
+  means looking at the product.

@@ -8,13 +8,19 @@
  * votes (AGENTS.md rule 9).
  *
  * Providers:
- *   * `ManualSeed` (DEFAULT, always allowed): clearly-labeled approximate
- *     fixtures for recurring USD movers — NFP (first Friday, 12:30 UTC),
- *     CPI (monthly), FOMC (8x/yr approximate). Replaced by provider data
- *     when a licensed provider is enabled.
  *   * `FmpProvider` (GATED — Gate G5): FMP economic-calendar adapter. Code
  *     ships but stays DISABLED unless `FMP_ENABLED=true` AND a licensing
  *     review is recorded in `memory/decisions.md`. Default: off.
+ *   * `ManualSeed`: RETIRED from the production path. It computed approximate
+ *     NFP/CPI/FOMC dates, and because those rows were indistinguishable from
+ *     provider rows once in `economic_events`, the app presented invented
+ *     release dates as a real calendar — most visibly a release "six days away"
+ *     that no publisher had issued. The class stays so its date arithmetic
+ *     remains tested, but nothing can reach it in production.
+ *
+ * With no approved provider this function returns `upserted: 0` and reports an
+ * empty calendar, which is what the app's honest empty state expects. Silence is
+ * recoverable; invented dates are not.
  *
  * Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
  *      FMP_ENABLED (default 'false'), FMP_API_KEY (only when enabled)
@@ -181,12 +187,37 @@ Deno.serve(async (_req) => {
   const now = new Date();
 
   // Gate G5: FMP stays disabled unless explicitly enabled + reviewed.
-  let provider: EventProvider = new ManualSeed();
-  if (Deno.env.get('FMP_ENABLED') === 'true') {
-    const fmpKey = Deno.env.get('FMP_API_KEY');
-    if (!fmpKey) return Response.json({ ok: false, error: 'FMP_ENABLED but no FMP_API_KEY (Gate G5).' }, { status: 500 });
-    provider = new FmpProvider(fmpKey);
+  //
+  // There is now NO FALLBACK PROVIDER. Previously an unconfigured deploy fell
+  // back to `ManualSeed`, which computed approximate NFP/CPI/FOMC dates. Those
+  // rows landed in `economic_events` and rendered in the app indistinguishable
+  // from a real calendar, so the app showed releases several days away that were
+  // never published by anyone. A missing calendar is honest silence; invented
+  // dates are a lie with a timestamp on it.
+  //
+  // Without an approved provider this function reports that it has nothing,
+  // which the app renders as its empty state. `ManualSeed` is kept below so its
+  // date arithmetic stays tested, but nothing can reach it in production.
+  if (Deno.env.get('FMP_ENABLED') !== 'true') {
+    return Response.json({
+      ok: true,
+      provider: 'none',
+      upserted: 0,
+      note:
+        'no approved calendar provider is configured (Gate G5: FMP_ENABLED is ' +
+        'not set). Reporting an empty calendar rather than computed fixture dates.',
+      at: now.toISOString(),
+    });
   }
+
+  const fmpKey = Deno.env.get('FMP_API_KEY');
+  if (!fmpKey) {
+    return Response.json(
+      { ok: false, error: 'FMP_ENABLED but no FMP_API_KEY (Gate G5).' },
+      { status: 500 },
+    );
+  }
+  const provider: EventProvider = new FmpProvider(fmpKey);
 
   let rows: RawEvent[];
   try {
