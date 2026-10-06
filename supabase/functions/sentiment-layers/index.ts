@@ -11,11 +11,13 @@
  *   market_implied (20%)  US Treasury daily real yield curve  → real yield impulse
  *   positioning    (25%)  CFTC disaggregated Commitments of Traders → managed money
  *
- * Still null, deliberately, and never faked (§0 "never fabricate"):
- *   policy             (35%) Fed/FOMC — needs an FOMC statement parser
- *   gold_fundamentals (20%) WGC — needs a quarterly ingest
- * A null layer is reported as unavailable rather than scored 0, because 0 means
- * "neutral" and silence is not neutrality.
+ * A layer that cannot be measured is reported as unavailable rather than scored
+ * 0, because 0 means "neutral" and silence is not neutrality.
+ *
+ * `gold_fundamentals` is no longer among them: World Gold Council data is
+ * licensed for personal, non-commercial use only and needs written authorisation
+ * we do not have, so it is removed outright rather than left as a pending null
+ * row that pinned macro coverage at 73% forever. D-20261006-011.
  *
  * ── Why the CFTC Socrata API and not cftc.gov ───────────────────────────────
  * `www.cftc.gov` serves its weekly .txt and yearly .zip files through a bot
@@ -360,21 +362,25 @@ Deno.serve(async () => {
     notes.push(`policy unavailable: ${(e as Error).message}`);
   }
 
-  // ── gold_fundamentals (20%): not built yet ─────────────────────────────────
-  // Written as an explicit null row rather than omitted, so the app can tell
-  // "this layer does not exist yet" from "the layer exists and reads zero".
-  layers.push({
-    layer: 'gold_fundamentals',
-    horizon: HORIZONS.gold_fundamentals,
-    weight: WEIGHTS.gold_fundamentals,
-    score: null,
-    alignment: null,
-    measured_at: new Date(0).toISOString(),
-    source: 'World Gold Council gold demand data',
-    source_url: null,
-    stale: true,
-    detail: { reason: 'ingest not implemented yet' },
-  });
+  // ── gold_fundamentals: REMOVED, not pending ────────────────────────────────
+  // This used to be written as an explicit null row so the app could tell "this
+  // layer does not exist yet" from "this layer exists and reads zero". That was
+  // the wrong distinction to draw: the layer is not "not built yet", it is
+  // unobtainable. World Gold Council data is licensed for personal,
+  // non-commercial use only and needs written authorisation we do not have.
+  //
+  // Keeping a null row also pinned macro-side coverage at 55/75 = 73% forever,
+  // which reads as permanent incompleteness rather than an honest statement of
+  // what is measurable. See D-20261006-011.
+  //
+  // The existing row is deleted here so the app cannot keep rendering a layer
+  // the product has decided not to claim.
+  const { error: purgeError } = await db
+    .from('sentiment_layers')
+    .delete()
+    .eq('layer', 'gold_fundamentals');
+  if (purgeError) notes.push(`purge gold_fundamentals: ${purgeError.message}`);
+  else notes.push('gold_fundamentals removed (unlicensed source)');
 
   for (const row of layers) {
     const { error } = await db.from('sentiment_layers').upsert(row, { onConflict: 'layer' });

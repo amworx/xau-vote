@@ -158,12 +158,12 @@ void main() {
           ),
         );
         final r = await s.refresh();
-        // 20 of 75 macro-side points: below the gate, so alignment stays null
+        // 20 of 55 macro-side points: below the gate, so alignment stays null
         // even though the impulse is measured.
         expect(r!.macroAlignment, isNull);
         expect(
           r.dataQuality.join(' '),
-          allOf(contains('market_implied'), contains('macro coverage 27%')),
+          allOf(contains('market_implied'), contains('macro coverage 36%')),
         );
       });
 
@@ -200,8 +200,8 @@ void main() {
           ),
         );
         final r = await s.refresh();
-        expect(r!.macroAlignment, -1, reason: '73% coverage resolves macro');
-        expect(r.dataQuality.join(' '), contains('macro coverage 73%'));
+        expect(r!.macroAlignment, -1, reason: '100% coverage resolves macro');
+        expect(r.dataQuality.join(' '), contains('macro coverage 100%'));
       });
 
       SentimentLayerRow row(String layer, double weight, int alignment,
@@ -219,11 +219,19 @@ void main() {
             'detail': <String, dynamic>{},
           })!;
 
-      test('positioning alone stays out of the macro gate', () async {
-        // policy 35 + positioning 25 is only 35/75 = 47% macro-side, because
-        // positioning is a sentiment layer, not a macro one. Macro therefore
-        // stays null while sentiment is still measured - the two are counted
-        // from different denominators on purpose.
+      test('policy alone now clears the macro gate', () async {
+        // CONSEQUENCE OF D-20261006-011, and deliberately visible rather than
+        // papered over.
+        //
+        // The gate is a fixed 50% of macro-side weight, unchanged. But with the
+        // unobtainable WGC layer removed the denominator is 55 instead of 75, so
+        // policy alone is 35/55 = 64% rather than 35/75 = 47%. Policy therefore
+        // clears the gate on its own, where before it could not, and the scorer
+        // may now veto a setup on one macro layer out of two.
+        //
+        // That is a weakening of a safety property, so it is called out for the
+        // owner rather than adopted quietly. The threshold itself was NOT
+        // retuned: that is a methodology decision, not a licensing fix.
         final s = AnalysisService(
           repository: _Repo(
             bars: full(),
@@ -234,13 +242,13 @@ void main() {
           ),
         );
         final r = await s.refresh();
-        expect(r!.macroAlignment, isNull);
-        expect(r.dataQuality.join(' '), contains('macro coverage 47%'),
-            reason: 'policy 35 of 75 macro-side; positioning is not macro');
+        expect(r!.macroAlignment, -1);
+        expect(r.dataQuality.join(' '), contains('macro coverage 64%'),
+            reason: 'policy 35 of 55 macro-side; positioning is not macro');
         expect(r.sentimentAlignment, -1, reason: 'positioning still reaches sentiment');
       });
 
-      test('the live three-layer read is weighed on both sides', () async {
+      test('the live layer read is weighed on both sides', () async {
         // Mirrors the database on 2026-10-05: Fed hiked (policy -1), real yields
         // up (market_implied -1), COT at the 37.8th percentile (-1).
         final s = AnalysisService(
@@ -259,7 +267,7 @@ void main() {
         expect(r.macroAgrees, isNotNull,
             reason: 'a resolved macro must resolve to an agreement sign');
         expect(r.sentimentAgrees, isNotNull);
-        expect(r.dataQuality.join(' '), contains('macro coverage 73%'));
+        expect(r.dataQuality.join(' '), contains('macro coverage 100%'));
       });
     });
 

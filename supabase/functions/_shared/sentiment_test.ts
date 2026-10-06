@@ -24,17 +24,32 @@ import {
   splitCsv,
   num,
   dateOnly,
+  MACRO_SIDE_WEIGHT,
   type TreasuryRow,
 } from './sentiment.ts';
 
-test('§5.1 weights match the methodology', () => {
+test('§5.1 weights, minus the layer we cannot license', () => {
   assert.equal(WEIGHTS.policy, 35);
   assert.equal(WEIGHTS.positioning, 25);
-  assert.equal(WEIGHTS.gold_fundamentals, 20);
   assert.equal(WEIGHTS.market_implied, 20);
-  // The four layers must account for the whole vote.
+
+  // The methodology's fourth layer is gone, not reweighted. D-20261006-011.
+  assert.equal(
+    'gold_fundamentals' in WEIGHTS,
+    false,
+    'gold_fundamentals must stay removed: its source cannot be licensed',
+  );
+
+  // The claim is now 80 points, not 100. Renormalising to re-absorb the freed 20
+  // would silently change the scoring, which is not a licensing fix.
   const total = Object.values(WEIGHTS).reduce((a, b) => a + b, 0);
-  assert.equal(total, 100);
+  assert.equal(total, 80);
+});
+
+test('macro-side weight is what is actually measurable', () => {
+  assert.equal(MACRO_SIDE_WEIGHT, 55);
+  // Positioning is sentiment, not macro.
+  assert.equal(MACRO_SIDE_WEIGHT, WEIGHTS.policy + WEIGHTS.market_implied);
 });
 
 test('§1.6 percentile window is 156 weeks', () => {

@@ -9,20 +9,46 @@
  * `instruction/XAUUSD_IMPLEMENTATION_READY_METHODOLOGY.md` §1.6 and §5.
  */
 
-// ── §5.1 weights, verbatim from the methodology ──────────────────────────────
+// ── §5.1 weights, minus one layer we cannot lawfully source ─────────────────
+//
+// The methodology allocates policy 35 / positioning 25 / gold_fundamentals 20 /
+// market_implied 20. `gold_fundamentals` is REMOVED, not reweighted.
+//
+// World Gold Council data is licensed for personal, non-commercial use only.
+// Scraping or redistributing it needs written authorisation we do not have, so
+// that 20 points can never be earned. Leaving it in the denominator capped
+// macro-side coverage at 55/75 = 73% permanently, which reads as "this product is
+// permanently incomplete" rather than "this product measures what it can legally
+// measure". A ceiling that can never be reached is not a measurement.
+//
+// The remaining weights are UNCHANGED, deliberately. Renormalising them to
+// re-absorb the 20 points would inflate the influence of policy and market_implied
+// relative to the methodology, which is a scoring change pretending to be a
+// licensing fix. Alignment values are unaffected either way, because an unmeasured
+// layer never contributed to the weighted mean.
+//
+// D-20261006-011. Restoring this layer requires a licensed source, not a code
+// change.
 export const WEIGHTS = {
   policy: 35,
   positioning: 25,
-  gold_fundamentals: 20,
   market_implied: 20,
 } as const;
 
 export const HORIZONS = {
   policy: 'days-weeks',
   positioning: 'weeks',
-  gold_fundamentals: 'months',
   market_implied: 'hours-days',
 } as const;
+
+/**
+ * Macro-side weight that can actually be measured: policy + market_implied.
+ *
+ * Positioning is sentiment, not macro, so it is excluded from this total. Kept
+ * here as the single source of truth so the app, the function and the tests
+ * cannot disagree about the denominator.
+ */
+export const MACRO_SIDE_WEIGHT = WEIGHTS.policy + WEIGHTS.market_implied;
 
 /** §1.6: percentile over 156 weeks (3 years). */
 export const PERCENTILE_WEEKS = 156;

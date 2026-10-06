@@ -22,12 +22,23 @@
 ///     confidence, which is what §6 requires of a weekly reading.
 ///
 ///   * Macro alignment is left NULL until enough macro-side weight is actually
-///     measured. Policy (35) and market-implied (20) are now both live, so macro
-///     coverage is 55 of 75 = 73% and alignment resolves. WGC (20) is the one
-///     macro-side layer still missing, and until more exists the gate is what
-///     stops a partial picture from vetoing a setup: the measured impulses are
-///     surfaced in [MacroState.realYieldImpulse] / [MacroState.policyImpulse]
-///     and in [macroCoverage] regardless.
+///     measured. The gate is a fixed 50% of macro-side weight and was NOT
+///     retuned by the layer removal, so it still stops a thin picture from
+///     vetoing a setup: measured impulses are surfaced in
+///     [MacroState.realYieldImpulse] / [MacroState.policyImpulse] and in
+///     [macroCoverage] regardless of the gate.
+///
+///     With policy (35) and market-implied (20) both live, macro coverage is
+///     55 of 55 = 100% and alignment resolves. The methodology's fourth macro
+///     layer - WGC gold demand, 20 points - was REMOVED rather than left pending,
+///     because its source cannot be licensed. 55 is therefore the whole of what
+///     is measurable, not a shortfall. D-20261006-011.
+///
+///     One consequence is called out rather than hidden: with the denominator at
+///     55, policy alone is 64% and clears the 50% gate on its own, where before
+///     the removal it was 47% and did not. One macro layer of two can now drive
+///     a veto. The threshold is left at its methodology value deliberately -
+///     retuning it is a scoring decision, not a licensing fix.
 ///
 /// A missing layer is reported as missing, never as zero. Zero means "neutral";
 /// silence does not mean neutral.
@@ -132,17 +143,36 @@ class SentimentLayers {
 
   /// §5.1 weights. Kept here so coverage can be computed without trusting
   /// whatever the rows happen to say.
+  ///
+  /// `gold_fundamentals` is deliberately absent. World Gold Council data is
+  /// licensed for personal, non-commercial use only and needs written
+  /// authorisation we do not have, so its 20 methodology points can never be
+  /// earned. Leaving it in the denominator capped macro coverage at 55/75 = 73%
+  /// permanently, which reads as permanent incompleteness rather than an honest
+  /// statement of what is measurable. The other weights are unchanged: absorbing
+  /// the freed points into policy and market_implied would be a scoring change
+  /// disguised as a licensing fix. See D-20261006-011.
   static const Map<String, double> expectedWeights = {
     'policy': 35,
     'positioning': 25,
-    'gold_fundamentals': 20,
     'market_implied': 20,
   };
 
-  /// Macro-side weight. Positioning is sentiment, not macro, so it is excluded;
-  /// `dollar_impulse` and `inflation_impulse` have no §5.1 layer of their own and
-  /// are not counted here.
-  static const double macroSideWeight = 75;
+  /// Macro-side weight that can actually be measured: policy + market_implied.
+  ///
+  /// Positioning is sentiment, not macro, so it is excluded. `dollar_impulse`
+  /// and `inflation_impulse` have no §5.1 layer of their own and are not counted
+  /// here either.
+  ///
+  /// Derived from [expectedWeights] rather than hard-coded so that adding or
+  /// removing a layer cannot leave this denominator quietly stale.
+  static final double macroSideWeight = ['policy', 'market_implied']
+      .map((l) => expectedWeights[l] ?? 0)
+      .reduce((a, b) => a + b);
+
+  /// Total weight of every layer the product claims to measure.
+  static final double totalWeight =
+      expectedWeights.values.reduce((a, b) => a + b);
 
   /// Fraction of macro-side weight that actually produced an alignment.
   double get macroCoverage {
@@ -154,13 +184,17 @@ class SentimentLayers {
     return measured / macroSideWeight;
   }
 
-  /// Fraction of ALL §5.1 weight that produced an alignment.
+  /// Fraction of ALL claimed weight that produced an alignment.
+  ///
+  /// Divided by [totalWeight] rather than a literal 100. With gold_fundamentals
+  /// removed the claim is 80 points, and dividing by 100 left this permanently
+  /// capped at 80% - a second false ceiling of the same kind.
   double get overallCoverage {
     var measured = 0.0;
     for (final row in rows) {
       if (row.alignment != null) measured += expectedWeights[row.layer] ?? 0;
     }
-    return measured / 100;
+    return measured / totalWeight;
   }
 
   SentimentLayerRow? operator [](String layer) {

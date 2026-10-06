@@ -62,7 +62,8 @@ final live = SentimentLayers([
         'as_of': '2026-10-05',
         'legs_missing': ['usd', 'volatility'],
       }),
-  row('gold_fundamentals', 20),
+  // No gold_fundamentals: removed because its source cannot be licensed.
+  // D-20261006-011.
 ]);
 
 ScanResult scan({

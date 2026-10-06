@@ -112,7 +112,7 @@ void main() {
   });
 
   group('coverage', () {
-    test('live state: only market_implied measured -> 20 of 75 macro-side', () {
+    test('live state: only market_implied measured -> 20 of 55 macro-side', () {
       final layers = SentimentLayers([
         SentimentLayerRow.tryParse(
           row(layer: 'market_implied', weight: 20, alignment: -1),
@@ -121,10 +121,9 @@ void main() {
           row(layer: 'positioning', weight: 25, score: -1, alignment: -1),
         )!,
         SentimentLayerRow.tryParse(row(layer: 'policy', weight: 35))!,
-        SentimentLayerRow.tryParse(row(layer: 'gold_fundamentals', weight: 20))!,
       ]);
-      expect(layers.macroCoverage, closeTo(20 / 75, 1e-9));
-      expect(layers.overallCoverage, closeTo(45 / 100, 1e-9));
+      expect(layers.macroCoverage, closeTo(20 / 55, 1e-9));
+      expect(layers.overallCoverage, closeTo(45 / 80, 1e-9));
     });
 
     test('positioning counts toward overall but not macro coverage', () {
@@ -133,8 +132,11 @@ void main() {
           row(layer: 'positioning', weight: 25, alignment: 1),
         )!,
       ]);
-      expect(layers.macroCoverage, 0);
-      expect(layers.overallCoverage, closeTo(0.25, 1e-9));
+expect(layers.macroCoverage, 0);
+        // 25 of 80 claimed points, not 25 of 100. The denominator is the weight
+        // the product actually claims, so removing an unobtainable layer raises
+        // this fraction rather than leaving a permanent 80% ceiling.
+        expect(layers.overallCoverage, closeTo(25 / 80, 1e-9));
     });
 
     test('empty layers report zero coverage, not a full read', () {
@@ -155,8 +157,7 @@ void main() {
       SentimentLayerRow.tryParse(
         row(layer: 'policy', weight: 35, score: -1.03, alignment: -1),
       )!,
-      SentimentLayerRow.tryParse(row(layer: 'gold_fundamentals', weight: 20))!,
-      SentimentLayerRow.tryParse(
+        SentimentLayerRow.tryParse(
         row(layer: 'positioning', weight: 25, score: -1, alignment: -1),
       )!,
     ]);
@@ -172,15 +173,15 @@ void main() {
 
     test('live macro coverage clears the gate and resolves to bearish', () {
       final layers = liveState();
-      // policy 35 + market_implied 20 = 55 of 75 macro-side = 73%.
-      expect(layers.macroCoverage, closeTo(55 / 75, 1e-9));
+      // policy 35 + market_implied 20 = 55 of 55 macro-side = 100%.
+      expect(layers.macroCoverage, closeTo(55 / 55, 1e-9));
       expect(layers.macroCoverage, greaterThanOrEqualTo(SentimentLayers.macroAlignmentThreshold));
       expect(layers.macro.alignment, -1);
       expect(layers.macro.isAvailable, isTrue);
     });
 
     test('macro alignment stays null below the coverage threshold', () {
-      // Only market_implied measured: 20/75 = 27%, under the 50% gate. The
+      // Only market_implied measured: 20/55 = 36%, under the 50% gate. The
       // scorer vetoes on a negative macro alignment, so a 27% sample must not be
       // able to block a setup.
       final thin = SentimentLayers([
@@ -188,9 +189,8 @@ void main() {
           row(layer: 'market_implied', weight: 20, alignment: -1),
         )!,
         SentimentLayerRow.tryParse(row(layer: 'policy', weight: 35))!,
-        SentimentLayerRow.tryParse(row(layer: 'gold_fundamentals', weight: 20))!,
       ]);
-      expect(thin.macroCoverage, closeTo(20 / 75, 1e-9));
+      expect(thin.macroCoverage, closeTo(20 / 55, 1e-9));
       final macro = thin.macro;
       expect(macro.alignment, isNull);
       expect(macro.isAvailable, isFalse);
@@ -205,7 +205,7 @@ void main() {
     });
 
     test('macro alignment resolves once the threshold is met', () {
-      // market_implied 20 + policy 35 = 55 of 75 = 73%, over the gate.
+      // market_implied 20 + policy 35 = 55 of 55 = 100%, over the gate.
       final layers = SentimentLayers([
         SentimentLayerRow.tryParse(
           row(layer: 'market_implied', weight: 20, alignment: -1),
@@ -213,9 +213,8 @@ void main() {
         SentimentLayerRow.tryParse(
           row(layer: 'policy', weight: 35, score: 1, alignment: 1),
         )!,
-        SentimentLayerRow.tryParse(row(layer: 'gold_fundamentals', weight: 20))!,
       ]);
-      expect(layers.macroCoverage, closeTo(55 / 75, 1e-9));
+      expect(layers.macroCoverage, closeTo(55 / 55, 1e-9));
       // weight-weighted mean of (-1 * 20) and (+1 * 35) is positive.
       expect(layers.macro.alignment, 1);
       expect(layers.macro.isAvailable, isTrue);
@@ -229,7 +228,6 @@ void main() {
         SentimentLayerRow.tryParse(
           row(layer: 'policy', weight: 35, score: -2, alignment: -1),
         )!,
-        SentimentLayerRow.tryParse(row(layer: 'gold_fundamentals', weight: 20))!,
       ]);
       expect(layers.macro.alignment, -1);
     });
@@ -275,8 +273,6 @@ void main() {
       final layers = SentimentLayers([
         SentimentLayerRow.tryParse(row(layer: 'policy', weight: 35))!,
       ]);
-      expect(layers.isMissing('gold_fundamentals'), isTrue);
-      expect(layers.isUnmeasured('gold_fundamentals'), isTrue);
       // policy exists as a row but carries no measurement.
       expect(layers.isMissing('policy'), isFalse);
       expect(layers.isUnmeasured('policy'), isTrue);

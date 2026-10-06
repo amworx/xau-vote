@@ -62,8 +62,9 @@ SentimentLayers live() => SentimentLayers([
             'as_of': '2026-10-05',
             'legs_missing': ['usd', 'volatility'],
           }),
-      row('gold_fundamentals', 20),
-    ]);
+// No gold_fundamentals row: the layer was removed, not left pending, because its
+  // source cannot be licensed. See D-20261006-011.
+        ]);
 
 Widget wrap(
   SentimentLayers layers, {
@@ -110,31 +111,39 @@ void main() {
       expect(find.textContaining('+9bp over 5 sessions'), findsOneWidget);
     });
 
-    testWidgets('the four layers appear in weight order', (t) async {
+    testWidgets('the three layers appear in weight order', (t) async {
       await t.pumpWidget(wrap(live()));
       // Only the layer headers: name plus " NN%", which is what distinguishes
-      // them from the "MACRO COVERAGE 73%" chip.
+      // them from the "MACRO COVERAGE 100%" chip.
       final names = find
           .byType(Text)
           .evaluate()
           .map((e) => (e.widget as Text).data ?? '')
           .where((s) => RegExp(r'^\S[\S-]*\s+\d+%$').hasMatch(s))
           .toList();
-      expect(names, hasLength(4));
+      expect(names, hasLength(3));
       expect(names[0], startsWith('POLICY'));
       expect(names[1], startsWith('POSITIONING'));
       expect(names[2], startsWith('MARKET-IMPLIED'));
-      expect(names[3], startsWith('GOLD-FUNDAMENTALS'));
+      // The fourth methodology layer is gone because its source cannot be
+      // licensed, not because it is pending. It must not be rendered at all.
+      expect(find.textContaining('GOLD-FUNDAMENTALS'), findsNothing);
     });
   });
 
   group('honesty about what is missing', () {
     testWidgets('an unmeasured layer reads NOT MEASURED, never NEUTRAL', (t) async {
-      await t.pumpWidget(wrap(live()));
+      // Built here rather than reusing live(): live() has every layer measured,
+      // and the null gold_fundamentals row that used to supply an unmeasured
+      // layer is gone. The property under test still needs an unmeasured layer,
+      // so one is supplied explicitly rather than relying on a fixture accident.
+      await t.pumpWidget(wrap(SentimentLayers([
+        row('policy', 35, alignment: -1, score: -1.03),
+        row('market_implied', 20, alignment: -1),
+      ])));
       expect(find.text('NOT MEASURED'), findsWidgets);
       // No layer measured zero, so no NEUTRAL badge may appear.
       expect(find.text('NEUTRAL'), findsNothing);
-      expect(find.text('World Gold Council demand data — not ingested'), findsOneWidget);
     });
 
     testWidgets('a partly measured layer names the missing legs', (t) async {
@@ -234,9 +243,11 @@ void main() {
   });
 
   group('coverage', () {
-    testWidgets('live state reports 73%', (t) async {
+    testWidgets('live state reports full macro coverage', (t) async {
       await t.pumpWidget(wrap(live()));
-      expect(find.textContaining('MACRO COVERAGE 73%'), findsOneWidget);
+      // 100% is reachable because the unobtainable layer was removed from the
+      // denominator rather than left to cap coverage at 73% forever.
+      expect(find.textContaining('MACRO COVERAGE 100%'), findsOneWidget);
     });
 
     testWidgets('renders at 390px without overflowing', (t) async {

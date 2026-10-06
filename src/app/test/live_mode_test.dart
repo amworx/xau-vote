@@ -241,18 +241,8 @@ final SentimentLayers _liveSentiment = SentimentLayers([
     'stale': true,
     'detail': {'reason': 'ingest not implemented yet'},
   })!,
-  SentimentLayerRow.tryParse(const {
-    'layer': 'gold_fundamentals',
-    'horizon': 'months',
-    'weight': 20,
-    'score': null,
-    'alignment': null,
-    'measured_at': '1970-01-01T00:00:00.000Z',
-    'source': 'World Gold Council gold demand data',
-    'source_url': null,
-    'stale': true,
-    'detail': {'reason': 'ingest not implemented yet'},
-  })!,
+  // No gold_fundamentals fixture. The layer was removed rather than left pending:
+  // its source cannot be licensed. See D-20261006-011.
 ]);
 
 /// Registered from [main] below; kept separate so this fixture stays next to the
@@ -263,8 +253,11 @@ void _sentimentLayerReadTests() {
       final repo = _StubRepository(sentimentRows: _liveSentiment);
       final layers = await repo.sentimentLayers();
 
-      expect(layers.rows, hasLength(4));
-      expect(layers['positioning']?.alignment, -1);
+// Three layers: gold_fundamentals was removed because its source cannot be
+      // licensed, so it must not come back from the database either.
+      expect(layers.rows, hasLength(3));
+      expect(layers['gold_fundamentals'], isNull);
+        expect(layers['positioning']?.alignment, -1);
       expect(layers['market_implied']?.alignment, -1);
       expect(layers['positioning']?.detail['percentile_156w'], 37.8);
 
@@ -277,7 +270,7 @@ void _sentimentLayerReadTests() {
       expect(layers.macro.realYieldImpulse, -1);
       // ...but macro alignment stays null at 20/75 coverage, so a single
       // 20-weight reading cannot veto a setup.
-      expect(layers.macroCoverage, closeTo(20 / 75, 1e-9));
+      expect(layers.macroCoverage, closeTo(20 / 55, 1e-9));
       expect(layers.macro.alignment, isNull);
       expect(layers.macro.isAvailable, isFalse);
     });

@@ -421,3 +421,47 @@
 - **lesson:** an unbounded read from a growing table is not neutral. It fails in
   the direction of looking correct while being wrong, and the failure gets worse
   as the table fills. Always order newest-first and always bound the request.
+
+---
+
+## D-20261006-011 - gold_fundamentals removed, not pending
+
+- **date:** 2026-10-06
+- **status:** accepted
+- **why:** World Gold Council data is licensed for personal, non-commercial use
+  only. Scraping or redistributing it needs written authorisation we do not have.
+  The layer is therefore **unobtainable**, which is different from "not built yet",
+  and the two were being presented the same way.
+- **the real damage was arithmetic.** With `gold_fundamentals` at 20 points in the
+  methodology's allocation, macro-side weight was 75 and the maximum achievable
+  coverage was 55/75 = 73%. The product reported "73% coverage" forever, which
+  reads as permanent incompleteness rather than as an honest statement of what it
+  can legally measure. A ceiling that can never be reached is not a measurement.
+  Removing the layer makes the achievable denominator 55, so 55/55 = 100% is real.
+- **removed, NOT reweighted.** The other weights are untouched. Absorbing the
+  freed 20 points into policy and market_implied would raise their influence and
+  change scoring, which would be a scoring change disguised as a licensing fix.
+  Alignment values are unaffected either way, because an unmeasured layer never
+  contributed to the weighted mean. The total claim is now 80 points, and
+  `overallCoverage` divides by 80 rather than a literal 100 - which had left a
+  second false ceiling at 80%.
+- **both denominators are now derived, not hard-coded**, so adding or removing a
+  layer cannot leave either one quietly stale.
+- **CONSEQUENCE, surfaced rather than buried:** the alignment gate is a fixed 50%
+  and was deliberately NOT retuned. But with the denominator at 55, policy alone
+  is 35/55 = 64% and now clears the gate on its own, where before it was 47% and
+  did not. One macro layer of two can now drive a veto. This weakens a safety
+  property, so it is called out here and in the model docs and in a test whose
+  name states it. Retuning the threshold is a methodology decision and belongs to
+  the owner, not to a licensing fix.
+- **also removed:** the null placeholder row (and its "ingest not implemented yet"
+  text, which implied it would arrive on its own), the UI rendering order, the
+  layer-specific source and as-of strings, and every fixture across the app and
+  the TS port. The function now deletes the row if it finds one, so a stale row
+  cannot survive a deploy.
+- **tests:** 255 Dart tests pass, analyzer clean, and all four TS suites pass under
+  node's type stripping (policy 18, sentiment 25, analysis 42, engine 7).
+- **status of the methodology document:** `instruction/XAUUSD_IMPLEMENTATION_READY_METHODOLOGY.md`
+  still lists four layers. That document is authoritative for the METHOD and has
+  not been edited; this decision records the deviation and its reason. Reconciling
+  the document is the owner's call.

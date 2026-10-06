@@ -55,7 +55,10 @@ const SentimentLayersSection({
 
   final bool isLong;
 
-  static const _order = ['policy', 'positioning', 'market_implied', 'gold_fundamentals'];
+  // `gold_fundamentals` was removed here too. The layer is not pending, it is
+  // unobtainable without a licence we do not have, and rendering it as
+  // "not ingested" invited the reading that it would arrive on its own.
+  static const _order = ['policy', 'positioning', 'market_implied'];
 
   @override
   Widget build(BuildContext context) {
@@ -212,12 +215,10 @@ decoration: const BoxDecoration(
       case 'market_implied':
         final y = d['real10y'];
         if (y == null) return null;
-        return '10-year real yield ${_pct(y)}';
-      case 'gold_fundamentals':
-        return 'World Gold Council demand data — not ingested';
-      default:
-        return null;
-    }
+return '10-year real yield ${_pct(y)}';
+        default:
+          return null;
+      }
   }
 
   String? _meta(SentimentLayerRow r) {
@@ -253,11 +254,9 @@ decoration: const BoxDecoration(
         final bp = d['change5d_bp'];
         final asOf = d['as_of'];
         if (bp != null) bits.add('${_signed(num.tryParse('$bp'))}bp over 5 sessions');
-        if (asOf != null) bits.add('$asOf');
-      case 'gold_fundamentals':
-        return null;
-    }
-    return bits.isEmpty ? null : bits.join(' · ');
+if (asOf != null) bits.add('$asOf');
+      }
+      return bits.isEmpty ? null : bits.join(' · ');
   }
 
   /// A layer that is partly missing must say which part, so it cannot be read
