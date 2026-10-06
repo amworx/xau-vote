@@ -253,10 +253,25 @@ async function record(
     }
   }
 
+  // Input attestation.
+  //
+  // verify_jwt is false, so a caller can post any verdict it likes. What it
+  // cannot do is prove its prices were real. The client reports the newest bar
+  // it used per timeframe, and this function - which already reads market_bars
+  // for settlement - checks those bars against the table itself.
+  //
+  // This does NOT prove the client's verdict was computed correctly; that would
+  // need the TS port, which this bundler cannot import. It does mean a forged
+  // row has to quote a real price at a real bar or be VOIDed, which removes the
+  // cheapest way to poison the record.
+  const inputCheck = await verifyInputDigest(db, body.inputDigest, decidedAt);
+
   const voidReason = hashMismatch
     ? 'RULE_HASH_MISMATCH'
     : paramsMismatch
     ? 'RULE_PARAMS_MISMATCH'
+    : inputCheck.mismatches.length > 0
+    ? 'INPUT_MISMATCH'
     : null;
 
   const spreadValue = num(body.spreadValue);
@@ -267,6 +282,10 @@ async function record(
   if (paramsAbsent) dataQuality.push('NO_CLIENT_PARAMS');
   if (hashMismatch) dataQuality.push('RULE_HASH_MISMATCH');
   if (paramsMismatch) dataQuality.push('RULE_PARAMS_MISMATCH');
+  if (inputCheck.absent) dataQuality.push('NO_INPUT_DIGEST');
+  if (inputCheck.mismatches.length > 0) {
+    dataQuality.push(`INPUT_MISMATCH:${inputCheck.mismatches.join('|')}`);
+  }
   if (spreadStatus !== 'available' || spreadValue == null) dataQuality.push('SPREAD_UNAVAILABLE');
 
   const sign = side === 'LONG' || side === 'FORCED_LONG' ? 1 : -1;
@@ -354,7 +373,103 @@ async function record(
     ruleHash: serverHash,
     voided: voidReason,
     counterfactualRecorded: cf != null,
+    inputBarsChecked: inputCheck.checked,
+    inputMismatches: inputCheck.mismatches,
   });
+}
+
+/**
+ * Checks the bars a decision claims to have used against `market_bars`.
+ *
+ * The client sends, per timeframe, the newest bar it evaluated: its open time and
+ * its close. The server asks the table for the newest closed bar that had already
+ * closed at `decided_at`, and requires the client to be looking at that exact bar.
+ *
+ * It deliberately does NOT compute the expected open time as
+ * `decided_at - interval`. A decision is dated to an M15 close, which is not on
+ * the 30m or 1h grid, so that arithmetic asks for bars at :15 past the hour that
+ * have never existed. An earlier version did exactly that and reported a
+ * perfectly honest client as `1h:no-bar`. Asking the table which bar was current
+ * is simpler and correct for every timeframe.
+ *
+ * Comparing open times, not just prices, is what makes this worth having. A
+ * client reading a stale feed still quotes REAL prices, so a price-only check
+ * waves it through. Requiring the client to be on the bar the server considers
+ * current catches a stale or truncated series directly - which is exactly the
+ * fault that had this app analysing four-day-old bars.
+ *
+ * Returning `absent` rather than a mismatch when no digest is supplied is
+ * deliberate: an older client simply has nothing to attest with, and voiding
+ * every row from it would destroy real data to enforce a check it cannot make.
+ * The flag `NO_INPUT_DIGEST` records that the check did not happen, so a row
+ * count of it is always visible.
+ */
+async function verifyInputDigest(
+  db: ReturnType<typeof createClient>,
+  raw: unknown,
+  decidedAt: Date,
+): Promise<{ checked: number; mismatches: string[]; absent: boolean }> {
+  if (raw == null || typeof raw !== 'object') {
+    return { checked: 0, mismatches: [], absent: true };
+  }
+
+  const TF_MINUTES: Record<string, number> = { '5m': 5, '15m': 15, '30m': 30, '1h': 60 };
+  const digest = raw as Record<string, unknown>;
+  const mismatches: string[] = [];
+  let checked = 0;
+
+  for (const [tf, value] of Object.entries(digest)) {
+    const minutes = TF_MINUTES[tf];
+    if (minutes == null) continue;
+    const entry = value as Record<string, unknown> | null;
+    if (entry == null || typeof entry !== 'object') continue;
+
+    const claimedClose = num(entry.close);
+    if (claimedClose == null) continue;
+
+    const { data, error } = await db
+      .from('market_bars')
+      .select('open_time,close')
+      .eq('symbol', 'XAUUSD')
+      .eq('timeframe', tf)
+      .eq('is_closed', true)
+      // Strictly before the decision instant: the decision was made from the bar
+      // closing AT decided_at, whose open is earlier.
+      .lt('open_time', decidedAt.toISOString())
+      .order('open_time', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) { mismatches.push(`${tf}:query-error`); continue; }
+    if (data == null) { mismatches.push(`${tf}:no-bar`); continue; }
+
+    const realOpen = new Date(data.open_time).getTime();
+    const claimedOpen = Date.parse(String(entry.openTime ?? ''));
+    if (!Number.isFinite(claimedOpen)) { mismatches.push(`${tf}:no-open-time`); continue; }
+
+    // The stale-feed guard. Real prices from the wrong bar still add up.
+    if (realOpen !== claimedOpen) {
+      const barsBehind = Math.round((realOpen - claimedOpen) / (minutes * 60_000));
+      mismatches.push(
+        barsBehind > 0 ? `${tf}:stale-by-${barsBehind}` : `${tf}:ahead-of-server`,
+      );
+      continue;
+    }
+
+    const realClose = Number(data.close);
+    if (!Number.isFinite(realClose)) { mismatches.push(`${tf}:unreadable-close`); continue; }
+
+    // Tolerant comparison: the client sends a double through JSON, and a
+    // sub-tick difference is not evidence of forgery. A price that differs by
+    // more than a cent is.
+    if (Math.abs(realClose - claimedClose) > 0.01) {
+      mismatches.push(`${tf}:close-differs`);
+      continue;
+    }
+    checked++;
+  }
+
+  return { checked, mismatches, absent: false };
 }
 
 /**

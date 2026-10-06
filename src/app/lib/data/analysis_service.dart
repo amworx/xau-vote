@@ -194,6 +194,7 @@ class AnalysisService extends ChangeNotifier {
           currentPrice: currentPrice,
           effectiveSpreadStatus: spreadStatus,
           effectiveSpreadNote: qualityNote,
+          inputBars: bars,
         ),
       );
 

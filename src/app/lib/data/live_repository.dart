@@ -777,7 +777,6 @@ class LiveRepository {
   /// There is deliberately no reverse mapping any more. It existed only to
   /// recognise whichever timeframes an unfiltered query happened to return, and
   /// that query is exactly the thing being removed.
-  @visibleForTesting
   static String dbTf(Tf tf) => switch (tf) {
         Tf.m5 => '5m',
         Tf.m15 => '15m',

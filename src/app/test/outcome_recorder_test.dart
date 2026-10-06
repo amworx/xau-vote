@@ -302,4 +302,50 @@ void main() {
       expect(p['reasonCodes'], contains('v12LowConfluence'));
     });
   });
+
+  group('input attestation digest', () {
+    Map<Tf, TimeframeBars> series() => {
+          Tf.m15: m15([candle(15)]),
+          Tf.h1: TimeframeBars(
+            timeframe: Tf.h1,
+            bars: [candle(60), candle(120)],
+            allDegraded: false,
+          ),
+        };
+
+    test('reports the newest CLOSED bar per timeframe', () {
+      final d = OutcomeRecorder.digestOf(series());
+      expect(d.keys, containsAll(['15m', '1h']));
+      final m15Entry = d['15m']! as Map<String, Object?>;
+      // candle(15) opened at 08:45 and closed at 09:00.
+      expect(m15Entry['openTime'], '2026-10-06T08:45:00.000Z');
+      expect(m15Entry['close'], 4151.15);
+    });
+
+    test('keys use the database spelling the server looks up', () {
+      final d = OutcomeRecorder.digestOf(series());
+      // `Tf.m15` as a string would silently attest nothing.
+      expect(d.containsKey('15m'), isTrue);
+      expect(d.containsKey('m15'), isFalse);
+    });
+
+    test('omits a timeframe whose bars are all still forming', () {
+      // Attesting a bar that has not closed would ask the server to match a bar
+      // it will not find, which would look like a mismatch rather than an
+      // absence.
+      final d = OutcomeRecorder.digestOf({
+        Tf.m15: m15([candle(0, closed: false)]),
+      });
+      expect(d, isEmpty);
+    });
+
+    test('carries barCount for diagnosis but it is not part of the check', () {
+      final d = OutcomeRecorder.digestOf(series());
+      expect((d['15m']! as Map<String, Object?>)['barCount'], 1);
+    });
+
+    test('an empty series yields an empty digest', () {
+      expect(OutcomeRecorder.digestOf(const {}), isEmpty);
+    });
+  });
 }

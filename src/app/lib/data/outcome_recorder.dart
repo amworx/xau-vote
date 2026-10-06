@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'live_repository.dart';
 import 'package:xau_core/xau_core.dart';
 
 /// Writes each engine decision to the outcome recorder so it can be scored.
@@ -69,6 +70,32 @@ class OutcomeRecorder {
     return last.openTime.add(const Duration(minutes: 15));
   }
 
+  /// The bars a decision claims to have used, for server-side attestation.
+  ///
+  /// Reports the newest CLOSED bar per timeframe. The server derives which bar
+  /// it expected from `decidedAt` and compares the close against `market_bars`
+  /// itself, so a forged row has to quote a real price at a real bar or be
+  /// VOIDed.
+  ///
+  /// [barCount] is carried for diagnosis only and is deliberately NOT verified:
+  /// it depends on how much history the client chose to window, so comparing it
+  /// would produce false mismatches that say nothing about honesty.
+  @visibleForTesting
+  static Map<String, Object?> digestOf(Map<Tf, TimeframeBars> bars) {
+    final out = <String, Object?>{};
+    bars.forEach((tf, series) {
+      final closed = series.bars.where((c) => c.isClosed).toList();
+      if (closed.isEmpty) return;
+      final last = closed.last;
+      out[LiveRepository.dbTf(tf)] = {
+        'barCount': closed.length,
+        'openTime': last.openTime.toIso8601String(),
+        'close': last.close,
+      };
+    });
+    return out;
+  }
+
   /// Submits one decision. Safe to call on every scan.
   ///
   /// Returns the decision key actually sent, or null if nothing was sent. The
@@ -82,6 +109,7 @@ class OutcomeRecorder {
     required double? currentPrice,
     required SpreadStatus effectiveSpreadStatus,
     required String effectiveSpreadNote,
+    Map<Tf, TimeframeBars> inputBars = const {},
   }) async {
     try {
       final decidedAt = decisionTimeFor(m15);
@@ -101,6 +129,9 @@ class OutcomeRecorder {
         effectiveSpreadNote: effectiveSpreadNote,
       );
       if (payload == null) return null;
+
+      final digest = digestOf(inputBars);
+      if (digest.isNotEmpty) payload['inputDigest'] = digest;
 
       // One decision per closed bar per side. Including the side means a flip
       // between bars produces a distinct row rather than colliding with the
