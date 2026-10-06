@@ -495,3 +495,75 @@
   the database, never by looking at the app. A green test suite and correct row
   counts said nothing about whether the screen was right. Checking the product
   means looking at the product.
+
+---
+
+## D-20261006-013 - The production price feed is three different feeds, not OANDA
+
+- **date:** 2026-10-06
+- **status:** accepted
+- **why this was investigated:** directive section 12 required establishing the feed
+  from code, config and logs rather than treating OANDA as established fact.
+  It is not one feed. There are three, and conflating them was the source of the
+  earlier confusion.
+
+### 1. PRICE (what the engine trades against) - gold-api.com
+
+- Endpoint: `GET https://api.gold-api.com/price/XAU`, no auth required.
+- Function: `tick`, scheduled every minute (`xv-tick`).
+- Writes `market_snapshots.price` with `bid=null`, `ask=null`, `source=null`.
+- Bar history: `build-bars`, same provider.
+- **Licence, captured 2026-10-06 from https://gold-api.com/terms** (terms effective
+  date September 10, 2026; Utah, USA):
+  > "Commercial use of the API is always permitted, including use in web
+  > applications, mobile apps, and third-party websites that you operate or
+  > develop for clients."
+  > "No restrictions on how many requests to the real time price API."
+- **ASSESSMENT:** licensed for commercial use and display. The provider publishes
+  no methodology for how its single price is derived and disclaims accuracy and
+  fitness. Treated as a display-price source, not an execution-grade quote.
+
+### 2. SPREAD (bid/ask) - OANDA fxTrade PRACTICE
+
+- Endpoint:
+  `GET https://api-fxpractice.oanda.com/v3/accounts/{id}/pricing?instruments=XAU_USD`
+- Function: `oanda-quote`, `verify_jwt=true`, token in Supabase Vault.
+- Writes `market_snapshots.bid/ask` with `source='oanda-practice'`.
+- **Licence, captured 2026-10-06 from
+  https://legal.oanda.com/oc/api_license_agreement_oc/en:**
+  > "use the FXTrade System and the Licensed Materials only for your own use"
+  > "use the Trading System and the Licensed Materials for Internal Use only"
+  > "not transmit, publish, disseminate, duplicate, display, disclose, offer, or
+  > otherwise provide, in any form whatsoever, the FXTrade Trading System Rates
+  > to any third party."
+- **ASSESSMENT: DISPLAY RESTRICTED.** The internal-use grant does not permit
+  publishing OANDA rates to end users, and XV is a public-facing app. Separately,
+  the practice environment simulates execution, so its spread is not an
+  execution-venue measurement either. Per directive §14 this is
+  `spread_status = AVAILABLE_BUT_DISPLAY_RESTRICTED`; the public app must be told
+  `UNAVAILABLE_FOR_DISPLAY` rather than shown a number the licence does not cover.
+- Practice candles return 404 for every instrument (documented in the function
+  itself), so OANDA contributes spread only.
+
+### 3. INDICATOR WARM-UP HISTORY - Binance PAXGUSDT
+
+- Function: `warm-bars`, written `quality='degraded'`, excluded from levels.
+- PAXG is a crypto token, not spot XAUUSD. Permitted only as a degraded warm-up.
+- Current state: 234/628 bars are degraded warm-up on 15m; 251/349 on 1h. The 1h
+  series is majority-degraded, which matters for EMA200 quality.
+
+### The ~$0.41 spread claim is NOT supported
+
+Measured across all 5,566 OANDA rows: mean **0.9913**, min 0.18, max 1.55. Hourly
+means range 0.30 to 1.46, and 1.46 repeats across many consecutive hours, which
+looks like a stuck liquidity ladder rather than a live quote. No aggregate in the
+data corresponds to $0.41. Provenance recorded as **UNKNOWN** rather than
+estimated. Recent hourly means sit near 0.45-0.51.
+
+### Consequences, recorded not deferred
+
+- The app currently displays a spread sourced from a licence that forbids exactly
+  that display. This must be corrected to `UNAVAILABLE_FOR_DISPLAY` for the public
+  build. Recorded here; the UI change is not part of steps 1-4.
+- Internal research use of the OANDA spread remains permitted and continues to
+  feed the outcome ledger, where it is never published.

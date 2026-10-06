@@ -89,6 +89,27 @@ const CANONICAL_STOP_CONFIG = {
 const HORIZON_BARS = 12;
 const M15_TIMEFRAME = '15m';
 
+// Ledger identity. Bump LEDGER_VERSION when the ledger's MEANING changes, and
+// MERGE_RULE_VERSION when only the episode GROUPING changes. Both are stored on
+// every row so a later change cannot retroactively alter historical counts.
+const LEDGER_VERSION = 'xv-ledger/1';
+const MERGE_RULE_VERSION = 'xv-episode-merge/1';
+
+/**
+ * Price-feed provenance, established from code, config and logs rather than
+ * assumed. D-20261006-013.
+ *
+ * The engine's mid comes from gold-api.com, whose terms state "Commercial use of
+ * the API is always permitted, including use in web applications, mobile apps,
+ * and third-party websites". The spread comes from OANDA fxTrade PRACTICE, whose
+ * API licence grants INTERNAL USE ONLY and forbids transmitting rates to third
+ * parties. XV is a public app, so the spread is recorded for research and marked
+ * display-restricted rather than published.
+ */
+const PRICE_SOURCE_MID = 'gold-api';
+const SPREAD_SOURCE = 'oanda-practice';
+const SPREAD_DISPLAY_PERMITTED = false;
+
 const GRADE_DB: Record<string, string> = {
   aPlus: 'A_PLUS',
   a: 'A',
@@ -160,6 +181,32 @@ const VERDICTS = new Set(['LONG', 'SHORT', 'NO_TRADE']);
 /** Side-relative context reading, per the ConfluenceResult convention. */
 function sideRelative(reading: number | null, sign: number): number | null {
   return reading == null ? null : reading * sign;
+}
+
+/**
+ * Episode fingerprint.
+ *
+ * Deterministic from the stored fields alone, so replaying the same inputs
+ * produces the same id — reproducible, not merely idempotent.
+ *
+ * Deliberately EXCLUDES entry/stop prices. An identical level re-derived every
+ * 60 seconds must collapse onto one episode; a level that moved materially is
+ * separated by the merge rule's own 0.5R test, which needs the prices but must
+ * not fragment identity on every re-derivation.
+ */
+async function episodeFingerprint(
+  side: string,
+  decidedAt: Date,
+  reasonCodes: string[],
+): Promise<string> {
+  return sha256Hex(canonical({
+    side,
+    bar: decidedAt.toISOString(),
+    // Reason codes are part of identity: a NO_TRADE caused by a blackout and one
+    // caused by low confluence are different observations on the same bar.
+    reasons: [...reasonCodes].sort(),
+    engine: ENGINE_VERSION,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -276,6 +323,19 @@ async function record(
 
   const spreadValue = num(body.spreadValue);
   const spreadStatus = String(body.spreadStatus ?? 'unavailable');
+  const spreadMeasured = spreadStatus === 'available' && spreadValue != null;
+
+  // Spread state per directive §14. A genuine OANDA bid/ask exists but its
+  // licence is internal-use-only, so it is recorded for research and marked
+  // display-restricted rather than presented as publishable. This is NOT a
+  // cross-source difference: it is a real venue ladder from one account.
+  const spreadState = spreadMeasured
+    ? (SPREAD_DISPLAY_PERMITTED ? 'AVAILABLE_AND_LICENSED' : 'AVAILABLE_BUT_DISPLAY_RESTRICTED')
+    : 'UNAVAILABLE';
+  // Never 'EVALUATED' on our own authority: the veto was not applied because the
+  // spread could not be shown, which is different from having judged it.
+  const spreadVeto = 'UNEVALUATED';
+  const spreadSource = spreadMeasured ? SPREAD_SOURCE : 'NONE';
 
   const dataQuality = strArray(body.dataQuality);
   if (clientHash == null) dataQuality.push('NO_CLIENT_HASH');
@@ -286,7 +346,9 @@ async function record(
   if (inputCheck.mismatches.length > 0) {
     dataQuality.push(`INPUT_MISMATCH:${inputCheck.mismatches.join('|')}`);
   }
-  if (spreadStatus !== 'available' || spreadValue == null) dataQuality.push('SPREAD_UNAVAILABLE');
+  if (!spreadMeasured) dataQuality.push('SPREAD_UNAVAILABLE');
+  dataQuality.push(`SPREAD_STATE:${spreadState}`);
+  dataQuality.push(`SPREAD_SOURCE:${spreadSource}`);
 
   const sign = side === 'LONG' || side === 'FORCED_LONG' ? 1 : -1;
   const macroAlignment = triState(body.macroAlignment);
@@ -364,6 +426,69 @@ async function record(
   });
   if (error) return json({ ok: false, error: error.message }, 500);
 
+  // ---- Episode into the ledger --------------------------------------------
+  // Only real decisions produce episodes. A forced counterfactual is a benchmark
+  // artefact, not an observation of the engine, so it is excluded: counting it
+  // would let the synthetic trade enter the evaluation sample.
+  let episodeId: string | null = null;
+  let merged = false;
+  let episodeState: string | null = null;
+  let episodeError: string | null = null;
+
+  if (voidReason == null) {
+    const fingerprint = await episodeFingerprint(side, decidedAt, reasonCodes);
+
+    // supabase-js v2 returns a thenable from rpc(), not a Promise, so it has no
+    // .catch(). Awaiting it inside try/catch is the only way to handle failure
+    // here - chaining .catch() threw a TypeError and turned every decision into
+    // a 500. Found by exercising this path, not by reading it.
+    let ep: Array<Record<string, unknown>> | null = null;
+    let epErrMessage: string | null = null;
+    try {
+      const res = await db.rpc('xv_episode_merge_v1', {
+        p_fingerprint: fingerprint,
+        p_timestamp_utc: decidedAt.toISOString(),
+        p_direction: verdict === 'NO_TRADE' ? 'NONE' : verdict,
+        p_rule_hash: serverHash,
+        p_engine_version: ENGINE_VERSION,
+        p_ledger_version: LEDGER_VERSION,
+        p_merge_rule_version: MERGE_RULE_VERSION,
+        // State is derived by the SQL function from the verdict and reason codes,
+        // so the app and the ledger cannot disagree about what an abstention was.
+        p_state: null,
+        p_reason_codes: reasonCodes,
+        p_data_quality: dataQuality,
+        p_entry: levels.entry,
+        p_stop_loss: levels.stop_loss,
+        p_tp1: levels.tp1,
+        p_tp2: levels.tp2,
+        p_tp3: levels.tp3,
+        p_risk_distance: levels.risk_distance,
+        p_spread_state: spreadState,
+        p_spread_veto: spreadVeto,
+        p_event_state: null,
+        p_input_digest: (body.inputDigest ?? null) as unknown as Record<string, unknown>,
+        p_provenance: 'INTERNAL',
+        p_price_source: PRICE_SOURCE_MID,
+      });
+      ep = (res.data ?? null) as Array<Record<string, unknown>> | null;
+      if (res.error) epErrMessage = res.error.message;
+    } catch (e) {
+      epErrMessage = String(e);
+    }
+
+    if (epErrMessage != null) {
+      // The scan is recorded either way. A lost episode is reported rather than
+      // hidden, because a silent gap in the evaluation sample is precisely what
+      // this ledger exists to prevent.
+      episodeError = epErrMessage;
+    } else if (Array.isArray(ep) && ep.length > 0) {
+      episodeId = ep[0].episode_id ?? null;
+      merged = ep[0].merged === true;
+      episodeState = ep[0].state ?? null;
+    }
+  }
+
   return json({
     ok: true,
     verdict,
@@ -375,6 +500,11 @@ async function record(
     counterfactualRecorded: cf != null,
     inputBarsChecked: inputCheck.checked,
     inputMismatches: inputCheck.mismatches,
+    spreadState,
+    episodeId,
+    episodeMerged: merged,
+    episodeState,
+    episodeError,
   });
 }
 
@@ -540,6 +670,13 @@ function resolveOne(
     };
   }
 
+  // The ledger only ever settles SETUP episodes - an abstention is closed at its
+  // horizon as a zero-R observation so it stops being re-examined, but that
+  // closure is a property of the episode's state, not of a price test. The
+  // classifier marks those states, and abstention rows never reach here.
+  const state = String(row.state ?? 'SETUP');
+  if (state !== 'SETUP') return null;
+
   const entry = Number(row.entry);
   const stopLoss = Number(row.stop_loss);
   const tp1 = Number(row.tp1);
@@ -547,7 +684,7 @@ function resolveOne(
 
   if (![entry, stopLoss, tp1, risk].every(Number.isFinite) || risk <= 0) return null;
 
-  const sign = row.side === 'LONG' || row.side === 'FORCED_LONG' ? 1 : -1;
+  const sign = row.direction === 'LONG' ? 1 : -1;
   const spread = row.spread_value == null ? null : Number(row.spread_value);
 
   let outcome: string;
@@ -566,7 +703,7 @@ function resolveOne(
   if (hit >= 0) {
     const b = bars[hit];
     const stopHit = sign === 1 ? b.low <= stopLoss : b.high >= stopLoss;
-    outcome = stopHit ? 'STOP' : 'TP1';
+    outcome = stopHit ? 'STOP' : 'TARGET_FIRST';
     exitPrice = stopHit ? stopLoss : tp1;
     barsUsed = hit + 1;
   } else {
@@ -586,34 +723,47 @@ function resolveOne(
   const rNet = spreadCostR == null ? rGross : rGross - spreadCostR;
 
   return {
-    status: 'RESOLVED',
     outcome,
+    // Directive §9: when no usable transaction-cost measurement exists, say so
+    // rather than fabricating one.
+    net_outcome: spreadCostR == null ? 'cost_model_unavailable' : 'measured_spread',
+    cost_model: spreadCostR == null ? 'cost_model_unavailable' : 'measured_spread',
     r_gross: Math.round(rGross * 10000) / 10000,
     r_net: Math.round(rNet * 10000) / 10000,
     spread_cost_r: spreadCostR == null ? null : Math.round(spreadCostR * 10000) / 10000,
     exit_price: exitPrice,
     bars_used: barsUsed,
-    settled_at: new Date().toISOString(),
+    // Provenance of the settlement is recorded separately from the decision's,
+    // so a later change of price feed is visible rather than silent.
+    outcome_source: `${M15_TIMEFRAME}:market_bars:${PRICE_SOURCE_MID}`,
+    price_source_at_outcome: PRICE_SOURCE_MID,
+    resolved_at: new Date().toISOString(),
   };
 }
 
 async function settle(db: ReturnType<typeof createClient>): Promise<Response> {
+  // Resolve EPISODES, not scans. The scan table keeps its own settlement for the
+  // audit trail, but the evaluation unit is the episode: ten scans of one gold
+  // move are one observation. Settling scans and then aggregating would let a
+  // repeated scan bias the mean.
   const { data: pending, error } = await db
-    .from('scan_decisions')
+    .from('xv_outcome_ledger')
     .select('*')
-    .eq('status', 'PENDING')
-    .lte('resolve_at', new Date().toISOString())
-    .order('decided_at', { ascending: true })
+    .eq('state', 'SETUP')
+    .is('resolved_at', null)
+    .is('outcome', null)
+    .lte('timestamp_utc', new Date(Date.now() - HORIZON_BARS * 15 * 60_000).toISOString())
+    .order('timestamp_utc', { ascending: true })
     .limit(500);
 
   if (error) return json({ ok: false, error: error.message }, 500);
   if (!pending || pending.length === 0) {
-    return json({ ok: true, settled: 0, note: 'nothing past its horizon' });
+    return json({ ok: true, settled: 0, note: 'no episodes past their horizon' });
   }
 
-  // One price query for the whole batch rather than one per row.
-  const from = String(pending[0].decided_at);
-  const to = String(pending[pending.length - 1].resolve_at);
+  // One price query for the whole batch rather than one per episode.
+  const from = String(pending[0].timestamp_utc);
+  const to = new Date(Date.now()).toISOString();
   const { data: bars, error: barErr } = await db
     .from('market_bars')
     .select('open_time, high, low, close')
@@ -636,12 +786,12 @@ async function settle(db: ReturnType<typeof createClient>): Promise<Response> {
   const unresolved: string[] = [];
 
   for (const row of pending as Record<string, unknown>[]) {
-    const decided = new Date(String(row.decided_at)).getTime();
-    const resolveAt = new Date(String(row.resolve_at)).getTime();
-    const window = series.filter((b) => b.t >= decided && b.t < resolveAt);
+    const start = new Date(String(row.timestamp_utc)).getTime();
+    const end = start + HORIZON_BARS * 15 * 60_000;
+    const window = series.filter((b) => b.t >= start && b.t < end);
 
     const update = resolveOne(row, window);
-    if (!update) { unresolved.push(String(row.decision_key)); continue; }
+    if (!update) { unresolved.push(String(row.episode_id)); continue; }
 
     // Fewer bars than the horizon means a data gap, not a quiet market. Flag it
     // rather than letting a truncated window read as a completed test.
@@ -652,10 +802,10 @@ async function settle(db: ReturnType<typeof createClient>): Promise<Response> {
     }
 
     const { error: upErr } = await db
-      .from('scan_decisions')
+      .from('xv_outcome_ledger')
       .update(update)
-      .eq('id', row.id)
-      .eq('status', 'PENDING'); // Idempotent: never re-settle a settled row.
+      .eq('episode_id', row.episode_id)
+      .is('resolved_at', null); // Idempotent: never re-settle a settled episode.
     if (upErr) return json({ ok: false, error: upErr.message }, 500);
     settled++;
   }
@@ -683,12 +833,25 @@ Deno.serve(async (req: Request) => {
       ok: true,
       service: 'outcome-recorder',
       engineVersion: ENGINE_VERSION,
+      ledgerVersion: LEDGER_VERSION,
+      mergeRuleVersion: MERGE_RULE_VERSION,
       horizonBars: HORIZON_BARS,
       protocol: 'docs/outcome-recorder-protocol.md',
+      evaluation: 'docs/evaluation-pre-registration.md',
+      priceFeed: {
+        mid: PRICE_SOURCE_MID,
+        spread: SPREAD_SOURCE,
+        // OANDA's licence grants internal use only and forbids transmitting rates
+        // to third parties, so the spread may not be shown to app users.
+        spreadDisplayPermitted: SPREAD_DISPLAY_PERMITTED,
+      },
       limitations: [
-        'verify_jwt is false; settlement is independent but verdicts are client-reported',
-        'the verdict is NOT recomputed server-side; thresholds are fingerprint-verified instead',
-        'slippage is unmodelled',
+        'verify_jwt is false: anyone can POST, so verdicts are client-reported',
+        'settled outcomes are independent - market_bars decides, not the client',
+        'input attestation voids a row whose claimed prices are not real',
+        'the verdict itself is not recomputed server-side; parameters are verified instead',
+        'slippage is unmodelled, so every net figure is optimistic',
+        'the OANDA spread is internal-use-only and may not be shown to app users',
       ],
     });
   }
