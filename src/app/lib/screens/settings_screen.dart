@@ -461,21 +461,7 @@ class _UpdateControls extends StatelessWidget {
       actions.add(_action('CANCEL', () => service.cancel(), warn: true));
     }
     if (state.isInstallable) {
-      actions.add(
-        _action('INSTALL', () async {
-          final ok = await service.install();
-          if (!ok && context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Could not open the installer. Allow installs for this app '
-                  'in Android settings, then try again.',
-                ),
-              ),
-            );
-          }
-        }),
-      );
+      actions.add(_action('INSTALL', () => _install(context)));
     }
 
     return Padding(
@@ -485,6 +471,54 @@ class _UpdateControls extends StatelessWidget {
   }
 
   /// One outline action, in the app's pill language.
+  /// Installs the verified update, asking Android for the grant first if needed.
+  ///
+  /// `REQUEST_INSTALL_PACKAGES` is not granted at install time: from Android 8
+  /// the user grants it per-source in Settings, and `checkSelfPermission` keeps
+  /// reporting GRANTED regardless, so the real question is
+  /// `canRequestPackageInstalls()`. When that is false the app offers to open
+  /// that screen. Previously it only *named* the setting in a snackbar and left
+  /// the user to find it, which is what made the update look uninstallable.
+  ///
+  /// A null answer means the platform could not tell us, which is not the same
+  /// as a refusal — the install is attempted either way, so nothing is blocked
+  /// by a missing capability rather than a missing grant.
+  Future<void> _install(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (await service.canInstallPackages() == false) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Android needs your permission to install this update.',
+          ),
+          duration: const Duration(seconds: 10),
+          action: SnackBarAction(
+            label: 'ALLOW',
+            onPressed: service.requestInstallPermission,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final result = await service.install();
+    if (!context.mounted || result.ok) return;
+
+    final message = switch (result.outcome) {
+      InstallOutcome.needsPermission =>
+        'Still not permitted. Turn on "Install unknown apps" for XV, then '
+            'tap INSTALL again.',
+      InstallOutcome.missingFile =>
+        'The downloaded update is missing. Tap DOWNLOAD again.',
+      InstallOutcome.failed =>
+        'Could not open the installer'
+            '${result.detail == null ? '' : ': ${result.detail}'}.',
+      InstallOutcome.opened => '',
+    };
+    messenger.showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Widget _action(String label, VoidCallback onTap, {bool warn = false}) {
     return InkWell(
       onTap: onTap,

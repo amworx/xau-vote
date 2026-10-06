@@ -157,3 +157,23 @@
 - **finding:** A85.1 defines market-implied as "USD + real yields + volatility". Only the real-yield leg is ingested. A row that simply reads `alignment: -1` under a source label implying all three legs would overstate what was measured.
 - **decision:** `detail.legs_measured: ["real_yields"]` and `detail.legs_missing: ["usd", "volatility"]` are written on every market_implied row, so a partial layer is self-describing instead of quietly reading as complete.
 - **status:** accepted
+
+---
+
+## D-20261005-010 - Ask for the install permission instead of naming it
+
+- **date:** 2026-10-05
+- **reported symptom:** the in-app updater could not install the new version; it looked like a missing permission.
+- **root cause (three defects, one invisible):**
+  1. `MainActivity.kt` answered `canInstallPackages` with `SDK_INT >= O`. That is true on every device this app can run on, so Dart always believed installation was permitted. `REQUEST_INSTALL_PACKAGES` is NOT granted at install time - from Android 8 the user grants it per-source in Settings - and `checkSelfPermission` keeps returning GRANTED regardless. The only truthful question is `PackageManager.canRequestPackageInstalls()`.
+  2. There was no handler that opened the permission screen at all. The app could detect nothing and ask for nothing, so the user had to find the setting unaided.
+  3. `installApk` called `startActivity` then `result.success(null)` unconditionally. The system actually refuses inside the installer UI, so Dart was told the launch worked while nothing happened - the button looked dead.
+- **decision:**
+  - `canInstallPackages` now calls `packageManager.canRequestPackageInstalls()`, true unconditionally below Android 8.
+  - New `requestInstallPermission` handler opens `Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES` scoped to `package:$packageName`, falling back to the app-details page, and short-circuits when already granted.
+  - `installApk` checks the grant BEFORE launching and reports `needs_permission` as a distinct error code; a null result from the capability check is treated as "unknown", not "denied", so nothing is blocked by a missing capability.
+  - The install intent gained `ClipData` (the read grant on the data URI alone is not honoured by the package installer on several Android versions) plus `EXTRA_NOT_UNKNOWN_SOURCE` and `EXTRA_INSTALLER_PACKAGE_NAME`.
+  - `installApk` returns `InstallResult`/`InstallOutcome` instead of `bool`, so "needs permission" survives to the UI. The old `bool` collapsed every failure into the same unfixable message.
+- **UI:** the INSTALL action now offers an `ALLOW` action that opens the system screen. This is a functional snackbar action reusing the existing visual language, NOT a new designed surface - a proper first-class permission explainer is still available and would go through the browser-prototype-then-approval route first.
+- **verification:** 12 new tests across the MethodChannel contract (granted / not granted / cannot-tell, and each error code mapping). The Kotlin compile caught a wrong constant - `ACTION_MANAGE_INSTALL_PERMISSIONS` does not exist; it is `ACTION_MANAGE_UNKNOWN_APP_SOURCES`. Built APK verified with aapt2: `1.0.8`/code 9, `REQUEST_INSTALL_PACKAGES` present.
+- **status:** accepted

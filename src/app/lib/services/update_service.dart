@@ -36,6 +36,29 @@ import 'package:http/http.dart' as http;
 /// Which transport [UpdateService] uses. Overridden in tests.
 typedef UpdateProbe = Future<http.Response> Function(Uri url);
 
+/// How an install attempt ended.
+///
+/// The distinction that matters is [InstallOutcome.needsPermission]: the app can
+/// fix that by asking, so the UI must offer to open the system screen rather
+/// than reporting a generic failure. That is the whole reason this is an enum
+/// instead of the `bool` it replaced.
+enum InstallOutcome { opened, needsPermission, missingFile, failed }
+
+/// The result of trying to hand a verified APK to the system installer.
+class InstallResult {
+  const InstallResult(this.outcome, [this.detail]);
+
+  const InstallResult.opened() : this(InstallOutcome.opened);
+
+  final InstallOutcome outcome;
+  final String? detail;
+
+  /// True when the installer was actually launched.
+  bool get ok => outcome == InstallOutcome.opened;
+
+  bool get needsPermission => outcome == InstallOutcome.needsPermission;
+}
+
 /// Platform bridge for the two things only Android can answer.
 class UpdatePlatform {
   const UpdatePlatform();
@@ -69,15 +92,64 @@ class UpdatePlatform {
 
   /// Asks Android to open the installer for [apkPath].
   ///
-  /// Returns false when no installer could be opened, so the UI can say so
-  /// instead of leaving a button that does nothing.
-  Future<bool> installApk(String apkPath) async {
+  /// The native side reports a distinct `needs_permission` when the user has not
+  /// granted install permission, so the outcome survives to Dart instead of
+  /// collapsing into a bare false the UI cannot act on.
+  Future<InstallResult> installApk(String apkPath) async {
     try {
       await channel.invokeMethod<void>('installApk', {'path': apkPath});
-      return true;
-    } on PlatformException {
-      return false;
+      return const InstallResult(InstallOutcome.opened);
+    } on PlatformException catch (e) {
+      return InstallResult(_outcomeFor(e.code), e.message);
     } on MissingPluginException {
+      return const InstallResult(InstallOutcome.failed, 'no platform channel');
+    }
+  }
+
+  static InstallOutcome _outcomeFor(String? code) {
+    switch (code) {
+      case 'needs_permission':
+      case 'permission_denied':
+        return InstallOutcome.needsPermission;
+      case 'missing_file':
+      case 'empty_file':
+        return InstallOutcome.missingFile;
+      default:
+        return InstallOutcome.failed;
+    }
+  }
+
+  /// Whether this app is currently allowed to install packages.
+  ///
+  /// `REQUEST_INSTALL_PACKAGES` is granted by the USER in Settings from Android
+  /// 8, not at install time, so a permission check answers "granted" forever
+  /// and tells you nothing. The native side asks
+  /// `PackageManager.canRequestPackageInstalls()`, the only question that
+  /// reflects the real grant. Null when the platform cannot answer, which is
+  /// deliberately not the same as "allowed".
+  Future<bool?> canInstallPackages() async {
+    try {
+      return await channel.invokeMethod<bool>('canInstallPackages');
+    } on MissingPluginException {
+      return null;
+    } on PlatformException {
+      return null;
+    }
+  }
+
+  /// Opens the system screen where the user grants install permission.
+  ///
+  /// Returns true when a screen was opened (or the grant was already held). It
+  /// does NOT mean the user granted anything - re-read [canInstallPackages]
+  /// afterwards. Without this the app could detect the missing grant but had no
+  /// way to ask for it, which is why the install looked broken.
+  Future<bool> requestInstallPermission() async {
+    try {
+      final opened = await channel.invokeMethod<bool>('requestInstallPermission');
+      return opened ?? false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
       return false;
     }
   }
@@ -485,11 +557,23 @@ class UpdateService extends ChangeNotifier {
   }
 
   /// Opens the system installer for the verified APK.
-  Future<bool> install() async {
+  Future<InstallResult> install() async {
     final path = _state.installPath;
-    if (path == null) return false;
+    if (path == null) {
+      return const InstallResult(InstallOutcome.missingFile, 'nothing downloaded yet');
+    }
     return platform.installApk(path);
   }
+
+  /// Whether this app may install packages right now.
+  ///
+  /// Null when the platform cannot answer, which is not the same as "allowed".
+  Future<bool?> canInstallPackages() => platform.canInstallPackages();
+
+  /// Opens the system screen for granting install permission.
+  ///
+  /// Only meaningful on Android 8+. Returns false when no such screen exists.
+  Future<bool> requestInstallPermission() => platform.requestInstallPermission();
 
   /// Set by [pause]; consumed at the next chunk boundary so partial bytes
   /// already on disk are kept and the resume can continue from them.

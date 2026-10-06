@@ -562,3 +562,20 @@
   - Widening a gate is worse than satisfying it. Building policy cleared the coverage threshold legitimately; lowering the threshold would have been a way to make a thin read look authoritative.
 - **files:** src/xau_core/lib/analysis/confluence.dart, src/xau_core/test/confluence_test.dart, supabase/functions/_shared/policy.ts, supabase/functions/_shared/policy_test.ts, supabase/functions/sentiment-layers/index.ts, supabase/migrations/0007_sentiment_layers_score_numeric.sql, src/app/lib/models/sentiment_layers.dart, src/app/test/sentiment_layers_test.dart
 - **tags:** confluence, side-awareness, policy, fomc, methodology, coverage-gate
+
+---
+
+## EVT-20261005-0019 - Fix the updater install permission (the user hit this on hardware)
+
+- **id:** EVT-20261005-0019
+- **timestamp:** 2026-10-05T21:00Z .. 2026-10-05T21:40Z
+- **mode:** BUILD
+- **action:** Made the app request the Android install permission instead of only naming it.
+- **result:** Real grant check via `canRequestPackageInstalls()`, a handler that opens `ACTION_MANAGE_UNKNOWN_APP_SOURCES`, a distinct `needs_permission` outcome that survives to the UI, ClipData + install extras on the intent, and an ALLOW action on the INSTALL button. Release APK 1.0.8+9 built and verified with aapt2.
+- **errors:** first Kotlin compile failed - `Settings.ACTION_MANAGE_INSTALL_PERMISSIONS` is not a real constant; corrected to `ACTION_MANAGE_UNKNOWN_APP_SOURCES`. Two of my own Dart mistakes: nested the new enum/class inside `UpdatePlatform` instead of at top level, and wrote a test assertion that checked the mock rather than the code.
+- **lessons:**
+  - `checkSelfPermission` lying about a user-granted permission is the specific trap on Android 8+. The capability API, not the permission API.
+  - Reporting success immediately after `startActivity` hides the failure, because the refusal happens in the system UI. Pre-check the grant and report a coded outcome.
+  - A `bool` return collapses "you can fix this" and "you cannot" into the same branch. The return type was part of the bug.
+- **tags:** updater, android, permissions, fileprovider, release-1.0.8
+- **open:** publishing 1.0.8 is blocked - SUPABASE_SERVICE_ROLE_KEY is not in the environment and must not be pasted in chat again. Asked the user to set it locally.
