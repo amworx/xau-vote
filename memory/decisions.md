@@ -283,3 +283,21 @@
 - **arithmetic check performed on their challenge:** `MACRO COVERAGE 73%` is 55/75 macro-side weight and reconciles. Expert 3's "80" is the all-in denominator (100 minus WGC). Their conclusion was wrong, but the criticism is VALID and important: the UI renders a percentage with no stated denominator, so a reader assumes 100. Two denominators (75 macro-side, 100 all-in) exist in the model and the display must name which one. This is a real specification defect.
 - **sample-size maths verified:** SE of mean R ~= 1/sqrt(n); n of 200-300 separates +0.15R from zero at 95%. Expert 2's figure is correct. Expert 2's additional warning is stronger: the current data is from a trending bull regime that flatters longs, and long and short must be evaluated separately.
 - **status:** pending owner decision
+
+---
+
+## D-20261006-006 - Two corrections to my own claims, after a fourth expert review
+
+- **date:** 2026-10-06
+- **status:** accepted
+- **CORRECTION 1 - "Unproven" is not "disproven".** I wrote that the consensus premise is "structurally dead" and "dead-ended". That overclaims. The evidence supports: **publisher consensus is unavailable at zero cost under current licensing terms.** It does not support a claim about whether publisher consensus would have had any value. The distinction matters because a false-negative is a far more expensive error here than a false-positive - it would cause us to abandon something that works. Recorded language change: unproven, not disproven.
+- **CORRECTION 2 - provenance is NOT economic independence. This limits my own fix.**
+  D-20261006-002 made independence count DISTINCT `source_id` and excluded `internal://` sources. That is correct and it did stop the `desk-a/b/c` failure. But it proves **identity** separation, not **economic** independence. One entity operating two branded publishers produces two valid distinct source IDs and passes the gate perfectly.
+  - What provenance machinery actually proves: origin, and tamper evidence (signed manifests, allowlists, hash chains, append-only storage).
+  - What it cannot prove: that two publishers are not the same desk, the same data vendor, the same algorithm, or the same incentive.
+  - Genuine economic independence is an organisational question requiring ownership disclosure, conflict-of-interest declarations, source attestation and periodic audit - not a technical control.
+  - **Every expert proposed provenance as the answer to the independence problem. Provenance is not the answer to that question.** Recorded so D-20261006-002 is not read as having solved independence.
+- **CORRECTION 3 - the same trap applies to our own validation.** Overlapping 15M setups inside one gold move are economically ONE observation, not N. Counting them as independent would manufacture statistical confidence out of autocorrelation - the identical error class as counting nine seed rows as nine publishers, applied to our own backtest. Signals must be clustered before any sample size is quoted. This reconciles Expert 2's "n of 200-300 independent trades" with Expert 4's "the required sample depends on frequency, asset class, risk model and effect size".
+- **carried forward as the strongest guidance:** define the validation protocol BEFORE testing (freeze scoring logic and parameter versions; separate development, validation and untouched out-of-sample; walk-forward rather than one optimised backtest; record spread, slippage, latency, fees and rejected orders; report sample size, expectancy, drawdown, confidence intervals and regime-specific results), and **publish failed tests as well as successful ones.**
+- **commercial test adopted:** can a credible partner pay for the engine BEFORE substantial additional engineering? If not, do not build licensing infrastructure.
+- **status:** accepted
