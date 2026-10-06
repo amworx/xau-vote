@@ -696,3 +696,35 @@
   test existed precisely to catch the second, and did. Duplicated constants need a
   test that fails, not a comment asking people to be careful.
 - **tags:** outcome-recorder, measurement, pre-registration, rule-hash, rls
+
+## EVT-20261006-0212 recorder wired into the app; found and fixed a four-day stale-data bug
+
+- **mode:** BUILD / REVIEW
+- **action:** Wired the outcome recorder into `AnalysisService.refresh()`, added a
+  scheduled settlement job, verified end to end on the device.
+- **result:** real decisions now flow (one `NO_TRADE` plus its forced
+  counterfactual, genuine spread 0.58 USD, ATR5m 3.18, entry 4162.19 matching the
+  live market). The settlement cron ran unattended and closed the pending rows as
+  `ABSTAINED`. 250 app tests pass, analyzer clean.
+- **bugs found:**
+  - The four-day stale-bar truncation in `analysisBars` (D-20261006-010). Severe
+    and previously invisible.
+  - `OutcomeRecorder` resolved `Supabase.instance.client` in its constructor,
+    which made merely constructing an `AnalysisService` throw in 17 tests. Made
+    it lazy.
+  - Client parameter verification initially assumed a Dart-side SHA-256 hash. That
+    was a trap: Dart renders `9.0` as `"9.0"` and `JSON.stringify` renders it
+    `"9"`, so every honest row would have VOIDed on float formatting alone.
+    Switched to sending the numbers and comparing them server-side.
+  - A v4 function deploy shipped referencing an undefined `sideIsLong()` with the
+    whole `settle()` function dropped. Caught by re-proving settle after deploy.
+- **self-inflicted:** a PowerShell `Set-Content` rewrite of `live_repository.dart`
+  mangled a Unicode minus into mojibake and left an unbalanced brace. Reverted
+  with `git checkout` and redid the edit with the encoding-safe tool. Lesson: do
+  not rewrite whole source files with `Set-Content` in PowerShell 5.1.
+- **files:** lib/data/outcome_recorder.dart (new), lib/data/analysis_service.dart,
+  lib/data/live_repository.dart, test/outcome_recorder_test.dart (new),
+  test/analysis_bars_fetch_test.dart (new),
+  supabase/migrations/0011_outcome_recorder_settlement_cron.sql,
+  supabase/functions/outcome-recorder/index.ts (v6)
+- **tags:** outcome-recorder, stale-data, postgrest-row-cap, regression-guard

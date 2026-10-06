@@ -13,6 +13,7 @@
 /// shows its honest empty state. No placeholder price, no invented level.
 library;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:xau_core/xau_core.dart' hide Direction;
 
@@ -652,76 +653,137 @@ class LiveRepository {
 
   /// Closed OHLC bars per timeframe for the technical engine.
   ///
-  /// Reads `market_bars` and returns validated, closed bars in ascending time
-  /// order. In-progress bars are excluded here (and again by the engine) so an
-  /// unfinished candle can never influence a published level.
+  /// Returns validated, closed bars in ascending time order. In-progress bars
+  /// are excluded here (and again by the engine) so an unfinished candle can
+  /// never influence a published level.
+  ///
+  /// **One request per timeframe, newest first.** This is not a style choice.
+  /// Supabase caps a PostgREST response at 1000 rows per request, and that cap
+  /// is invisible to `current_setting('pgrst.db_max_rows')`. The previous
+  /// implementation made ONE request covering every timeframe ordered by
+  /// `open_time` ASCENDING, so the cap kept the OLDEST 1000 rows of the whole
+  /// table and discarded every recent bar. With ~2,800 rows present, all four
+  /// timeframes were truncated at the same instant and the app analysed bars
+  /// roughly four days stale while presenting them as live, with no error
+  /// anywhere to explain it.
+  ///
+  /// Ordering DESCENDING with a per-timeframe limit means each series receives
+  /// the newest N bars it asked for, so a cap can only ever cost extra history
+  /// rather than the most recent price. It also stops the failure growing worse
+  /// as the table fills, which is what the ascending version did.
   Future<Map<Tf, TimeframeBars>> analysisBars({int maxPerTimeframe = 600}) async {
-    final r = await _client
-        .from('market_bars')
-        .select('timeframe,open_time,open,high,low,close,volume,quality')
-        .eq('symbol', 'XAUUSD')
-        .eq('is_closed', true)
-        .order('open_time', ascending: true);
-
-    if (r.isEmpty) return const {};
-
-    final grouped = <Tf, List<Candle>>{};
-    final degraded = <Tf, bool>{};
-
-    for (final row in r) {
-      final tf = _toTf(row['timeframe']);
-      if (tf == null) continue;
-      final o = _toDouble(row['open']);
-      final h = _toDouble(row['high']);
-      final l = _toDouble(row['low']);
-      final c = _toDouble(row['close']);
-      if (o == null || h == null || l == null || c == null) continue;
-      final at = DateTime.tryParse('${row['open_time']}')?.toUtc();
-      if (at == null) continue;
-
-      final isDegraded = '${row['quality']}' == 'degraded';
-      (grouped[tf] ??= []).add(
-        Candle(
-          openTime: at,
-          open: o,
-          high: h,
-          low: l,
-          close: c,
-          volume: _toDouble(row['volume']),
-          source: 'supabase',
-          quality: isDegraded ? CandleQuality.degraded : CandleQuality.primary,
-        ),
-      );
-      // Sticky: a timeframe counts as degraded only if EVERY bar is degraded,
-      // so one primary bar is enough to make the series level-eligible.
-      degraded[tf] = (degraded[tf] ?? true) && isDegraded;
-    }
+    validateBarLimit(maxPerTimeframe);
 
     final out = <Tf, TimeframeBars>{};
+
     for (final tf in Tf.values) {
-      final bars = grouped[tf] ?? const <Candle>[];
-      if (bars.isEmpty) continue;
       final interval = switch (tf) {
         Tf.m5 => const Duration(minutes: 5),
         Tf.m15 => const Duration(minutes: 15),
         Tf.m30 => const Duration(minutes: 30),
         Tf.h1 => const Duration(hours: 1),
       };
-      final v = validateCandles(bars, interval);
-      // Keep only the most recent window: the engine needs a long series for
-      // EMA200 but not unbounded history.
-      final accepted = v.accepted;
-      final windowed = accepted.length > maxPerTimeframe
-          ? accepted.sublist(accepted.length - maxPerTimeframe)
-          : accepted;
+
+      final r = await _client
+          .from('market_bars')
+          .select('open_time,open,high,low,close,volume,quality')
+          .eq('symbol', 'XAUUSD')
+          .eq('timeframe', dbTf(tf))
+          .eq('is_closed', true)
+          .order('open_time', ascending: false)
+          .limit(maxPerTimeframe);
+
+      if (r.isEmpty) continue;
+
+      final bars = <Candle>[];
+      var allDegraded = true;
+
+      for (final row in r) {
+        final o = _toDouble(row['open']);
+        final h = _toDouble(row['high']);
+        final l = _toDouble(row['low']);
+        final c = _toDouble(row['close']);
+        if (o == null || h == null || l == null || c == null) continue;
+        final at = DateTime.tryParse('${row['open_time']}')?.toUtc();
+        if (at == null) continue;
+
+        final isDegraded = '${row['quality']}' == 'degraded';
+        bars.add(
+          Candle(
+            openTime: at,
+            open: o,
+            high: h,
+            low: l,
+            close: c,
+            volume: _toDouble(row['volume']),
+            source: 'supabase',
+            quality: isDegraded ? CandleQuality.degraded : CandleQuality.primary,
+          ),
+        );
+        // Sticky: a timeframe counts as degraded only if EVERY bar is degraded,
+        // so one primary bar is enough to make the series level-eligible.
+        allDegraded = allDegraded && isDegraded;
+      }
+
+      if (bars.isEmpty) continue;
+
+      // validateCandles sorts ascending, so the descending fetch order never
+      // leaks into the engine, which expects oldest-first everywhere.
+      final accepted = validateCandles(bars, interval).accepted;
+      if (accepted.isEmpty) continue;
+
       out[tf] = TimeframeBars(
         timeframe: tf,
-        bars: windowed,
-        allDegraded: degraded[tf] ?? false,
+        bars: accepted,
+        allDegraded: allDegraded,
       );
     }
+
     return out;
   }
+
+  /// PostgREST's per-response row cap.
+  ///
+  /// Set here rather than read from `current_setting('pgrst.db_max_rows')`
+  /// because on this project that setting is NULL while the cap is
+  /// demonstrably in force: a live request returned exactly 1000 rows with no
+  /// error and no warning. Anything that assumes it can discover the cap by
+  /// asking the database will silently mis-truncate.
+  static const int postgrestRowCap = 1000;
+
+  /// Rejects a bar limit the server would silently truncate.
+  ///
+  /// A limit above the cap produces a short response with no error, which is
+  /// how the original bug stayed invisible. Failing loudly at the call site is
+  /// the only defence.
+  @visibleForTesting
+  static void validateBarLimit(int maxPerTimeframe) {
+    if (maxPerTimeframe > postgrestRowCap) {
+      throw ArgumentError.value(
+        maxPerTimeframe,
+        'maxPerTimeframe',
+        'must be <= $postgrestRowCap; PostgREST caps responses at $postgrestRowCap '
+            'rows and a larger request would be silently truncated',
+      );
+    }
+  }
+
+  /// Database spelling of a timeframe.
+  ///
+  /// Kept explicit rather than derived from the enum name: `Tf.m15` is `m15`
+  /// here but `15m` in `market_bars.timeframe`, and getting it wrong yields an
+  /// empty series rather than an error.
+  ///
+  /// There is deliberately no reverse mapping any more. It existed only to
+  /// recognise whichever timeframes an unfiltered query happened to return, and
+  /// that query is exactly the thing being removed.
+  @visibleForTesting
+  static String dbTf(Tf tf) => switch (tf) {
+        Tf.m5 => '5m',
+        Tf.m15 => '15m',
+        Tf.m30 => '30m',
+        Tf.h1 => '1h',
+      };
 
   /// Newest genuine venue spread, or an explicit UNAVAILABLE state.
   ///
@@ -796,20 +858,5 @@ class LiveRepository {
       );
     }
     return out;
-  }
-
-  static Tf? _toTf(Object? v) {
-    switch ('$v') {
-      case '5m':
-        return Tf.m5;
-      case '15m':
-        return Tf.m15;
-      case '30m':
-        return Tf.m30;
-      case '1h':
-        return Tf.h1;
-      default:
-        return null;
-    }
   }
 }

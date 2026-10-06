@@ -228,18 +228,51 @@ async function record(
   const clientHash = body.clientRuleHash ? String(body.clientRuleHash) : null;
   const hashMismatch = clientHash != null && clientHash !== serverHash;
 
+  // Parameter verification.
+  //
+  // The client sends the NUMBERS its engine actually used, not a hash it
+  // computed locally. Reproducing this function's canonical-JSON encoding in
+  // Dart is a formatting trap: Dart renders 9.0 as "9.0" where JSON.stringify
+  // renders it "9", so a client-computed hash would mismatch on float
+  // formatting alone and VOID every honest row. Comparing values numerically
+  // here avoids the trap and makes a failure readable instead of cryptographic.
+  const expectedParams: Record<string, number> = {
+    ...CANONICAL_THRESHOLDS,
+    ...CANONICAL_STOP_CONFIG,
+  };
+  let paramsMismatch = false;
+  let paramsAbsent = false;
+  const sentParams = body.clientParameters as Record<string, unknown> | null | undefined;
+
+  if (sentParams == null || typeof sentParams !== 'object') {
+    paramsAbsent = true;
+  } else {
+    for (const [key, want] of Object.entries(expectedParams)) {
+      const got = num(sentParams[key]);
+      if (got == null || got !== want) { paramsMismatch = true; break; }
+    }
+  }
+
+  const voidReason = hashMismatch
+    ? 'RULE_HASH_MISMATCH'
+    : paramsMismatch
+    ? 'RULE_PARAMS_MISMATCH'
+    : null;
+
   const spreadValue = num(body.spreadValue);
   const spreadStatus = String(body.spreadStatus ?? 'unavailable');
 
   const dataQuality = strArray(body.dataQuality);
   if (clientHash == null) dataQuality.push('NO_CLIENT_HASH');
+  if (paramsAbsent) dataQuality.push('NO_CLIENT_PARAMS');
   if (hashMismatch) dataQuality.push('RULE_HASH_MISMATCH');
+  if (paramsMismatch) dataQuality.push('RULE_PARAMS_MISMATCH');
   if (spreadStatus !== 'available' || spreadValue == null) dataQuality.push('SPREAD_UNAVAILABLE');
 
   const sign = side === 'LONG' || side === 'FORCED_LONG' ? 1 : -1;
   const macroAlignment = triState(body.macroAlignment);
   const sentimentAlignment = triState(body.sentimentAlignment);
-  const status = hashMismatch ? 'VOID' : 'PENDING';
+  const status = voidReason == null ? 'PENDING' : 'VOID';
 
   const rows: Record<string, unknown>[] = [{
     decision_key: decisionKey,
@@ -262,7 +295,7 @@ async function record(
     spread_value: spreadValue,
     engine_version: ENGINE_VERSION,
     rule_hash: serverHash,
-    void_reason: hashMismatch ? 'RULE_HASH_MISMATCH' : null,
+    void_reason: voidReason,
     is_counterfactual: false,
     parent_decision_key: null,
     status,
@@ -297,7 +330,7 @@ async function record(
       spread_value: spreadValue,
       engine_version: ENGINE_VERSION,
       rule_hash: serverHash,
-      void_reason: hashMismatch ? 'RULE_HASH_MISMATCH' : null,
+      void_reason: voidReason,
       is_counterfactual: true,
       parent_decision_key: decisionKey,
       status,
@@ -319,7 +352,7 @@ async function record(
     grade: rows[0].grade,
     recorded: rows.length,
     ruleHash: serverHash,
-    voided: hashMismatch ? 'RULE_HASH_MISMATCH' : null,
+    voided: voidReason,
     counterfactualRecorded: cf != null,
   });
 }

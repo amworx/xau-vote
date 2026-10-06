@@ -376,3 +376,48 @@
   and a caller can submit synthetic inputs. Settlement is independent so a forged
   row cannot invent a favourable outcome, but the input path is open. The fix is
   real authentication, not a workaround.
+
+---
+
+## D-20261006-010 - The live app was analysing four-day-old bars and calling them live
+
+- **date:** 2026-10-06
+- **severity:** highest found to date. Not a display bug: every verdict the app
+  produced was computed from stale prices.
+- **status:** fixed and verified on hardware.
+- **root cause:** `LiveRepository.analysisBars()` made ONE PostgREST request
+  covering all four timeframes, `.order('open_time', ascending: true)`, with no
+  limit. Supabase caps a response at 1000 rows. The cap therefore kept the
+  OLDEST 1000 rows of the entire table and discarded every recent bar. With
+  ~2,800 rows present, all four series were truncated at the same wall-clock
+  instant (every timeframe newest = 2026-10-02 22:xx) and the app analysed
+  roughly four-day-old data while presenting it as current.
+- **why it stayed invisible:** the cap produces a SHORT response, not an error.
+  Nothing threw, nothing logged, the UI rendered normally. The only visible tell
+  was that the price on screen lagged the real market by days.
+- **the cap is not discoverable from SQL.** `current_setting('pgrst.db_max_rows')`
+  is NULL on this project while the cap is demonstrably in force. Any code that
+  tries to read the limit from the database will believe there is none.
+- **fix:** one request per timeframe, filtered by `timeframe`, ordered
+  `open_time DESCENDING`, with an explicit per-timeframe limit. Descending
+  ordering means a cap can only cost extra history, never the most recent price.
+  The dead reverse mapping (`_toTf`) was removed with the unfiltered query.
+  `validateBarLimit` now rejects a limit above 1000 rather than letting it
+  truncate silently.
+- **how it was found:** the outcome recorder, not review. The first decision the
+  app wrote was dated 2026-10-02 when the server clock said 2026-10-06, with a
+  price 16 USD below the live market. The recorder is what made an invisible
+  data fault visible, which is the strongest argument yet for having built it
+  before continuing to build features.
+- **contaminated data removed:** the decisions written during the broken window
+  were deleted. Their inputs were stale bars, so they are not observations of
+  this strategy and keeping them would have corrupted the baseline.
+- **regression guard:** `test/analysis_bars_fetch_test.dart` asserts the
+  timeframe spelling, the row-cap guard, and - deliberately - reads the source
+  to confirm the ordering stays DESCENDING and stays per-timeframe. A
+  source-reading test is normally a smell, but this bug produced no runtime
+  error at all, so reading the code that causes it is the only way to catch its
+  return.
+- **lesson:** an unbounded read from a growing table is not neutral. It fails in
+  the direction of looking correct while being wrong, and the failure gets worse
+  as the table fills. Always order newest-first and always bound the request.

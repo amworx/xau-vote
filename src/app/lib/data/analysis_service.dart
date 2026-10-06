@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:xau_core/xau_core.dart';
 
 import 'live_repository.dart';
+import 'outcome_recorder.dart';
 import '../models/sentiment_layers.dart';
 
 /// Runs the multi-timeframe analysis on demand and caches the result.
@@ -27,12 +28,29 @@ import '../models/sentiment_layers.dart';
 bool sessionIsOpenAt(DateTime utc) => AnalysisService.sessionGate(utc);
 
 class AnalysisService extends ChangeNotifier {
-  AnalysisService({LiveRepository? repository, MarketScanner? scanner})
-      : _repo = repository ?? LiveRepository(),
-        _scanner = scanner ?? const MarketScanner();
+  AnalysisService({
+    LiveRepository? repository,
+    MarketScanner? scanner,
+    OutcomeRecorder? recorder,
+  })  : _repo = repository ?? LiveRepository(),
+        _scanner = scanner ?? const MarketScanner(),
+        _recorder = recorder ?? OutcomeRecorder();
 
   final LiveRepository _repo;
   final MarketScanner _scanner;
+
+  /// Writes each decision to the outcome recorder. Injectable so tests can
+  /// substitute a recorder and assert on what would have been submitted without
+  /// touching the network.
+  final OutcomeRecorder _recorder;
+
+  /// The decision key last submitted, or null if none has been.
+  ///
+  /// Exposed for tests and diagnostics only. The recorder deliberately does not
+  /// surface this in the UI: publishing "we logged your decision" invites the
+  /// record being read as a performance claim, which it is not.
+  @visibleForTesting
+  String? get lastRecordedKey => _recorder.lastSubmittedKey;
 
   ScanResult? _cached;
   DateTime? _cachedAt;
@@ -111,6 +129,13 @@ class AnalysisService extends ChangeNotifier {
               '(macro coverage ${(layers.macroCoverage * 100).toStringAsFixed(0)}%'
               '${unmeasured.isEmpty ? '' : ', missing ${unmeasured.join(', ')}'})';
 
+      // Extracted because the outcome recorder needs the same price the scan
+      // used. Recomputing it at send time would let the two disagree if a bar
+      // landed mid-scan, which would score the decision against a price the
+      // engine never saw.
+      final currentPrice =
+          m5Bars.bars.isNotEmpty ? m5Bars.bars.last.close : h1Bars?.bars.lastOrNull?.close;
+
       final scan = _scanner.scan(
         ScanRequest(
           direction: direction,
@@ -122,7 +147,7 @@ class AnalysisService extends ChangeNotifier {
           spreadStatusOverride: spreadStatus,
           events: events,
           now: now,
-          currentPrice: m5Bars.bars.isNotEmpty ? m5Bars.bars.last.close : h1Bars?.bars.lastOrNull?.close,
+          currentPrice: currentPrice,
           sessionOpen: isSessionOpen(now),
           // The two §5.1 inputs the §8.3 overlay consumes. Supplying them is
           // what makes the overlay reachable at all.
@@ -155,6 +180,23 @@ class AnalysisService extends ChangeNotifier {
       // Notify after the state is fully written so a listener never observes a
       // half-updated snapshot.
       notifyListeners();
+
+      // Measurement, not a user-facing feature. Fire-and-forget, and
+      // guaranteed not to throw, so a failed write can never interfere with the
+      // analysis the user is looking at. Nothing here changes what the app shows.
+      unawaited(
+        _recorder.record(
+          scan: scan,
+          m15: m15Bars,
+          thresholds: _scanner.engine.thresholds,
+          stopConfig: _scanner.stopConfig,
+          candidateDirection: direction,
+          currentPrice: currentPrice,
+          effectiveSpreadStatus: spreadStatus,
+          effectiveSpreadNote: qualityNote,
+        ),
+      );
+
       return _cached;
     } catch (e) {
       _error = '$e';
