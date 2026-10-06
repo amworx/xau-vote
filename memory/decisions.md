@@ -253,3 +253,17 @@
 - **consequence of D-20261006-002:** the consensus path now correctly refuses. That leaves the product with no published setups at all until real publishers exist, which is the honest state, but it means `collect-ideas` is now only producing data that can never be published.
 - **decision:** leaving the seed generator running is acceptable and deliberate for now - it keeps the pipeline exercised and visible - but nothing it produces may ever satisfy the independence gate. The gate is the enforcement; the generator is not trusted.
 - **open:** decide whether `collect-ideas` should stop entirely, or be relabelled in the UI as a demo fixture so a trader can never mistake seeded rows for a publisher view. Relabelling is the better answer and is a UI change requiring prototype + approval.
+
+---
+
+## D-20261006-004 - WGC FAILS the licensing gate; drop the fourth layer (expert review corrected a factual error of mine)
+
+- **date:** 2026-10-06
+- **how found:** an external expert challenged the premise that WGC/Goldhub is public-domain data. I verified it rather than accepting or dismissing it.
+- **VERIFIED AGAINST THE SOURCE.** gold.org/terms-and-conditions states: content is provided "only for your personal, non-commercial use", and absent other permission you may not "modify, copy, scrape, distribute, transmit, display, reproduce, duplicate, publish, license, frame, link, create derivative works from, transfer or otherwise use in any manner, in whole or in part" without "the prior written authorisation of WGC and with suitable accreditation to WGC."
+- **compounding fact:** the underlying series is not even all WGC's. The Q4/FY2024 methodology note states demand and supply data from Q1 2014 is provided by Metals Focus, and 2010-2013 is "a synthesis of Metals Focus and GFMS, **Thomson Reuters** data".
+- **conclusion:** this is "personal, non-commercial" use only. A published Android app that redistributes derived figures is neither personal nor non-commercial, and scraping is named explicitly. WGC **fails rule 5** (automated collection + redistribution). It must be dropped, not left as a null row.
+- **my error:** `plans/2026-10-06_source-architecture-expert-brief.md` described the four layers as "public-domain government data". WGC is a trade association, not a government publisher. The methodology document's A81.1 P1 list includes WGC; that list is now known to contain one entry that fails our own gate.
+- **CONFIRMED CLEAN by contrast:** CFTC (US government), US Treasury (US government) and FOMC statements are fine. All three live layers are genuinely public-domain government publications.
+- **weight consequence that MUST be applied:** macro-side weight is currently denominated as policy 35 + WGC 20 + market_implied 20 = **75**. With WGC permanently excluded the achievable macro-side weight is **55**, and the same measured data becomes **100%** coverage rather than 73%. The coverage denominator must be recomputed over ACHIEVABLE weight, otherwise the UI permanently implies a 27% shortfall that does not exist and the 50% gate becomes meaningless.
+- **status:** accepted
