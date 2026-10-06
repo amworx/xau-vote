@@ -59,6 +59,38 @@ void main() {
       expect(isSessionOpen(utc(2026, 1, 14, 15)), isTrue);
       expect(isSessionOpen(utc(2026, 7, 15, 15)), isTrue);
     });
+
+    test('the daily 17:00-18:00 New York halt is closed midweek', () {
+      // Regression 2026-10-06: the header showed a live "LATE US" pill at
+      // 17:30 New York while the venue was halted for rollover. Weekend logic
+      // alone called it open because Tuesday is not Saturday.
+      // Winter: 22:00 UTC is 17:00 EST (shut), 23:00 UTC is 18:00 EST (open).
+      expect(isSessionOpen(utc(2026, 1, 14, 22)), isFalse);
+      expect(isSessionOpen(utc(2026, 1, 14, 23)), isTrue);
+      // Summer: 21:00 UTC is 17:00 EDT (shut), 22:00 UTC is 18:00 EDT (open).
+      expect(isSessionOpen(utc(2026, 7, 15, 21)), isFalse);
+      expect(isSessionOpen(utc(2026, 7, 15, 22)), isTrue);
+      // The halt labels CLOSED, never a session name.
+      expect(sessionAt(utc(2026, 7, 15, 21, 30)), MarketSession.closed);
+      expect(sessionLabel(sessionAt(utc(2026, 7, 15, 21, 30))), 'CLOSED');
+      // Next open from inside the halt is the same evening's 18:00 New York.
+      final next = nextOpenUtc(utc(2026, 7, 15, 21, 30))!;
+      expect(newYorkTime(next).hour, 18);
+      expect(newYorkTime(next).day, 15);
+    });
+
+    test('the closure reason tells halt apart from weekend', () {
+      // Tuesday 17:30 New York is the daily halt, not the weekend.
+      expect(closureAt(utc(2026, 7, 14, 21, 30)), MarketClosure.dailyHalt);
+      // Friday 17:30 New York is already the weekend despite the hour.
+      expect(closureAt(utc(2026, 7, 10, 21, 30)), MarketClosure.weekend);
+      // Sunday 17:30 New York is still the weekend despite the hour.
+      expect(closureAt(utc(2026, 7, 12, 21, 30)), MarketClosure.weekend);
+      // Saturday is the weekend.
+      expect(closureAt(utc(2026, 7, 11, 15)), MarketClosure.weekend);
+      // Open market has no closure reason.
+      expect(closureAt(utc(2026, 7, 15, 13)), isNull);
+    });
   });
 
   group('session labelling', () {

@@ -940,3 +940,37 @@
    - **open:** verbatim reply still not archived. The licence file closes when
      the owner pastes it. No row may be approved before that filing.
    - **tags:** fxscalpers, activation, licence-evidence
+
+## EVT-20261006-0217 market pill lied during the daily halt; price age now shown
+
+   - **mode:** BUILD
+   - **action:** Two user-reported defects, both confirmed before fixing.
+   - **defect 1 (real bug):** the header showed a live session pill midweek at
+     17:30 New York while the venue was halted for rollover. `isSessionOpen`
+     modelled only the weekend; the daily 17:00-18:00 New York halt had no rule
+     at all. Fixed in the engine (single rule, both consumers), with regression
+     tests. Verified on device during the halt: MARKET CLOSED pill, correct
+     halt copy, REOPENS IN counting to 18:00 New York.
+   - **defect 1b (found while verifying):** the closed card said "closed for the
+     weekend" on a Tuesday. Added `closureAt()` (weekend vs dailyHalt, with
+     Friday-17:xx and Sunday-17:xx correctly reading as weekend) and separate
+     copy on Radar and Signal cards. Same-evening halt vs two-day weekend are
+     different waits and now get different words.
+   - **defect 2 (not a bug; a ceiling):** the Radar price looked frozen because
+     gold barely moved AND the provider republishes on a ~30s cycle (measured:
+     21:32:41Z -> 21:33:11Z). The pipe was healthy. MetaTrader-like per-second
+     ticks are not achievable at $0 with display-licensable data: OANDA has real
+     ticks but its licence forbids display, exchange proxies break instrument
+     honesty, and polling harder cannot beat the provider`s own publish cycle.
+     So instead of faking motion, the caption now shows the provider-clock age
+     ("Live from the price provider - 21s ago"), which ticks every 5s poll and
+     proves freshness even when the number sits still. Verified on device.
+   - **files:** src/xau_core/lib/analysis/session.dart,
+     src/xau_core/test/session_test.dart, src/app/lib/data/live_data.dart,
+     src/app/lib/screens/radar_screen.dart, src/app/lib/screens/signal_screen.dart,
+     src/app/test/live_mode_test.dart
+   - **tests:** xau_core 287 (was 286), app 260. Both analyzers clean.
+   - **note:** Gold Hunts session-view integration is mid-flight (migration 0022
+     applied without cron, sync function written, NOT deployed, no app changes
+     yet). Resume there next.
+   - **tags:** session-calendar, daily-halt, price-freshness, honesty-copy

@@ -563,6 +563,18 @@ void main() {
       expect(live.price, 4170.66);
       expect(live.priceIsLive, isFalse);
     });
+
+    test('a shown price always carries a non-negative age', () async {
+      final live = LiveData(repository: _StubRepository(price: 4175.30));
+      addTearDown(live.dispose);
+      await live.refresh();
+
+      // The stub timestamp is far in the past, so the age is large - the point
+      // is the contract: present whenever a price is shown, and never negative
+      // (clock skew must not print "-3s ago").
+      expect(live.priceAgeSeconds, isNotNull);
+      expect(live.priceAgeSeconds!, greaterThanOrEqualTo(0));
+    });
   });
   // `mockMode` is a compile-time flag, so a test cannot flip the build. What
   // the screens branch on is the [LiveData] `main.dart` mounts above them for a

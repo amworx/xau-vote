@@ -47,6 +47,13 @@ DateTime _transitionUtc(int year, int month, int nth) {
 /// Whether the XAUUSD spot market is open at [utc].
 bool isSessionOpen(DateTime utc) {
   final ny = newYorkTime(utc);
+  // Daily trading halt, 17:00-18:00 New York (rollover). The venue publishes no
+  // tradable quotes in this hour. Weekend logic alone would call midweek 17:xx
+  // open - on 2026-10-06 the header showed a live "LATE US" pill at 17:30 New
+  // York while the market was halted. The hour check comes first so it applies
+  // uniformly: Friday 17:xx was already shut by the 17:00 close, Sunday 17:xx
+  // by the 18:00 open, and midweek had no rule at all until this one.
+  if (ny.hour == 17) return false;
   switch (ny.weekday) {
     case DateTime.saturday:
       return false;
@@ -81,6 +88,28 @@ MarketSession sessionAt(DateTime utc) {
   if (minuteOfDay < usStart) return MarketSession.europe;
   if (minuteOfDay < lateUsStart) return MarketSession.us;
   return MarketSession.lateUs;
+}
+
+/// Why the market is closed, for honest labelling.
+///
+/// A trader reading "closed for the weekend" on a Tuesday evening has been
+/// misled about when to come back - and "reopens in 30 minutes" next to a
+/// weekend message is a contradiction on screen. The two closures mean
+/// different waits, so they get different words.
+enum MarketClosure { weekend, dailyHalt }
+
+/// The reason the market is closed at [utc], or null when it is open.
+MarketClosure? closureAt(DateTime utc) {
+  if (isSessionOpen(utc)) return null;
+  final ny = newYorkTime(utc);
+  // The halt only reads as a halt on Monday-Thursday evenings. Friday 17:xx is
+  // already the weekend (closed since 17:00), and Sunday 17:xx is still the
+  // weekend (opens 18:00) - calling either "a 30-minute break" would lie about
+  // the wait.
+  final isMidweek =
+      ny.weekday >= DateTime.monday && ny.weekday <= DateTime.thursday;
+  if (isMidweek && ny.hour == 17) return MarketClosure.dailyHalt;
+  return MarketClosure.weekend;
 }
 
 /// Short label for the header, e.g. `CLOSED`, `US`, `ASIA`.

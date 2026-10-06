@@ -668,9 +668,14 @@ class _MarketClosedNotice extends StatelessWidget {
   const _MarketClosedNotice();
 
   @override
+  @override
   Widget build(BuildContext context) {
     final reopens = nextOpenUtc(DateTime.now().toUtc());
     final wait = reopens?.difference(DateTime.now().toUtc());
+    // Same distinction as the Radar closed card: a Tuesday-evening halt is not
+    // "the weekend", and the wait differs by two days.
+    final halted =
+        closureAt(DateTime.now().toUtc()) == MarketClosure.dailyHalt;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
       child: HarborCard(
@@ -689,9 +694,12 @@ class _MarketClosedNotice extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Gold spot is closed for the weekend. Entry, stop and targets '
-              'are withheld until the session reopens.',
+            Text(
+              halted
+                  ? 'Gold spot is halted for the daily rollover break. Entry, '
+                      'stop and targets are withheld until quotes resume.'
+                  : 'Gold spot is closed for the weekend. Entry, stop and targets '
+                      'are withheld until the session reopens.',
               style: TextStyle(
                 fontFamily: 'Sora',
                 fontSize: 12,

@@ -439,6 +439,7 @@ class _LiveQuoteHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final price = live.price;
   final priceIsLive = live.priceIsLive;
+  final priceAgeSeconds = live.priceAgeSeconds;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 14),
       child: Column(
@@ -472,14 +473,17 @@ class _LiveQuoteHero extends StatelessWidget {
             ),
           const SizedBox(height: 8),
           Text(
-            // Say where the number actually came from. The price is read live
-            // from the provider, so describing it as a "stored snapshot" would be
-            // wrong; and when the provider is unreachable the number IS a stored
-            // snapshot, so claiming otherwise would be worse.
+            // Say where the number actually came from AND how old it is. A
+            // slow-moving price looks frozen whether the feed is healthy or
+            // dead, so the age - ticking off the provider's own clock, never
+            // the poll time - is the proof of life. A stale fallback keeps its
+            // honest label rather than borrowing the live one.
             price == null
                 ? 'No market snapshot stored yet — the first tick appears here.'
                 : priceIsLive
-                    ? 'Live from the price provider.'
+                    ? (priceAgeSeconds != null
+                        ? 'Live from the price provider · ${priceAgeSeconds}s ago.'
+                        : 'Live from the price provider.')
                     : 'Provider unreachable — showing the latest stored snapshot.',
             style: const TextStyle(fontFamily: 'Sora', fontSize: 11, color: harborFaint),
           ),
@@ -625,6 +629,11 @@ class _MarketClosedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final reopens = nextOpenUtc(DateTime.now().toUtc());
     final wait = reopens?.difference(DateTime.now().toUtc());
+    // Weekend and daily halt get different words: "closed for the weekend" on
+    // a Tuesday evening lies about the wait, and "reopens in 30 minutes" next
+    // to a weekend message is a contradiction on screen.
+    final halted =
+        closureAt(DateTime.now().toUtc()) == MarketClosure.dailyHalt;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: VerdictCardShell(
@@ -643,9 +652,14 @@ class _MarketClosedCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Gold spot is closed for the weekend. Levels are withheld until '
-              'the session reopens — a setup here could not be entered.',
+            Text(
+              halted
+                  ? 'Gold spot is halted for the daily rollover break. Levels '
+                      'are withheld until quotes resume — a setup here could '
+                      'not be entered.'
+                  : 'Gold spot is closed for the weekend. Levels are withheld '
+                      'until the session reopens — a setup here could not be '
+                      'entered.',
               style: TextStyle(
                 fontFamily: 'Sora',
                 fontSize: 12,

@@ -53,6 +53,21 @@ class LiveData extends ChangeNotifier {
   /// False when the price came from the stored snapshot because the provider was
   /// unreachable. The UI must not present a stale number as live.
   bool _priceIsLive = false;
+
+  /// Age of [price] against the provider's own timestamp, in whole seconds.
+  ///
+  /// This is what makes a slow-moving price verifiably alive: gold can sit
+  /// nearly flat for minutes, and a bare number then looks frozen whether the
+  /// feed is healthy or dead. The age ticks on every 5s poll from the
+  /// provider's own clock, so "Live - 8s ago" proves freshness while "Live -
+  /// 4m ago" would expose a stall. Never derived from the poll time, which
+  /// would claim freshness the provider never stated.
+  int? get priceAgeSeconds {
+    final at = _priceAt;
+    if (at == null) return null;
+    final age = DateTime.now().toUtc().difference(at).inSeconds;
+    return age < 0 ? 0 : age;
+  }
   double? _sessionLow;
   double? _sessionHigh;
   DisplaySignal? _signal;
