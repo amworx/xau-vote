@@ -213,6 +213,7 @@ class _RadarScreenState extends State<RadarScreen> {
           scan: analysis?.result,
           onRefresh: analysis?.refresh,
           layers: analysis?.layers,
+          error: analysis?.error,
         ),
         // The switcher demos states the live pipeline owns, so it must not
         // appear next to real rows.

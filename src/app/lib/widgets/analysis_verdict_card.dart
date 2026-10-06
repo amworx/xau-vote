@@ -31,6 +31,7 @@ class AnalysisVerdictCard extends StatelessWidget {
     required this.scan,
     this.onRefresh,
     this.layers,
+    this.error,
   });
 
   final ScanResult? scan;
@@ -43,10 +44,19 @@ class AnalysisVerdictCard extends StatelessWidget {
   /// layer and a measured one must not look alike.
   final SentimentLayers? layers;
 
+  /// Why the scan produced no result, when it failed rather than never having
+  /// run. Surfaced instead of being swallowed behind "waiting for history".
+  final String? error;
+
   @override
   Widget build(BuildContext context) {
     final s = scan;
     if (s == null) {
+      // A failed scan and a scan that has not run yet are different states and
+      // must not read the same. Showing "waiting for enough history" while the
+      // scan was actually throwing is how a broken pipeline hides behind a
+      // reassuring message.
+      final failed = error != null;
       return HarborCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,17 +64,47 @@ class AnalysisVerdictCard extends StatelessWidget {
             const HarborEyebrow('MULTI-TIMEFRAME ANALYSIS'),
             const SizedBox(height: 10),
             Text(
-              'No analysis yet',
+              failed ? 'Analysis failed' : 'No analysis yet',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: harborInk,
+                    color: failed ? harborShort : harborInk,
                   ),
             ),
             const SizedBox(height: 4),
             Text(
-              'The scan runs on closed bars only. Waiting for enough history to evaluate the 1H regime.',
+              failed
+                  ? 'The scan could not complete. Nothing is being inferred from the absence of a result.'
+                  : 'The scan runs on closed bars only. Waiting for enough history to evaluate the 1H regime.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: harborDim),
             ),
+            if (failed) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: harborShortSoft,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFF2C2C2)),
+                ),
+                child: Text(
+                  error!,
+                  style: const TextStyle(
+                    fontFamily: 'SpaceMono',
+                    fontSize: 10,
+                    height: 1.4,
+                    color: Color(0xFFB23A3A),
+                  ),
+                ),
+              ),
+            ],
+            if (onRefresh != null) ...[
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: onRefresh,
+                child: const HarborChip('RESCAN', glyph: Icons.refresh_rounded),
+              ),
+            ],
           ],
         ),
       );

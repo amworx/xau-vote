@@ -204,3 +204,27 @@
 - **second bug found by a test:** a zero alignment was being labelled `CONFLICT`. A measured neutral opinion is not a conflict, and calling it one would penalise a layer for having no view. `NEUTRAL` is now a distinct tag, separate from `NOT WEIGHED` - a measured zero opinion is not the absence of one.
 - **kept honest:** `NOT MEASURED` is visually distinct from `NEUTRAL`; partial layers name the missing part (`usd and volatility of this layer are missing`, `SEP projections not read`); a stale layer reads `STALE` and says it is ignored; below the coverage gate the strip reads `NOT WEIGHED`. No probability or vote-count language, asserted by a test.
 - **verification:** 17 widget tests including that flipping the live side changes NEITHER row. Full app suite 213 pass, analyzer clean. Visual check via a web build of the real card at 390px.
+
+---
+
+## D-20261005-013 - The analysis card must distinguish "failed" from "not run yet"
+
+- **date:** 2026-10-06
+- **found on hardware:** the Radar card read "No analysis yet - waiting for enough history to evaluate the 1H regime" while `market_bars` held 342 closed 1h bars, 597 closed 15m, 423 closed 30m and 1292 closed 5m with ZERO gaps. The copy was confidently wrong.
+- **two causes, both real defects:**
+  1. `AnalysisService.startPolling` used `Timer.periodic` only, so the first scan did not run for a full 60 seconds after launch. `LiveData.startPolling` fires immediately; the analysis service did not. A one-minute delay is indistinguishable from missing data.
+  2. `refresh()` catches everything into `_error` and returns null, but the card only checked `scan == null` and never rendered `error`. A permanently throwing scan therefore displayed a reassuring "waiting for history" message indefinitely.
+- **decision:** `startPolling` runs one scan immediately; `AnalysisVerdictCard` takes `error` and renders an "Analysis failed" state in red with the message and a RESCAN action, while "no analysis yet" is reserved for a scan that genuinely has not produced a result.
+- **general rule this restates:** a message that asserts a cause must not be shown when the cause is unknown. "Waiting for enough history" is a claim about the database, and it was false.
+- **status:** accepted
+
+---
+
+## D-20261005-014 - Never build a release APK with a placeholder credential
+
+- **date:** 2026-10-06
+- **what happened:** building 1.0.8 while blocked on the service-role key, I passed `SUPABASE_PUBLISHABLE_KEY=sb_publishable_mfrzwmqgwgcyaxehdbqh` - the project ref with a `sb_publishable_` prefix. It is not a key. The installed app returned `PostgrestException: Invalid API key` (401) and showed an empty feed with "No analysis yet".
+- **why it mattered:** the app was silently non-functional and the failure surfaced only as a degraded banner. A build with a plausible-looking-but-wrong credential looks successful right up until it is on a device.
+- **correct value:** `sb_publishable_RQuuxcbF5SyyDC0bkn0ZdQ_2jrrBfT6` (project "default"). Readable from the MCP tool `supabase_get_publishable_keys` - the publishable key is NOT a secret and does not need to be pasted, rotated, or withheld. Only the service-role key does.
+- **rule added:** before installing or publishing an APK, verify the feed answers 200 with the exact credential used in the build. A key is a build input like any other and is verified, not assumed.
+- **status:** accepted

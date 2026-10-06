@@ -614,3 +614,26 @@
   - A prototype can only exercise the states it renders. Rendering the real widget with a real no-direction verdict found a bug the three-state prototype structurally could not.
   - Do not store a side-relative value and then re-derive side-relativeity downstream. Pass the raw fact and let each consumer orient it.
 - **tags:** ui, sentiment-layers, verdict-card, side-awareness, prototype-to-flutter
+
+---
+
+## EVT-20261006-0001 - Sideloaded 1.0.8, fixed a dead feed, and proved the core function on hardware
+
+- **id:** EVT-20261006-0001
+- **timestamp:** 2026-10-06T13:50 .. 2026-10-06T14:20
+- **mode:** BUILD + VERIFY
+- **trigger:** user reported the in-app updater still could not install, with the 1.0.7-era message.
+- **actions:**
+  1. `adb devices` showed the phone online (Android 16 / SDK 36) with **1.0.6 code 7** installed - older than even 1.0.7. The message they saw was from that build.
+  2. Sideloaded the built 1.0.8 APK with `adb install -r -d`, bypassing the in-app updater entirely. Installed as code 9. `appops get com.xauvote.app REQUEST_INSTALL_PACKAGES` -> `allow`.
+  3. The screenshot then showed `PostgrestException: Invalid API key` (401): I had built that APK with a placeholder publishable key. Rebuilt with the real one from `supabase_get_publishable_keys` and reinstalled.
+  4. Analysis still reported "No analysis yet" with 342 closed 1h bars present. Two defects found: the 60s delay before the first scan, and a thrown error being rendered as a reassuring "waiting for history" message. Both fixed.
+- **result:** full pipeline live on the phone - price 4,156.44, a LONG consensus setup with levels, and the analysis card showing NO TRADE / FILTERING with TECHNICAL 5/12, FINAL 8.0, MACRO COVERAGE 73%, all four layers, and `vs LONG CONFLICT / vs SHORT SUPPORTS`. The cron had refreshed the real yield to 2.95% / +5bp.
+- **side benefit:** FINAL 8.0 = technical 5 + 2*1 (macro) + 1 (sentiment) confirms the side-aware overlay is working - macro is contributing POSITIVE because the candidate side is short.
+- **lessons:**
+  - `adb install` is the escape hatch for a broken updater, and it is instant. Reach for it when the updater is the thing under test.
+  - The publishable key is not a secret and does not need to be withheld from tooling; only the service-role key does. Conflating the two caused a dead build.
+  - Verified the credential against the API before building, next time.
+  - "Waiting for enough history" was a false statement about the database. Error text that asserts a cause must not be shown when the cause is unknown.
+- **open:** the in-app install path itself is STILL unverified - 1.0.8 is the newest build and is now installed, so there is no update to offer. The permission fix (canRequestPackageInstalls + ACTION_MANAGE_UNKNOWN_APP_SOURCES + ClipData + needs_permission) is in place but untested end to end. Service-role key still needs rotating, and 1.0.8 is still unpublished.
+- **tags:** release, adb, install-permission, credential, hardware-verification, core-function

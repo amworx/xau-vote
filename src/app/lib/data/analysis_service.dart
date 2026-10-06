@@ -163,8 +163,14 @@ class AnalysisService extends ChangeNotifier {
   }
 
   /// Starts periodic rescanning. Callers must [dispose] to cancel the timer.
+  ///
+  /// Runs one scan immediately rather than waiting a full interval first. With a
+  /// 60-second period the card used to sit empty for a minute after launch,
+  /// showing "waiting for enough history" when the history was already there —
+  /// a delay that read exactly like missing data.
   void startPolling({Duration interval = const Duration(seconds: 60)}) {
     _timer?.cancel();
+    unawaited(refresh());
     _timer = Timer.periodic(interval, (_) => refresh());
   }
 
