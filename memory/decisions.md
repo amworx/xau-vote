@@ -301,3 +301,19 @@
 - **carried forward as the strongest guidance:** define the validation protocol BEFORE testing (freeze scoring logic and parameter versions; separate development, validation and untouched out-of-sample; walk-forward rather than one optimised backtest; record spread, slippage, latency, fees and rejected orders; report sample size, expectancy, drawdown, confidence intervals and regime-specific results), and **publish failed tests as well as successful ones.**
 - **commercial test adopted:** can a credible partner pay for the engine BEFORE substantial additional engineering? If not, do not build licensing infrastructure.
 - **status:** accepted
+
+---
+
+## D-20261006-007 - Validation metric: expectancy in R, not win rate (sample-efficiency finding)
+
+- **date:** 2026-10-06
+- **finding from expert review, checked arithmetically.** An expert specified win-rate sample sizes of "~380 trades for 55% vs 50%" and "~2400 for 52% vs 50%". Both are optimistic by roughly 4x. Two-proportion test, alpha 0.05 two-sided, power 80%:
+  - 55% vs 50% -> **1,563 per group**
+  - 52% vs 50% -> **9,795 per group**
+- **consequence:** detecting a 2-percentage-point win-rate edge is almost certainly out of reach for a selective 15M system on any tolerable timeline. At even 4 signals/day it is ~6.5 years for the 52% case.
+- **the better metric is expectancy in R-multiples**, because R has far lower variance than a binary win/loss outcome. To detect a mean R of +0.15 at 95% confidence: sigma_R 1.0 -> **171 trades**; sigma_R 1.5 -> **384 trades**.
+- **so the two approaches differ by 4x to 25x in sample efficiency.** Expert 2's "n of 200-300 independent trades" was correct for expectancy; Expert 5's figures were for win rate and are the wrong metric to plan around.
+- **decision:** the pre-registered protocol scores **expectancy in R, net of measured spread**, with win rate reported only as a secondary descriptive. Primary metric fixed BEFORE any testing so the holdout is not spent choosing a metric after seeing results.
+- **unchanged and still required:** cluster overlapping setups within one gold move into a single observation before quoting any sample size (D-20261006-006); prospective spread collection, because historical spread aggregates are not this venue's cost.
+- **unverified claim flagged:** "historical spread underestimates cost by 20-60%" is plausible and directionally right but I have not verified the magnitude. Treat as a hypothesis to measure, not a planning constant.
+- **status:** accepted
