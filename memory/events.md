@@ -668,3 +668,31 @@
 - **structure:** six numbered decision-forcing questions, each to be answered as Recommendation / Reasoning / Risks / Alternative / Confidence / Assumptions, with an explicit invitation to disagree with the stated premises.
 - **deliberately included:** the independence bug (ideas counted instead of sources) and the live-seeding problem, because both are evidence about how this product misleads and the expert's Q6 depends on them.
 - **tags:** expert-consultation, product-strategy, licensing, sources, sanitization
+
+## EVT-20261006-0201 outcome recorder built, deployed and verified end to end
+
+- **mode:** BUILD
+- **action:** Built the outcome recorder: protocol pre-registered first, then
+  migrations 0008/0009/0010, the `outcome-recorder` Edge Function, and a parity test
+  that guards the one unavoidable constant duplication.
+- **result:** deployed v5 ACTIVE. rule_hash
+  `f7694543642d1f593d2f9e987ed808d7fe37d67328f898ca641a60386585ff87`.
+  Settlement branches verified by hand against real m15 bars: TP1, the
+  same-bar stop/target tie resolving to STOP, TIMEOUT scored at the horizon close,
+  and clustering marking an overlapping second setup as a repeat. RLS confirmed to
+  deny anon SELECT, INSERT and the summary view - with a positive control proving
+  the key was valid, so the denial was real access control and not a bad key.
+  All fixtures deleted; table empty and ready for real decisions.
+- **files:** docs/outcome-recorder-protocol.md,
+  supabase/migrations/0008_outcome_recorder.sql, 0009_..._notrade_side.sql,
+  0010_..._abstained_outcome.sql, supabase/functions/outcome-recorder/index.ts,
+  src/app/test/outcome_recorder_parity_test.dart
+- **errors:** four real bugs, listed in D-20261006-009. One self-inflicted deploy
+  error: a v4 payload referenced an undefined `sideIsLong()` and had dropped the
+  whole `settle()` function. Caught before trusting it and re-deployed verbatim from
+  the local file in v5.
+- **lesson:** hand-writing constants from memory produced two separate serious
+  errors in one task - a corrupted engine port and a wrong stop config. The parity
+  test existed precisely to catch the second, and did. Duplicated constants need a
+  test that fails, not a comment asking people to be careful.
+- **tags:** outcome-recorder, measurement, pre-registration, rule-hash, rls

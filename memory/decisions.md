@@ -336,3 +336,43 @@
 - **database state verified:** zero rows in any actionable state. The 11 non-EXPIRED rows are all `INVALIDATED`, which is a terminal lifecycle state and therefore legitimate History data, NOT live setups - expiring them would destroy history.
 - **verified on hardware:** 1.0.8 installed via adb, Radar shows NO CONSENSUS with no levels and no copy action, analysis card still live.
 - **status:** accepted
+
+---
+
+## D-20261006-009 - Outcome recorder, pre-registered before collection
+
+- **date:** 2026-10-06
+- **status:** accepted
+- **why:** Seven expert reviews converged on one ordering: pause features, build the
+  outcome recorder first. It is the only work whose value compounds with time.
+- **protocol:** `docs/outcome-recorder-protocol.md`, written and frozen BEFORE the
+  first row was recorded. That ordering is the point - a protocol written after
+  seeing outcomes is not a protocol.
+- **primary metric, fixed in advance:** expectancy in R, net of measured spread.
+  Mean R needs 171 trades at sigma 1.0, or 384 at sigma 1.5, for +0.15R at 95%
+  two-sided. Stated before collection so that stopping early cannot later be
+  reframed as success.
+- **the levels the app withholds are stored in `scan_decisions` and are unreadable
+  by the client.** RLS is enabled with zero anon/authenticated policies. This is
+  the arrangement that lets the product hide prices while remaining accountable
+  for every verdict it publishes.
+- **abstentions are recorded, not discarded.** A `NO_TRADE` writes both itself and
+  a forced-trade counterfactual. Without this the denominator is invisible and the
+  record cannot say whether the engine's caution helped or hurt.
+- **kill criteria fixed in advance:** stop if mean r_net <= 0 after 171 clusters;
+  stop if the forced counterfactual beats the live engine; stop if median spread
+  exceeds 1.0R; decide explicitly if under 60 clusters after six months.
+  Publishing a failed test is a requirement of this protocol.
+- **`rule_hash = sha256(engine_version || canonical_json(thresholds, stopConfig,
+  horizonBars))`,** computed server-side. A client reporting different parameters
+  is VOIDed. A threshold change starts a new cohort instead of rewriting history.
+- **Bugs found by running it end to end, not by review.** Four, all while the table
+  was empty of real data: `NO_TRADE` was not a valid side so abstentions could not
+  be recorded at all; abstentions never resolved and would have been re-scanned
+  forever; a counterfactual could be posted alone and orphan itself; and
+  `CANONICAL_STOP_CONFIG` had four of six values wrong, which would have
+  fingerprinted every decision against parameters the engine never used.
+- **not solved, stated plainly:** the app has no identity, so `verify_jwt` is false
+  and a caller can submit synthetic inputs. Settlement is independent so a forged
+  row cannot invent a favourable outcome, but the input path is open. The fix is
+  real authentication, not a workaround.
