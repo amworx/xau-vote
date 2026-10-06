@@ -842,7 +842,10 @@ class LiveRepository {
   /// If this call fails, the stored snapshot is still better than an empty
   /// screen, but it is NOT live and is reported as such (product rule 2).
   Future<({double? price, DateTime? at, bool live})> directSpotPrice({
-    Duration timeout = const Duration(seconds: 6),
+    // 12s, not 6s. A cold Edge Function start was observed taking longer than
+    // 6s, which produced a spurious fallback on an otherwise healthy path. The
+    // price is on a 5s timer, so one slow start must not read as an outage.
+    Duration timeout = const Duration(seconds: 12),
   }) async {
     try {
       final res = await _http

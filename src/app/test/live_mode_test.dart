@@ -115,7 +115,7 @@ class _StubRepository implements LiveRepository {
   /// false.
   @override
   Future<({double? price, DateTime? at, bool live})> directSpotPrice({
-    Duration timeout = const Duration(seconds: 6),
+    Duration timeout = const Duration(seconds: 12),
   }) async {
     _guard();
     final p = price;

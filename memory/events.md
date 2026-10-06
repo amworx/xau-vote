@@ -834,3 +834,33 @@
      src/app/lib/screens/radar_screen.dart
    - **deployed:** spread_gate_privileges (0017), live_price_cache (0018),
      price-live v2.
+
+   - **recorder regression check (important, and it came back clean):** after the
+     privilege work, `scan_decisions` had no new row for ~20 minutes and the
+     revocations were the obvious suspect. They were not the cause. Checked the
+     function logs (`outcome-recorder` = a51c4133, 73 calls, still firing) and
+     then the code: `decisionTimeFor(m15)` derives the decision time from the
+     newest CLOSED M15 bar, so `decision_key` only changes when a bar closes. The
+     19:45 key already existed, so the server correctly deduplicated. The gap was
+     expected behaviour, and note 19:30 was already missing before this session,
+     which is why the empty stretch should not have been read as new.
+   - **recording re-confirmed live:** a fresh pair landed for the 20:00 bar at
+     20:05:18, and they carry `spread_status = available` with `spread_value =
+     null` - the undisclosed state propagating correctly into the ledger. The
+     19:15 row still holds 0.63 from before the fix, which is historical evidence
+     in an internal table with no client access.
+   - **known limitation carried into the validation protocol:** because the app
+     can no longer hold a spread number, it cannot compute `spread_cost_r`, so net
+     R will not deduct spread cost once real SETUP episodes start arriving. The
+     ledger does not back-fill it either. This makes reported net R slightly
+     optimistic. The server CAN read the ladder (service role) and compute it
+     internally without ever exposing it, which is the right place for it - but
+     that is a change to make deliberately before the first setup is scored, not
+     after.
+   - **timeout:** `directSpotPrice` timeout raised 6s -> 12s. A real cold Edge
+     Function start exceeded 6s and produced a spurious "provider unreachable"
+     fallback on a healthy path.
+   - **version:** bumped to 1.0.9+10. `decision_key` embeds the client version, so
+     a version bump is also what makes the next decision a new key.
+   - **build gotcha repeated:** `--dart-define=LIVE=true` is required or the app
+     silently serves fixtures.

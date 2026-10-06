@@ -159,7 +159,7 @@ class _SlowRepository implements LiveRepository {
 
   @override
   Future<({double? price, DateTime? at, bool live})> directSpotPrice({
-    Duration timeout = const Duration(seconds: 6),
+    Duration timeout = const Duration(seconds: 12),
   }) async =>
       (price: null, at: null, live: false);
   @override
