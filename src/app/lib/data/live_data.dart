@@ -17,16 +17,22 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:xau_core/analysis/independence.dart';
+import 'package:xau_core/analysis/session.dart';
 
 import 'live_repository.dart';
 import '../models/display_models.dart';
 
 /// Snapshot of everything the screens read in live mode.
 class LiveData extends ChangeNotifier {
-  LiveData({SupabaseClient? client, LiveRepository? repository})
-    : _repo = repository ?? LiveRepository(client);
+  LiveData({SupabaseClient? client, LiveRepository? repository, DateTime Function()? clock})
+    : _repo = repository ?? LiveRepository(client),
+      _clock = clock ?? DateTime.now;
 
   final LiveRepository _repo;
+
+  /// Clock seam, so tests can simulate a halt-to-open flip without waiting
+  /// for Friday. Production always passes the real clock.
+  final DateTime Function() _clock;
 
   /// Fast cadence: quote, range, active signal.
   Timer? _fastTimer;
@@ -39,6 +45,23 @@ class LiveData extends ChangeNotifier {
   /// [_fastTimer], because re-reading those tables more often only rebuilds the
   /// same widgets against unchanged data.
   Timer? _priceTimer;
+
+  /// Session flip watcher. Recomputes market open/closed on a slow beat and
+  /// notifies ONLY when it flips.
+  ///
+  /// Reported 2026-10-07: the market reopened after the daily halt and the app
+  /// kept showing MARKET CLOSED until a manual refresh. Every screen derives
+  /// open/closed at build time, and builds only happen when polled data
+  /// changes - on a flat price nothing rebuilds, so no build ever notices the
+  /// reopen. This timer is the something that notices: two notifications a
+  /// day (halt + reopen, plus weekend transitions), silence the rest of the
+  /// time. It deliberately does not poll data and does not rebuild screens on
+  /// a beat - that would be the Events-list churn bug all over again, on
+  /// purpose this time.
+  Timer? _sessionTimer;
+  bool? _lastSessionOpen;
+
+  static const _sessionWatchInterval = Duration(seconds: 10);
 
   /// Slow cadence: calendar, history, news digest.
   Timer? _slowTimer;
@@ -131,6 +154,7 @@ class LiveData extends ChangeNotifier {
     _fastTimer?.cancel();
     _slowTimer?.cancel();
     _priceTimer?.cancel();
+    _sessionTimer?.cancel();
     _fastTimer = Timer.periodic(Duration(seconds: seconds), (_) => _pollFast());
     // Scheduled calendar and history rows change on the order of minutes to
     // hours. Re-reading them on every price tick was the cause of the Events
@@ -140,6 +164,12 @@ class LiveData extends ChangeNotifier {
     _slowTimer = Timer.periodic(_slowInterval, (_) => _pollSlow());
     _priceTimer =
         Timer.periodic(_priceInterval, (_) => _pollPrice());
+    // Baseline without notifying: the screens already render the current
+    // state from their first build, so announcing it again would rebuild
+    // everything ten seconds into the session for no visible change.
+    _lastSessionOpen = isSessionOpen(DateTime.now().toUtc());
+    _sessionTimer =
+        Timer.periodic(_sessionWatchInterval, (_) => _watchSession());
     _pollFast();
     _pollSlow();
   }
@@ -178,6 +208,27 @@ class LiveData extends ChangeNotifier {
   Future<void> _pollSlow() =>
       _refresh(includeSlowSections: true, manual: false);
 
+  /// One session check. Notifies listeners if and only if the market flipped
+  /// since the last check, so the open/closed surfaces (pill, closed card,
+  /// gated actions) re-derive within seconds of a halt or reopen instead of
+  /// waiting for an unrelated data change.
+  ///
+  /// [at] is the clock seam: production passes nothing and reads the real
+  /// clock, tests pass fixed instants on either side of a boundary.
+  void checkSession({DateTime? at}) {
+    final open = isSessionOpen((at ?? _clock()).toUtc());
+    if (_lastSessionOpen == null) {
+      _lastSessionOpen = open;
+      return;
+    }
+    if (open != _lastSessionOpen) {
+      _lastSessionOpen = open;
+      notifyListeners();
+    }
+  }
+
+  void _watchSession() => checkSession();
+
   void stopPolling() {
     _fastTimer?.cancel();
     _fastTimer = null;
@@ -185,6 +236,8 @@ class LiveData extends ChangeNotifier {
     _slowTimer = null;
     _priceTimer?.cancel();
     _priceTimer = null;
+    _sessionTimer?.cancel();
+    _sessionTimer = null;
   }
 
   /// Full read, used by pull-to-refresh and by the slow poll.

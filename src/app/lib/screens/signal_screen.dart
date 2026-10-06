@@ -664,8 +664,32 @@ class _ClosedSetupHistory extends StatelessWidget {
 /// Withholding the levels is the point: an entry, stop and target presented
 /// over a shut market read as actionable, and the trader cannot act on any of
 /// them. The setup is not deleted, it simply is not offered as a trade.
-class _MarketClosedNotice extends StatelessWidget {
+class _MarketClosedNotice extends StatefulWidget {
   const _MarketClosedNotice();
+
+  @override
+  State<_MarketClosedNotice> createState() => _MarketClosedNoticeState();
+}
+
+class _MarketClosedNoticeState extends State<_MarketClosedNotice> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    // Same heartbeat as the Radar closed card: the reopen countdown must tick
+    // on its own rather than depend on LiveData rebuilds, which stall whenever
+    // the polled data sits still.
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
 
   @override
   @override

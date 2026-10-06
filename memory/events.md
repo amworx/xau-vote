@@ -974,3 +974,34 @@
      applied without cron, sync function written, NOT deployed, no app changes
      yet). Resume there next.
    - **tags:** session-calendar, daily-halt, price-freshness, honesty-copy
+
+## EVT-20261006-0218 market reopen went unnoticed; session flip watcher added
+
+   - **mode:** BUILD
+   - **action:** User reported the app still showed MARKET CLOSED after the
+     daily halt ended. Confirmed the mechanism: every screen derives
+     open/closed at build time, and builds only happen when polled data
+     changes. On a flat stretch nothing rebuilds, so no build ever notices the
+     reopen. The user saw the flip only when an unrelated data poll finally
+     rebuilt the screens - hence the lag they then reported.
+   - **fix:** LiveData runs a 10s session watcher that recomputes
+     `isSessionOpen` and notifies ONLY on flip (open->closed or closed->open).
+     Two notifications a day, silence otherwise - deliberately not a beat that
+     rebuilds screens, which would repeat the Events-list churn bug on purpose.
+     Baseline is set silently at start to avoid a pointless rebuild 10s in.
+   - **also:** the watcher I first declared was never wired into start/stop
+     (interrupted mid-edit), so one build shipped the fields with no timer. The
+     lag the user saw was that gap. Wired now; `_sessionTimer` lifecycle
+     matches the other three timers. Lesson: an unwired declaration is worse
+     than no code, because the diff looks finished.
+   - **test:** `checkSession({at})` clock seam - simulated halt-to-open across
+     the 18:00 New York boundary notifies exactly once, with silence on either
+     side. Tests never call startPolling so no pending-timer failures.
+   - **verified on device:** fresh launch into the open market shows green ASIA
+     pill, live price with age, NO CONSENSUS (no voters - correct), NO TRADE
+     analysis. The flip path itself is covered by the unit test; the next live
+     flip is Friday 17:00 New York.
+   - **files:** src/app/lib/data/live_data.dart,
+     src/app/test/live_mode_test.dart
+   - **tests:** app 261, xau_core 288. Both analyzers clean.
+   - **tags:** session-flip, auto-detect, notify-on-change

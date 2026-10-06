@@ -125,13 +125,46 @@ String sessionLabel(MarketSession s) => switch (s) {
 ///
 /// Used by the UI to tell a trader when to look back rather than leaving them
 /// staring at a closed market.
+///
+/// The coarse 15-minute sweep finds the first open point, then a 1-minute
+/// refinement walks forward to the actual boundary. Without the refinement the
+/// returned instant rides on a grid anchored to *now*: every probe advances
+/// with the clock, so the reported wait stays pinned - during the daily halt
+/// it read a constant ~30:00, then ~15:00, a countdown that never counts. The
+/// reopen instant must be a fixed wall-clock time for the UI countdown to move.
 DateTime? nextOpenUtc(DateTime utc) {
   if (isSessionOpen(utc)) return null;
-  var probe = utc.add(const Duration(minutes: 15));
+  const coarse = Duration(minutes: 15);
+  var probe = utc.add(coarse);
   // 4 days covers the longest closed stretch (Saturday) at 15-minute steps.
+  DateTime? firstOpen;
   for (var i = 0; i < 4 * 24 * 4; i++) {
-    if (isSessionOpen(probe)) return probe;
-    probe = probe.add(const Duration(minutes: 15));
+    if (isSessionOpen(probe)) {
+      firstOpen = probe;
+      break;
+    }
+    probe = probe.add(coarse);
   }
-  return null;
+  if (firstOpen == null) return null;
+  // Refine: the boundary lies inside the last coarse step. Walk forward from
+  // its start at 1-minute resolution so the answer is the transition itself,
+  // not the grid point after it.
+  //
+  // Truncated to the minute, not the caller's seconds. Session boundaries fall
+  // exactly on minute transitions (the rules only read hour and minute), so
+  // the transition instant carries no seconds - but a candidate built from
+  // DateTime.now() does, and those seconds ride along into the answer. On
+  // 2026-10-07 the countdown read a constant 02:59 across screenshots 13s
+  // apart: reopen-now was always exactly 180.0s because the seconds of the
+  // answer tracked the seconds of the question. A wall-clock instant must not
+  // depend on when it was asked.
+  DateTime trunc(DateTime dt) =>
+      DateTime.utc(dt.year, dt.month, dt.day, dt.hour, dt.minute);
+  var candidate = trunc(firstOpen.subtract(coarse));
+  if (isSessionOpen(candidate)) return candidate;
+  for (var i = 0; i < 16; i++) {
+    candidate = candidate.add(const Duration(minutes: 1));
+    if (isSessionOpen(candidate)) return candidate;
+  }
+  return trunc(firstOpen);
 }

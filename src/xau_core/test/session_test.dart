@@ -1,8 +1,8 @@
 import 'package:test/test.dart';
 import 'package:xau_core/xau_core.dart';
 
-DateTime utc(int y, int m, int d, [int h = 0, int min = 0]) =>
-    DateTime.utc(y, m, d, h, min);
+DateTime utc(int y, int m, int d, [int h = 0, int min = 0, int sec = 0]) =>
+    DateTime.utc(y, m, d, h, min, sec);
 
 void main() {
   group('New York conversion honours US DST', () {
@@ -77,6 +77,23 @@ void main() {
       final next = nextOpenUtc(utc(2026, 7, 15, 21, 30))!;
       expect(newYorkTime(next).hour, 18);
       expect(newYorkTime(next).day, 15);
+    });
+
+    test('the reopen instant is fixed, not pinned to the probe grid', () {
+      // Regression 2026-10-07: the countdown read a constant 29:59, then a
+      // constant 14:59, then a constant 02:59 across screenshots seconds
+      // apart. First the 15-minute probe grid moved with the clock; then the
+      // 1-minute refinement carried the caller's seconds into the answer, so
+      // reopen-minus-now was always exactly N*60s. The boundary itself must
+      // come back identical across calls, on the minute, seconds zero -
+      // otherwise the UI countdown cannot move.
+      final a = nextOpenUtc(utc(2026, 7, 15, 21, 30, 41))!;
+      final b = nextOpenUtc(utc(2026, 7, 15, 21, 36, 7))!;
+      expect(a.isAtSameMomentAs(b), isTrue);
+      // And it is the 18:00 boundary on the minute, not the grid point after.
+      expect(newYorkTime(a).hour, 18);
+      expect(newYorkTime(a).minute, 0);
+      expect(a.second, 0);
     });
 
     test('the closure reason tells halt apart from weekend', () {

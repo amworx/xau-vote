@@ -21,6 +21,8 @@
 library;
 
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:xau_core/analysis/independence.dart';
@@ -622,8 +624,34 @@ class _ErrorLine extends StatelessWidget {
 /// exist, it just cannot be entered because nothing will move. Saying "no trade"
 /// would misdescribe the situation and could read as a verdict on the
 /// analysis; the honest answer is that the market is not trading.
-class _MarketClosedCard extends StatelessWidget {
+class _MarketClosedCard extends StatefulWidget {
   const _MarketClosedCard();
+
+  @override
+  State<_MarketClosedCard> createState() => _MarketClosedCardState();
+}
+
+class _MarketClosedCardState extends State<_MarketClosedCard> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    // The reopen countdown needs its own heartbeat. It used to rely on
+    // LiveData rebuilds, which only fire when polled data actually changes -
+    // so on a flat price the countdown froze (reported stuck at 29:59). A
+    // one-second ticker on this card alone repaints just this subtree; the
+    // rest of the screen is untouched.
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

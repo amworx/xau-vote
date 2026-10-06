@@ -575,6 +575,34 @@ void main() {
       expect(live.priceAgeSeconds, isNotNull);
       expect(live.priceAgeSeconds!, greaterThanOrEqualTo(0));
     });
+
+    test('a halt-to-open flip notifies without any data changing', () async {
+      // Regression 2026-10-07: the market reopened after the daily halt and
+      // the app kept showing MARKET CLOSED until an unrelated data poll
+      // happened to rebuild the screens. The flip below moves no price, no
+      // signal, no event - only the clock - and the screens must still learn.
+      final live = LiveData(repository: _StubRepository());
+      addTearDown(live.dispose);
+      var notifications = 0;
+      live.addListener(() => notifications++);
+
+      // Tuesday 17:50 New York: halted. Baseline, no announcement.
+      live.checkSession(at: DateTime.utc(2026, 10, 6, 21, 50));
+      expect(notifications, 0);
+
+      // Still halted ten minutes later: silence, not a rebuild every check.
+      live.checkSession(at: DateTime.utc(2026, 10, 6, 21, 55));
+      expect(notifications, 0);
+
+      // 18:01 New York: open. Exactly one announcement, so every surface that
+      // derives open/closed at build time re-derives within seconds.
+      live.checkSession(at: DateTime.utc(2026, 10, 6, 22, 1));
+      expect(notifications, 1);
+
+      // Still open: silence again.
+      live.checkSession(at: DateTime.utc(2026, 10, 6, 22, 5));
+      expect(notifications, 1);
+    });
   });
   // `mockMode` is a compile-time flag, so a test cannot flip the build. What
   // the screens branch on is the [LiveData] `main.dart` mounts above them for a
