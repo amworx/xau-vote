@@ -851,3 +851,48 @@ gate now rests entirely on the third switch - no approved rows. The day anyone
 approves the first curated row, the reply text must already be filed, or that
 approval violates D-20261006-017. Owner to paste the reply; ten seconds of work
 that closes the last open item on this source.
+
+## D-20261006-020 - Finance Calendar review: APPROVED as convenience layer
+
+**decided:** 2026-10-06 (provider docs read same day)
+
+**reviewed:** `https://www.financecalendar.com/api/` (endpoint catalogue, licence,
+limits), `https://www.financecalendar.com/about/` (editorial policy), and a
+live `GET /wp-json/fc/v1/today` response. Exact provider wording captured
+below; capture date 2026-10-06.
+
+**licence (verbatim):** "Free for any use — commercial included — with one
+condition: link to financecalendar.com wherever the data appears." The live
+`/today` payload repeats it: "Free for any use with attribution: link to
+https://www.financecalendar.com". Attribution means "a visible link near where
+the data is shown (or in your app`s about/credits page)".
+
+**operating terms (verbatim):** "No API key. No rate limits (responses are
+edge-cached for 5 minutes). CORS is open, so you can call it straight from a
+browser." — "Please cache responses on your side where you can; the data
+changes at most hourly."
+
+**consensus:** "appears roughly two days before a release" - may be null (the
+live `/today` event carried consensus:null). Displayed only as Provider
+consensus; no trading rule may depend on it alone. surprise = actual -
+forecast when both exist, else unavailable; actual-vs-previous stays separate.
+
+**actuals:** "filled within the hour of the official print". Times "verified
+against official sources".
+
+**scope limits that matter to XV:**
+- Earnings dates are NOT in the API. Do not expect them.
+- The `/today` market block is NYSE open/closed - NOT gold spot sessions. Never
+  feed it into the session calendar; gold hours stay in xau_core.
+- Holidays endpoint covers NYSE/Nasdaq 2026-27. Useful context for equity
+  sessions, not authority for gold.
+
+**official-source precedence adopted:** Finance Calendar is convenience, not
+authority. BLS/Fed/BEA/Census/official issuer wins on conflict; discrepancies
+get recorded when observed. Every event row keeps its official-issuer URL for
+exactly this check.
+
+**verdict:** APPROVED for scheduled dates/times + provider consensus display
+(with attribution), polled hourly at most. NOT approved as: event authority
+over official sources, sole input to any trading rule, or a weekend/holiday
+oracle for gold.

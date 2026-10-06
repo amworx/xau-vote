@@ -1005,3 +1005,38 @@
      src/app/test/live_mode_test.dart
    - **tests:** app 261, xau_core 288. Both analyzers clean.
    - **tags:** session-flip, auto-detect, notify-on-change
+
+## EVT-20261006-0219 PAUSED: exact resume state for next session
+
+   - **mode:** MEMORY (session handoff)
+   - **where everything stands:** Gold Hunts session view is DONE and committed
+     (42fb4e2): tables + view + grants live, goldhunts-sync deployed, hourly
+     cron active, first sync verified (143 signals, 8 open), app section built
+     with 264 app tests green. The ONLY unverified part is seeing the Sources
+     section on the physical phone - adb taps would not switch tabs that
+     evening (cause undetermined; possibly the owner holding the device), so
+     device proof is pending the owner opening Sources by hand.
+   - **Finance Calendar status:** review DONE and recorded (D-020: approved as
+     convenience layer with attribution, official precedence). Migration 0023
+     (provider gate) APPLIED. NOT DONE: the FinanceCalendarProvider in
+     fetch-events (map /calendar rows, derive currency from title prefixes,
+     numeric-only forecast/previous/actual, slug externalIds), its deploy +
+     first-run verify, re-enabling xv-fetch-events cron (currently inactive),
+     and the Events-screen attribution line. Next session starts here.
+   - **known deferred items (do not lose):**
+     1. File the FXScalpers verbatim reply (owner, 10 seconds). Licence file
+        open until then; no row may be approved before it.
+     2. Gold Hunts outcome reconciliation (§3/§10): archive table exists and is
+        filling; independent tally + XV-bar reconstruction not built.
+     3. Provider-consensus TEXT ("Hold at 3.50-3.75%") is dropped (no column);
+        revisit only if a real display need appears.
+     4. Ruling still open: ALIGNED session-context-vote model vs directive §2.
+     5. spread_cost_r will be null on future real setups (app cannot hold a
+        spread number) - server-side computation is the right fix before the
+        first setup is scored.
+     6. Next live session flip to observe: Friday 17:00 New York (watcher
+        mechanism is unit-tested; live observation pending).
+   - **repo state:** tree clean after this commit. Phone runs v11 (1.0.9+11)
+     with all client changes. Backend: migrations through 0023, price-live v2,
+     build-consensus v5, goldhunts-sync v1, outcome-recorder v10.
+   - **tags:** handoff, pause, resume
