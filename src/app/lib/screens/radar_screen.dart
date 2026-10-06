@@ -209,7 +209,11 @@ class _RadarScreenState extends State<RadarScreen> {
         // shown separately from consensus because it answers a different
         // question. Consensus asks what independent sources agree on; this
         // asks whether the technicals, gates and vetoes permit a setup at all.
-        AnalysisVerdictCard(scan: analysis?.result, onRefresh: analysis?.refresh),
+        AnalysisVerdictCard(
+          scan: analysis?.result,
+          onRefresh: analysis?.refresh,
+          layers: analysis?.layers,
+        ),
         // The switcher demos states the live pipeline owns, so it must not
         // appear next to real rows.
         if (mockMode && live == null) const DemoStateRow(),

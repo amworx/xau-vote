@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:xau_core/xau_core.dart' hide Direction;
 
 import '../models/display_models.dart' show Direction;
+import '../models/sentiment_layers.dart';
 import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
+import 'sentiment_layers_section.dart';
 
 /// Renders the multi-timeframe analysis verdict: grade, scores, structural
 /// levels and the reason codes behind the call.
@@ -24,12 +26,22 @@ import '../widgets/harbor_widgets.dart';
 ///  * **Degraded/proxy history can never look level-eligible.** The card refuses
 ///    to render entry/SL/TP when the underlying history is degraded.
 class AnalysisVerdictCard extends StatelessWidget {
-  const AnalysisVerdictCard({super.key, required this.scan, this.onRefresh});
+  const AnalysisVerdictCard({
+    super.key,
+    required this.scan,
+    this.onRefresh,
+    this.layers,
+  });
 
   final ScanResult? scan;
 
   /// Invoked when the user asks to rescan.
   final VoidCallback? onRefresh;
+
+  /// The §5.1 layers behind this scan. Null when the scan could not read them,
+  /// in which case the block is omitted rather than shown empty — an absent
+  /// layer and a measured one must not look alike.
+  final SentimentLayers? layers;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +95,16 @@ class AnalysisVerdictCard extends StatelessWidget {
           if (hasLevels) ...[
             const SizedBox(height: 14),
             _LevelGrid(plan: plan),
+          ],
+          if (layers != null) ...[
+            const SizedBox(height: 14),
+            SentimentLayersSection(
+              layers: layers!,
+              macroAlignment: s.macroAlignment,
+              sentimentAlignment: s.sentimentAlignment,
+              hasDirection: isTrade,
+              isLong: s.verdict == Verdict.long,
+            ),
           ],
           const HarborDivider(),
           _ReasonSection(scan: s),

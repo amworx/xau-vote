@@ -191,3 +191,16 @@
 - **two denominators on purpose:** macro coverage counts only macro-side layers (policy, WGC, market-implied = 75 points). Positioning (25) is sentiment and is excluded from the macro gate but included in overall coverage. A test pins that policy + positioning alone is 47% and therefore still gated, which is unintuitive enough to be worth asserting.
 - **coverage added:** 7 scanner tests (including that the real live three-layer read blocks a long) and 4 service tests (unmeasured / thin / gated / live).
 - **status:** accepted
+
+---
+
+## D-20261005-012 - The layers block is rendered in-app; agreement derives from the RAW alignment
+
+- **date:** 2026-10-05
+- **approved:** browser prototype at `%TEMP%/opencode/layers/index.html`, approved by the user before any Flutter change.
+- **placement:** one block inside the existing `AnalysisVerdictCard` on Radar, after the score/level rows. All tokens reused from the approved banner prototype and `lib/theme.dart`; nothing new introduced.
+- **bug the first in-app render exposed (and the prototype could not):** the strip was driven by `macroAgrees`, which is ALREADY relative to the traded side, and then flipped again per row. With no candidate direction to orient against (`verdict == noTrade`, so `isLong` is false) BOTH rows came out inverted - the LONG row read SUPPORTS while the card said NO TRADE for a macro conflict. The prototype rendered each state with a real direction, so it never hit this.
+- **decision:** the strip now takes `macroAlignment` / `sentimentAlignment` (the raw layer lean) and derives each row independently. `isLong` only highlights the active row. Each row is correct without knowing which side is live, which removes the class of bug rather than patching one instance of it.
+- **second bug found by a test:** a zero alignment was being labelled `CONFLICT`. A measured neutral opinion is not a conflict, and calling it one would penalise a layer for having no view. `NEUTRAL` is now a distinct tag, separate from `NOT WEIGHED` - a measured zero opinion is not the absence of one.
+- **kept honest:** `NOT MEASURED` is visually distinct from `NEUTRAL`; partial layers name the missing part (`usd and volatility of this layer are missing`, `SEP projections not read`); a stale layer reads `STALE` and says it is ignored; below the coverage gate the strip reads `NOT WEIGHED`. No probability or vote-count language, asserted by a test.
+- **verification:** 17 widget tests including that flipping the live side changes NEITHER row. Full app suite 213 pass, analyzer clean. Visual check via a web build of the real card at 390px.

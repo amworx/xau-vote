@@ -595,3 +595,22 @@
   - Test stubs that throw from `noSuchMethod` will turn any new repository call into a silently failing suite.
   - Two weight denominators existing in one system (macro-side 75, all-in 100) is correct but needs a test, because it surprises.
 - **tags:** core-function, confluence, scanner, sentiment-layers, wiring
+
+---
+
+## EVT-20261005-0021 - Sentiment layers block in the verdict card
+
+- **id:** EVT-20261005-0021
+- **timestamp:** 2026-10-05T23:00Z .. 2026-10-06T00:10Z
+- **mode:** BUILD
+- **action:** Implemented the approved 5.1 layers block in Flutter and rendered it inside the real AnalysisVerdictCard for a visual check.
+- **result:** All four layers with their measured readings, direction badges, coverage chip, and a both-sides agreement strip. 213 app tests pass, analyzer clean.
+- **errors found by rendering the real widget (not the prototype):**
+  1. The agreement rows were double-flipping `macroAgrees`, which is already side-relative, so both rows inverted whenever there was no candidate direction. Fixed by deriving from the raw alignment; `isLong` now only highlights.
+  2. A zero alignment was tagged CONFLICT. Fixed with a distinct NEUTRAL tag.
+  3. A blanket regex replace of `harborDivider` also clobbered the `HarborDivider(` widget call, producing `Color(0xFFEDF0F4)()`.
+  4. Flutter web will not render from `file://`, and a `Start-Job` HTTP server dies with its parent shell; `Start-Process -WindowStyle Hidden` is what survives.
+- **lessons:**
+  - A prototype can only exercise the states it renders. Rendering the real widget with a real no-direction verdict found a bug the three-state prototype structurally could not.
+  - Do not store a side-relative value and then re-derive side-relativeity downstream. Pass the raw fact and let each consumer orient it.
+- **tags:** ui, sentiment-layers, verdict-card, side-awareness, prototype-to-flutter

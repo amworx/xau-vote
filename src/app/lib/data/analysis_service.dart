@@ -36,11 +36,20 @@ class AnalysisService extends ChangeNotifier {
 
   ScanResult? _cached;
   DateTime? _cachedAt;
+  SentimentLayers? _layers;
   String? _error;
   Timer? _timer;
 
   /// Cached result, or null before the first successful scan.
   ScanResult? get result => _cached;
+
+  /// The §5.1 layers behind the most recent scan, or null before the first one.
+  ///
+  /// Exposed separately from [result] because the layers carry the evidence -
+  /// the percentile, the target range, the as-of dates - that lets the UI show
+  /// why a score is what it is. [ScanResult] deliberately carries only the
+  /// resolved numbers.
+  SentimentLayers? get layers => _layers;
 
   /// Last error message; the UI shows it rather than pretending all is well.
   String? get error => _error;
@@ -123,6 +132,7 @@ class AnalysisService extends ChangeNotifier {
       );
 
       _error = null;
+      _layers = layers;
       _cached = ScanResult(
         verdict: scan.verdict,
         grade: scan.grade,
