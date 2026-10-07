@@ -918,3 +918,25 @@ independent, unlicensable-in-practice), not deleted, so the story stays
 queryable. Zero ideas ever entered, zero signals ever emitted from it - there
 is nothing to unwind. Voter count returns to zero external voters; consensus
 behaviour is unchanged (NO_SOURCES).
+
+## D-20261007-021 - api-evangelist/tradingeconomics reviewed: REJECTED (paid API, no free path)
+
+**decided:** 2026-10-07
+
+**reviewed:** `https://github.com/api-evangelist/tradingeconomics` (README +
+access-model section, read 2026-10-07).
+
+**what it is:** NOT a data feed. An API Evangelist third-party *profile* -
+OpenAPI/Postman specs and pricing notes describing Trading Economics`
+commercial API. No data flows from the repo itself.
+
+**access model (their words):** "calling the API requires a paid
+subscription... There is no free tier: the long-standing guest:guest
+sample-data account has been discontinued... Standard at $149/month and
+Professional at $299/month."
+
+**verdict:** REJECTED for XV. A $149+/month subscription is incompatible with
+the $0 free-only directive, and there is no free tier, trial path, or
+redistributable data to evaluate. Nothing to integrate, nothing to scrape
+(the repo contains no data surface at all). Events stay on Finance Calendar;
+news stays empty until a licensable $0 provider exists.
