@@ -377,6 +377,8 @@ class DisplayEvent {
     this.forecast,
     this.previous,
     this.actual,
+    this.actualText,
+    this.actualSource,
     this.surprise,
     this.outlook,
     this.alertsEnabled = true,
@@ -393,6 +395,16 @@ class DisplayEvent {
   final String? forecast;
   final String? previous;
   final String? actual;
+
+  /// Publisher-worded released figure, verbatim ("+3.4% YoY, +0.1% MoM").
+  /// Never parsed into [actual]: it is the publisher's wording, shown as-is
+  /// for releases with no issuer numeric (yet).
+  final String? actualText;
+
+  /// Who published the numeric actual, e.g. "BLS CUUR0000SA0 (public domain,
+  /// ref 2026-M08)". Null for publisher-worded figures, whose provenance is
+  /// the calendar provider itself.
+  final String? actualSource;
 
   /// Post-release flag: 'hot' | 'cold' | 'inline' | null (no result yet).
   /// Volatility context only — never a direction.

@@ -1,10 +1,10 @@
 /**
  * fetch-events — scheduled Edge Function, hourly + on boot (TASK-07 T7.2).
  *
- * Fetches the 7-day USD (+majors) economic calendar through an
- * `EventProvider`, normalizes rows into `economic_events`, and computes
- * surprise flags when actuals are present (NFP ±50K, CPI ±0.2pp, default
- * ±10% of |forecast|). Surprise is volatility context only — it never
+ * Fetches the USD (+majors) economic calendar through an `EventProvider`
+ * (60-day back window for late publisher actuals, 14-day forward window),
+ * normalizes rows into `economic_events`, and computes surprise flags when
+ * actuals are present (NFP ±50K, CPI ±0.2pp, default ±10% of |forecast|). Surprise is volatility context only — it never
  * votes (AGENTS.md rule 9).
  *
  * Providers:
@@ -40,6 +40,11 @@ export interface RawEvent {
   forecast: number | null;
   previous: number | null;
   actual: number | null;
+  /** Publisher-worded released figure, verbatim. The provider's actuals are
+   *  descriptive text ("+3.4% YoY, +0.1% MoM", "Held at 4.35%", "Flat") that
+   *  no parser may reduce to a number, so they travel in their own column and
+   *  are shown as-is. Null until the publisher prints one. */
+  actualText: string | null;
   url: string | null;
 }
 
@@ -83,6 +88,7 @@ export class ManualSeed implements EventProvider {
         forecast: null,
         previous: null,
         actual: null,
+        actualText: null,
         url: null,
       });
     }
@@ -98,6 +104,7 @@ export class ManualSeed implements EventProvider {
         forecast: null,
         previous: null,
         actual: null,
+        actualText: null,
         url: null,
       });
     }
@@ -117,6 +124,7 @@ export class ManualSeed implements EventProvider {
         forecast: null,
         previous: null,
         actual: null,
+        actualText: null,
         url: null,
       });
     }
@@ -175,9 +183,13 @@ export class FinanceCalendarProvider implements EventProvider {
   }
 
   async fetchUpcoming(now: Date): Promise<RawEvent[]> {
-    // 14-day forward window. The provider covers majors only (no earnings in
-    // the API), so depth comes from the window, never from invented rows.
-    const from = now.toISOString().slice(0, 10);
+    // 60-day back window + 14-day forward window. Backfill is deliberate:
+    // the provider prints actuals with a multi-week lag (verified 2026-10-07:
+    // 30-Sep releases still null, mid-August releases populated), so a
+    // forward-only read would never see a scored row. Past rows are harmless
+    // downstream: the guard reads ±60 min around now, the app's Upcoming pane
+    // filters to future rows, and Results reads actual-carrying rows only.
+    const from = new Date(now.getTime() - 60 * 24 * 3600 * 1000).toISOString().slice(0, 10);
     const to = new Date(now.getTime() + 14 * 24 * 3600 * 1000).toISOString().slice(0, 10);
     const r = await fetch(
       `${FinanceCalendarProvider.base}/calendar?from=${from}&to=${to}&limit=500`,
@@ -200,6 +212,11 @@ export class FinanceCalendarProvider implements EventProvider {
       const impactRaw = String(row['impact'] ?? '').toLowerCase();
       const num = (v: unknown): number | null =>
         typeof v === 'number' && Number.isFinite(v) ? v : null;
+      // Publisher actuals arrive as descriptive text, never numbers — carry
+      // them verbatim. num() above would silently drop them to null.
+      const txt = (v: unknown): string | null =>
+        typeof v === 'string' && v.trim().length > 0 ? v.trim() : null;
+      const actualText = txt(row['actual']);
       return {
         externalId: `fc-${slug ?? `${date}-${i}`}`,
         title,
@@ -209,6 +226,7 @@ export class FinanceCalendarProvider implements EventProvider {
         forecast: num(row['consensus']),
         previous: num(row['prior']),
         actual: num(row['actual']),
+        actualText,
         url,
       };
     });
@@ -247,6 +265,7 @@ export class FmpProvider implements EventProvider {
       forecast: typeof row['estimate'] === 'number' ? row['estimate'] : null,
       previous: typeof row['previous'] === 'number' ? row['previous'] : null,
       actual: typeof row['actual'] === 'number' ? row['actual'] : null,
+      actualText: null,
       url: null,
     }));
   }
@@ -308,6 +327,20 @@ Deno.serve(async (_req) => {
 
   let upserted = 0;
   for (const e of rows) {
+    // Clobber guard: the provider prints actuals with a multi-week lag, and
+    // bls-actuals writes issuer numerics into `actual` between our runs. An
+    // hourly upsert that blanked actual/actual_text/surprise whenever the
+    // publisher had nothing new would erase scored rows every hour, so
+    // actual-carrying columns are only sent when this fetch has an actual.
+    // Omitted keys are left untouched by the upsert. Text provenance needs no
+    // extra column: the row's provider field already says financecalendar.
+    const actualKeys: Record<string, unknown> = {};
+    if (e.actual !== null || e.actualText !== null) {
+      actualKeys['actual'] = e.actual;
+      actualKeys['actual_text'] = e.actualText;
+      actualKeys['surprise'] = surpriseFlag(e.title, e.actual, e.forecast);
+      if (e.actual !== null) actualKeys['actual_source'] = 'financecalendar';
+    }
     const { error } = await db.from('economic_events').upsert(
       {
         provider: provider.name,
@@ -316,12 +349,11 @@ Deno.serve(async (_req) => {
         currency: e.currency,
         impact: e.impact,
         starts_at: e.startsAt,
-        actual: e.actual,
         forecast: e.forecast,
         previous: e.previous,
-        surprise: surpriseFlag(e.title, e.actual, e.forecast),
         url: e.url,
         collected_at: now.toISOString(),
+        ...actualKeys,
       },
       { onConflict: 'provider,external_id' },
     );

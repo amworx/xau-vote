@@ -610,6 +610,8 @@ class LiveRepository {
       forecast: _numText(r['forecast']),
       previous: _numText(r['previous']),
       actual: _numText(r['actual']),
+      actualText: _wordedText(r['actual_text']),
+      actualSource: _wordedText(r['actual_source']),
       surprise: _surprise(r['surprise'] as String?),
       outlook: outlook,
     );
@@ -635,6 +637,15 @@ class LiveRepository {
     final d = _toDouble(v);
     if (d == null) return null;
     return d == d.roundToDouble() ? d.toInt().toString() : d.toStringAsFixed(2);
+  }
+
+  /// Publisher/issuer wording carried verbatim (actual_text, actual_source).
+  /// Trimmed, never parsed: turning "+3.4% YoY, +0.1% MoM" into a number
+  /// would be fabrication with extra steps.
+  static String? _wordedText(Object? v) {
+    if (v == null) return null;
+    final s = '$v'.trim();
+    return s.isEmpty ? null : s;
   }
 
   static String _hhmm(DateTime t) =>
@@ -964,6 +975,21 @@ class LiveRepository {
       ));
     }
     return out;
+  }
+
+  /// Released events with an actual figure, newest first.
+  ///
+  /// The Results tab reads these - never the scheduled rows. An event without
+  /// an actual is not a result, and reusing an upcoming release as one would
+  /// present a forecast as history.
+  Future<List<DisplayEvent>> resultEvents({int limit = 20}) async {
+    final r = await _client
+        .from('economic_events')
+        .select('*')
+        .or('actual.not.is.null,actual_text.not.is.null')
+        .order('starts_at', ascending: false)
+        .limit(limit);
+    return _toEvents((r as List).cast<Row>());
   }
 
   /// Calendar events for the event gate, mapped to the analysis tier model.

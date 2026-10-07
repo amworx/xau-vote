@@ -1194,3 +1194,34 @@
      lib/data/live_repository.dart, test/live_mode_test.dart
    - **tests:** app suite green incl. new preflight-shape test.
    - **tags:** web-testing, cors, conditional-imports
+
+## EVT-20261007-0226 results tab filled with real scored releases
+
+   - **mode:** BUILD
+   - **action:** User reported empty News + Results tabs. Found the provider
+     DOES publish actuals, but only as descriptive text with a multi-week lag
+     (Sept 30 rows still null, mid-August populated) - and fetch-events was
+     dropping them (numeric-only parse). Also D-20261006-020''s "actuals within
+     an hour" claim was wrong; corrected in D-20261007-023.
+   - **changes:** migration 0025 (actual_text, actual_source); fetch-events
+     60-day back window + verbatim actual_text + clobber guard so hourly
+     upserts never erase BLS numerics; new daily bls-actuals job (13:35 UTC
+     cron) scoring CPI (CUUR0000SA0), payrolls (CES0000000001), unemployment
+     rate (LNS14000000) from the BLS public API under a vintage rule
+     (reference month strictly before event month, M13 annual averages
+     excluded, first-write-wins); app resultEvents() + live results field +
+     Results pane with wording/provenance lines; _surpriseLine UNSCORED for
+     null surprise (was falsely "IN LINE" without a forecast).
+   - **verified live:** fetch-events upserted 108 rows; bls-actuals scored 4
+     (Oct 2 NFP 159044 ref M09; Sept 11 CPI 334.98 ref M08 + publisher text
+     "+0.1% MoM, 3.4% YoY"); dozens of rows carry provider wording (FOMC,
+     retail, BoE...). App analyzer clean, 268 tests green incl. new Results
+     rendering + empty-state tests. New APK installed on phone; web build
+     live on :8901 (synthetic taps don''t reach Flutter gestures, so the
+     RESULTS screenshot is left to the phone).
+   - **files:** supabase/functions/fetch-events/index.ts,
+     supabase/functions/bls-actuals/index.ts (new), migration
+     0025_bls_actual_source, lib/data/live_repository.dart,
+     lib/data/live_data.dart, lib/models/display_models.dart,
+     lib/screens/events_screen.dart, test/live_mode_test.dart
+   - **tags:** results, bls, actuals, surprise-honesty, vintage-rule

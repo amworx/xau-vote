@@ -120,6 +120,9 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
   List<DisplayEvent> _events = const [];
   List<DisplayDigestTheme> _digest = const [];
 
+  /// Released events with actuals, newest first — the Results tab's data.
+  List<DisplayEvent> _results = const [];
+
   /// Gold Hunts open session calls, labels only (D-20261006-016).
   ///
   /// Read-only context for the Sources screen's EXTERNAL SESSION VIEW section.
@@ -169,6 +172,12 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
   List<DisplaySource> get contributors => _contributors;
   List<DisplayEvent> get events => _events;
   List<DisplayDigestTheme> get digest => _digest;
+
+  /// Released events carrying actuals, newest first. The Results tab reads
+  /// these - never the scheduled rows. An event without an actual is not a
+  /// result, and reusing an upcoming release as one would present a forecast
+  /// as history.
+  List<DisplayEvent> get results => _results;
 
   /// Gold Hunts open session calls for the Sources screen's external session
   /// view. Context only - never an input to agreement, confirmation, or votes.
@@ -387,6 +396,7 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
 
         await guarded('history', () async { _history = await _repo.history(); });
         await guarded('events', () async { _events = await _repo.upcomingEvents(); });
+        await guarded('results', () async { _results = await _repo.resultEvents(); });
         await guarded('digest', () async { _digest = await _repo.latestDigest(); });
         // External session view, same slow cadence: the provider regenerates
         // hourly, so reading it faster only rebuilds the section against

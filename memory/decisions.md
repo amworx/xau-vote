@@ -982,3 +982,16 @@ not lead. Finance Calendar stays the primary convenience layer.
 
 **caveats on record:** ET times need EST/EDT conversion (existing DST logic
 covers it); no SLA/uptime; single maintainer (bus factor).
+
+## D-20261007-023 CORRECTS D-20261006-020 on Finance Calendar actual timing
+
+   - The approval claimed actuals land "within an hour". Live verification
+     2026-10-07 proves otherwise: 30-Sep releases still carry actual:null
+     while mid-August releases are populated. Publisher actuals arrive with a
+     MULTI-WEEK lag, as descriptive text, never numbers.
+   - Consequence, implemented same day: fetch-events keeps publisher wording
+     verbatim in economic_events.actual_text (never parsed); new daily job
+     bls-actuals backfills issuer numerics for CPI / payrolls / unemployment
+     from the BLS public API (keyless, US public domain) under a strict
+     vintage rule; Results tab reads actual-carrying rows with UNSCORED
+     (never "in line") when no forecast exists.

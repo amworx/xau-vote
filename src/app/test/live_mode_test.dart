@@ -61,6 +61,7 @@ class _StubRepository implements LiveRepository {
     this.historyRows = const [],
     this.sentimentRows = const SentimentLayers.empty(),
     this.events = const [],
+    this.results = const [],
     this.digest = const [],
     this.failWith,
     this.agreement = (distinctIdeas: 0, distinctSources: 0),
@@ -97,6 +98,10 @@ class _StubRepository implements LiveRepository {
 
   final SentimentLayers sentimentRows;
   final List<DisplayEvent> events;
+
+  /// Released rows for the Results tab. Empty by default: a stub must not
+  /// invent scored releases the backend did not report.
+  final List<DisplayEvent> results;
   final List<DisplayDigestTheme> digest;
 
   /// Gold Hunts session views. Empty by default: a stub must not invent an
@@ -104,8 +109,8 @@ class _StubRepository implements LiveRepository {
   final List<GoldHuntsSessionView> goldHunts;
 
   /// Slow-section names that throw instead of answering. Lets a test fail one
-  /// section (history, events, digest, session-view) while the rest succeed,
-  /// proving a hiccup in one cannot starve the others.
+  /// section (history, events, results, digest, session-view) while the rest
+  /// succeed, proving a hiccup in one cannot starve the others.
   final Set<String> failSlowSections;
 
   /// When set, every read throws — the failed-poll case.
@@ -186,6 +191,15 @@ class _StubRepository implements LiveRepository {
       throw StateError('events down');
     }
     return events;
+  }
+
+  @override
+  Future<List<DisplayEvent>> resultEvents({int limit = 20}) async {
+    _guard();
+    if (failSlowSections.contains('results')) {
+      throw StateError('results down');
+    }
+    return results;
   }
 
   @override
@@ -377,6 +391,20 @@ const _liveEvent = DisplayEvent(
   previous: '3.0%',
 );
 
+/// A scored release: issuer numeric plus the publisher's wording. Forecast is
+/// null (the feed carries none), so the row must render UNSCORED, never
+/// "in line" — in-line claims a comparison that never happened.
+const _liveResult = DisplayEvent(
+  id: 'live-res-cpi',
+  title: 'US CPI Report August 2026',
+  currency: 'USD',
+  impact: EventImpact.high,
+  startsIn: Duration(days: -56),
+  actual: '334.98',
+  actualText: '+3.4% YoY, +0.1% MoM',
+  actualSource: 'BLS CUUR0000SA0 (public domain, ref 2026-M08)',
+);
+
 const _liveDigest = DisplayDigestTheme(
   theme: 'Hawkish Fed repricing',
   pressure: NewsPressure.hawkish,
@@ -427,6 +455,7 @@ LiveData _populated() {
       signal: _liveSignal,
       historyRows: _liveHistory,
       events: const [_liveEvent],
+      results: const [_liveResult],
       digest: const [_liveDigest],
       // 9 distinct ideas from 4 independent sources, with 6 sources enabled.
       // Deliberately different numbers: the poller must show partial
@@ -1156,9 +1185,14 @@ void main() {
       expect(find.text('NFP — Non-Farm Payrolls'), findsNothing);
 
       await _openTab(tester, 'RESULTS');
-      expect(find.text('No results yet.'), findsOneWidget);
-      // The empty state names the cause: the feed carries no actuals.
-      expect(find.textContaining('no actuals'), findsOneWidget);
+      // The scored row renders its figures, the publisher's wording, and
+      // the figure's provenance — and the upcoming release never borrows in.
+      expect(find.text('US CPI Report August 2026'), findsOneWidget);
+      expect(find.textContaining('A 334.98'), findsOneWidget);
+      expect(find.textContaining('+3.4% YoY'), findsOneWidget);
+      expect(find.textContaining('BLS CUUR0000SA0'), findsOneWidget);
+      // No forecast on file: unscored, never "in line".
+      expect(find.textContaining('UNSCORED'), findsOneWidget);
       expect(find.text('CPI y/y'), findsNothing);
 
       await _openTab(tester, 'NEWS');
@@ -1181,6 +1215,11 @@ void main() {
       expect(find.text('HIGH+MED · 0 WATCHING · BLACKOUT —'), findsOneWidget);
       expect(find.text('No events match these filters.'), findsOneWidget);
       expect(find.text('NFP — Non-Farm Payrolls'), findsNothing);
+
+      await _openTab(tester, 'RESULTS');
+      // Nothing scored yet: the silence names the lag, not a broken feed.
+      expect(find.text('No results yet.'), findsOneWidget);
+      expect(find.textContaining('arrive with a lag'), findsOneWidget);
 
       await _openTab(tester, 'NEWS');
       expect(find.text('No digest published yet.'), findsOneWidget);

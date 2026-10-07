@@ -98,12 +98,12 @@ class _EventsScreenState extends State<EventsScreen> {
 
   List<DisplayEvent> get _visibleEvents => _allEvents.where(_visible).toList();
 
-  /// Released events with an actual. The live calendar read is scheduled-only,
-  /// so there is no released row to show and the tab renders its honest empty
-  /// state — it never reuses an upcoming release as a result.
+  /// Released events with an actual, newest first. The Results tab reads these
+  /// — never the scheduled calendar rows. A release without an actual is not
+  /// a result, and an upcoming release is never shown as one.
   List<DisplayEvent> get _resultEvents {
     final live = _live;
-    return live != null ? const <DisplayEvent>[] : MockFixtures.resultEvents;
+    return live != null ? live.results : MockFixtures.resultEvents;
   }
 
   /// Latest macro digest: the polled themes in a live build, the fixture
@@ -437,15 +437,14 @@ class _EventsScreenState extends State<EventsScreen> {
   /// Past events: actual vs forecast with the surprise flag (addendum §3.3).
   Widget _resultsPane() {
     final events = _resultEvents;
-    // The provider publishes no actuals in this feed (verified: week-old
-    // releases still carry actual:null), so there is nothing to score. Say
-    // that instead of a bare "nothing here", which reads as broken rather
-    // than as a known upstream gap.
+    // Scored rows arrive with a lag: the calendar prints publisher wording
+    // weeks after release, and the issuer backfill covers CPI/jobs only. An
+    // empty tab before either lands is a timing fact, not a broken feed.
     if (events.isEmpty) {
       return const _SilenceNote(
         'No results yet.',
-        detail: 'Released events in this feed carry no actuals, '
-            'so there is nothing to score against forecast.',
+        detail: 'Released figures land here after the publisher prints them '
+            'or the issuer backfill scores them — both arrive with a lag.',
       );
     }
     return Column(
@@ -487,6 +486,29 @@ class _EventsScreenState extends State<EventsScreen> {
                     color: harborDim,
                   ),
                 ),
+                // Publisher wording and figure provenance. A worded figure is
+                // the publisher's text, never parsed into the numeric above;
+                // a sourced figure names the issuer series and reference
+                // month so the number is checkable.
+                if (event.actualText != null || event.actualSource != null) ...[
+                  const SizedBox(height: 7),
+                  Text(
+                    [
+                      if (event.actualText != null) '“${event.actualText}”',
+                      if (event.actualSource != null)
+                        'Actual: ${event.actualSource}'
+                      else
+                        'Actual: calendar publisher',
+                    ].join('\n'),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Space Mono',
+                      fontSize: 10,
+                      color: harborDim,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 7),
                 Text(
                   _surpriseLine(event),
@@ -510,12 +532,16 @@ class _EventsScreenState extends State<EventsScreen> {
 
   /// A released figure that beat or missed its forecast is volatility
   /// context. An in-line print is a neutral fact, so it keeps [harborDim] and
-  /// never borrows the direction colours.
+  /// never borrows the direction colours. A null surprise means no comparison
+  /// was possible (no forecast on file) — that reads as unscored, never as
+  /// "in line", because in-line claims a comparison that never happened.
   static String _surpriseLine(DisplayEvent event) {
-    if (!event.isSurprise) return '○ IN LINE — near forecast';
-    return event.surprise == 'hot'
-        ? '▲ SURPRISE — hotter than forecast, expect volatility'
-        : '▼ SURPRISE — cooler than forecast, expect volatility';
+    return switch (event.surprise) {
+      'hot' => '▲ SURPRISE — hotter than forecast, expect volatility',
+      'cold' => '▼ SURPRISE — cooler than forecast, expect volatility',
+      'inline' => '○ IN LINE — near forecast',
+      _ => '◇ UNSCORED — no forecast to compare against',
+    };
   }
 
   /// News pane: the macro-backdrop themes (display only) and the collected
