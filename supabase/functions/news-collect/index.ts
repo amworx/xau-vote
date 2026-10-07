@@ -7,11 +7,21 @@
  * full publisher article text (copyright rule, addendum §8).
  *
  * Providers:
- *   * `ManualNews` (DEFAULT, always allowed): human-curated seed headlines.
  *   * `GNewsAdapter` (DEV/TEST ONLY): written for local exercise, stays
  *     DISABLED unless `GNEWS_ENABLED=true`. GNews free tier is
  *     non-commercial only — production needs a paid plan or an alternative
  *     with a recorded licensing review (Gate G5 pattern).
+ *
+ * There is deliberately NO default provider. `ManualNews` used to be the
+ * default, writing invented "Manual Desk" headlines with example.com links
+ * into production on every 30-minute run - and news-digest summarized those
+ * inventions into the "macro backdrop" themes on screen (observed live
+ * 2026-10-07: a "Fed policy repricing" theme evidenced only by example.com
+ * seed URLs). That was fabrication wearing a pipeline uniform, the same class
+ * as the retired ManualSeed calendar fixtures. The class stays below so the
+ * shape remains tested, but nothing in production can reach it: with no
+ * approved provider this function reports empty and writes nothing.
+ * An empty news table renders honest silence; invented headlines do not.
  *
  * Query-plan note (addendum §8 quota math): 30-min × ~8 queries overruns
  * GNews free (100 req/day). Until a paid tier lands, the live path batches
@@ -65,8 +75,13 @@ export function fingerprint(url: string, title: string): string {
 }
 
 /**
- * ManualNews — human-curated seed (always allowed, same fallback pattern
- * as idea sources). Clearly labeled; replaced by provider rows over time.
+ * ManualNews — RETIRED from the production path (2026-10-07).
+ *
+ * It wrote invented "Manual Desk" headlines with example.com links into
+ * production news_articles, and news-digest summarized those inventions into
+ * on-screen macro themes. The class stays so its shape remains tested, but
+ * nothing below constructs it: with no approved provider the function reports
+ * empty and writes nothing.
  */
 export class ManualNews implements NewsProvider {
   readonly name = 'manual';
@@ -128,11 +143,21 @@ Deno.serve(async (_req) => {
   const db = createClient(url, key);
   const now = new Date();
 
-  let provider: NewsProvider = new ManualNews();
+  let provider: NewsProvider | null = null;
   if (Deno.env.get('GNEWS_ENABLED') === 'true') {
     const gkey = Deno.env.get('GNEWS_API_KEY');
     if (!gkey) return Response.json({ ok: false, error: 'GNEWS_ENABLED but no GNEWS_API_KEY.' }, { status: 500 });
     provider = new GNewsAdapter(gkey);
+  }
+  if (provider === null) {
+    return Response.json({
+      ok: true,
+      provider: 'none',
+      stored: 0,
+      dupes: 0,
+      note: 'no approved news provider is configured; reporting empty rather than invented headlines.',
+      at: now.toISOString(),
+    });
   }
 
   const queries = QUERY_SET.slice(0, MAX_QUERIES_PER_CYCLE);

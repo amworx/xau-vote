@@ -175,8 +175,10 @@ export class FinanceCalendarProvider implements EventProvider {
   }
 
   async fetchUpcoming(now: Date): Promise<RawEvent[]> {
+    // 14-day forward window. The provider covers majors only (no earnings in
+    // the API), so depth comes from the window, never from invented rows.
     const from = now.toISOString().slice(0, 10);
-    const to = new Date(now.getTime() + 8 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+    const to = new Date(now.getTime() + 14 * 24 * 3600 * 1000).toISOString().slice(0, 10);
     const r = await fetch(
       `${FinanceCalendarProvider.base}/calendar?from=${from}&to=${to}&limit=500`,
       { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(25_000) },

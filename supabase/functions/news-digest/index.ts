@@ -101,9 +101,16 @@ Deno.serve(async (_req) => {
     .gte('collected_at', windowStart.toISOString())
     .order('collected_at', { ascending: false })
     .limit(200);
+  // Defense in depth (2026-10-07 incident): seed headlines with example.com
+  // links once flowed into production digests and onto the screen as macro
+  // themes. The collector no longer writes them and the rows are deleted, but
+  // the digest refuses them too, so a reintroduced fixture can never become a
+  // published theme through this path again.
+  const rows = ((data ?? []) as Array<{ url: string; title: string; summary: string | null; query_tag: string | null }>)
+    .filter((r) => !String(r.url ?? '').includes('example.com'));
   if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
 
-  const articles = ((data ?? []) as Array<{ url: string; title: string; summary: string | null; query_tag: string | null }>)
+  const articles = rows
     .map((r) => ({ url: r.url, title: r.title, summary: r.summary, queryTag: r.query_tag }));
   const themes = clusterArticles(articles);
 

@@ -1110,3 +1110,35 @@
    - **deployed:** fetch-events (FinanceCalendar default; FMP still gated).
    - **tests:** app 267 green, analyzer clean.
    - **tags:** finance-calendar, events, blackout-guard, attribution
+
+## EVT-20261007-0223 news seeder was fabricating the macro backdrop; removed
+
+   - **mode:** BUILD
+   - **action:** Three Events complaints investigated; the worst was a live
+     fabrication incident.
+   - **incident:** news-collect ran ManualNews as its DEFAULT provider every 30
+     min, writing invented "Manual Desk" headlines with example.com links into
+     production news_articles - and news-digest summarized those inventions
+     into the on-screen macro themes (live proof: a "Fed policy repricing"
+     theme evidenced ONLY by example.com seed URLs). Same class as the retired
+     calendar fixtures and the 0.35 spread. Fixed: ManualNews unreachable in
+     production (function reports empty when unconfigured), seed rows deleted
+     (articles and poisoned digests both back to 0), xv-news-collect and
+     xv-news-digest crons disabled, digest refuses example.com rows as
+     defense in depth.
+   - **results tab:** honestly empty and stays so for now - the provider
+     publishes NO actuals (verified: week-old releases still null despite docs
+     claiming hourly fills). The empty state now says why instead of reading
+     broken.
+   - **coverage:** fetch window widened 8d -> 14d forward (25 real rows). No
+     past window: past rows carry no actuals either, so they would add noise,
+     not results. Earnings excluded from the API by the provider (documented).
+   - **news clarity:** empty states name the cause (no licensed $0 news feed;
+     GNews free is non-commercial); theme rows now show their evidence count
+     ("N linked articles") so a theme reads as a summary, not a verdict.
+   - **files:** supabase/functions/news-collect, news-digest, fetch-events,
+     src/app/lib/screens/events_screen.dart, test/live_mode_test.dart
+   - **deployed:** all three functions; news-collect verified dry
+     (provider:none, stored:0); fetch-events verified (25 rows).
+   - **tests:** app 267 green, analyzer clean.
+   - **tags:** fabrication-incident, news-seeder, honest-empty, coverage

@@ -1120,10 +1120,14 @@ void main() {
 
       await _openTab(tester, 'RESULTS');
       expect(find.text('No results yet.'), findsOneWidget);
+      // The empty state names the cause: the feed carries no actuals.
+      expect(find.textContaining('no actuals'), findsOneWidget);
       expect(find.text('CPI y/y'), findsNothing);
 
       await _openTab(tester, 'NEWS');
       expect(find.text('Hawkish Fed repricing'), findsOneWidget);
+      // The theme shows what it stands on, so it reads as a summary.
+      expect(find.textContaining('linked article'), findsOneWidget);
       expect(find.text('No headlines collected.'), findsOneWidget);
       expect(find.text('Gold holds range ahead of US payrolls data'), findsNothing);
     });
@@ -1143,6 +1147,9 @@ void main() {
 
       await _openTab(tester, 'NEWS');
       expect(find.text('No digest published yet.'), findsOneWidget);
+      // The silence states its cause: no licensed feed, not a broken widget.
+      // Both empty notes say it (digest + headlines), so two matches.
+      expect(find.textContaining('licensed news'), findsNWidgets(2));
       expect(find.text('No headlines collected.'), findsOneWidget);
     });
   });

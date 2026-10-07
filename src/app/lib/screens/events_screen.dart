@@ -437,7 +437,17 @@ class _EventsScreenState extends State<EventsScreen> {
   /// Past events: actual vs forecast with the surprise flag (addendum §3.3).
   Widget _resultsPane() {
     final events = _resultEvents;
-    if (events.isEmpty) return const _SilenceNote('No results yet.');
+    // The provider publishes no actuals in this feed (verified: week-old
+    // releases still carry actual:null), so there is nothing to score. Say
+    // that instead of a bare "nothing here", which reads as broken rather
+    // than as a known upstream gap.
+    if (events.isEmpty) {
+      return const _SilenceNote(
+        'No results yet.',
+        detail: 'Released events in this feed carry no actuals, '
+            'so there is nothing to score against forecast.',
+      );
+    }
     return Column(
       children: [
         for (final event in events) ...[
@@ -522,7 +532,12 @@ class _EventsScreenState extends State<EventsScreen> {
         ),
         const SizedBox(height: 9),
         if (themes.isEmpty)
-          const _SilenceNote('No digest published yet.')
+          const _SilenceNote(
+            'No digest published yet.',
+            detail: 'Themes are summarized here once licensed news articles '
+                'arrive. None is feeding at zero cost - GNews free is '
+                'non-commercial.',
+          )
         else
           for (final theme in themes) ...[
             HarborCard(
@@ -531,13 +546,33 @@ class _EventsScreenState extends State<EventsScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      theme.theme,
-                      style: const TextStyle(
-                        fontFamily: 'Sora',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          theme.theme,
+                          style: const TextStyle(
+                            fontFamily: 'Sora',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        // What the theme stands on. A pressure label without a
+                        // source count reads as a verdict; the count shows it
+                        // is a summary of N articles, nothing more.
+                        Text(
+                          theme.evidenceCount == 1
+                              ? '1 linked article'
+                              : '${theme.evidenceCount} linked articles',
+                          style: const TextStyle(
+                            fontFamily: 'Space Mono',
+                            fontSize: 9,
+                            color: harborFaint,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   PressurePill(pressure: theme.pressure),
@@ -553,7 +588,11 @@ class _EventsScreenState extends State<EventsScreen> {
         ),
         const SizedBox(height: 9),
         if (headlines.isEmpty)
-          const _SilenceNote('No headlines collected.')
+          const _SilenceNote(
+            'No headlines collected.',
+            detail: 'Headlines appear here with their source once a licensed '
+                'news provider runs. None is active.',
+          )
         else
           for (final headline in headlines) ...[
             _NewsCard(item: headline),
@@ -970,18 +1009,41 @@ class _NewsCard extends StatelessWidget {
 /// Empty state for a filtered or not-yet-published slice. Silence, not a
 /// signal — an empty calendar must never read as an instruction (rule 9).
 class _SilenceNote extends StatelessWidget {
-  const _SilenceNote(this.message);
+  const _SilenceNote(this.message, {this.detail});
 
   final String message;
 
+  /// Second line saying WHY there is nothing, so an empty tab reads as an
+  /// explained state rather than a broken widget. Null when the message alone
+  /// is self-explanatory.
+  final String? detail;
+
   @override
   Widget build(BuildContext context) {
+    final detail = this.detail;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      child: Text(
-        message,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontFamily: 'Sora', fontSize: 12, color: harborFaint),
+      child: Column(
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontFamily: 'Sora', fontSize: 12, color: harborFaint),
+          ),
+          if (detail != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              detail,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'Space Mono',
+                fontSize: 9,
+                height: 1.5,
+                color: harborFaint,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
