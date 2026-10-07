@@ -1365,3 +1365,18 @@
    - **files:** supabase/functions/news-collect/index.ts,
      src/app/lib/screens/events_screen.dart (copy), tests, memory
    - **tags:** news, rss, licensing, bls-debugging, in-situ-diagnostics
+
+## EVT-20261007-0233 service-key rotation verified + first public release cut
+
+   - **mode:** BUILD
+   - **action:** User completed dashboard rotation; CLI secrets-set correctly
+     refused (SUPABASE_ prefix is reserved/auto-injected). Found the second
+     key copy before it broke: cron jobs invoke functions through
+     vault.xv_service_role_key, which does NOT follow dashboard rotation.
+     User updated the vault secret via SQL editor. Verified end-to-end:
+     price-live (biquote 1s), bls-actuals writes, cron-path invoke, and all
+     scheduled runs succeeding post-rotation (tick/consensus/bars/quotes/
+     settle). Then tagged v1.0.10 and published GitHub Release with the
+     sideload APK + honest notes.
+   - **files:** release v1.0.10 (app 1.0.10+18), memory
+   - **tags:** key-rotation, vault, release, github-release
