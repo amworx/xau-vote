@@ -121,6 +121,24 @@ String sessionLabel(MarketSession s) => switch (s) {
       MarketSession.lateUs => 'LATE US',
     };
 
+/// Start of the trading day that contains [utc], as a UTC instant.
+///
+/// A gold "day" runs 18:00 New York to 17:00 New York (then the halt). The
+/// Radar range must bound exactly this window: an unbounded trailing-N-rows
+/// read once printed a 4-hour min/max as the day's range, and a UTC-midnight
+/// cut would donate the 18:00-00:00 UTC stretch to the wrong day. Built purely
+/// from UTC instants (never local-zone fields): 18:00 New York is 22:00 UTC
+/// in daylight time and 23:00 UTC in standard time, exactly one of which
+/// reads back as 18:00 — the DST flips happen at 02:00 local, never here.
+DateTime sessionStartUtc(DateTime utc) {
+  final ny = newYorkTime(utc);
+  var day = DateTime.utc(ny.year, ny.month, ny.day);
+  if (ny.hour < 18) day = day.subtract(const Duration(days: 1));
+  final edt = DateTime.utc(day.year, day.month, day.day, 22);
+  if (newYorkTime(edt).hour == 18) return edt;
+  return DateTime.utc(day.year, day.month, day.day, 23);
+}
+
 /// When the market next opens, or null when already open.
 ///
 /// Used by the UI to tell a trader when to look back rather than leaving them

@@ -170,10 +170,10 @@ class _RadarScreenState extends State<RadarScreen> {
             ),
           )
         else if (live != null)
-          _LiveQuoteHero(live: live)
+          const _LiveQuoteBlock()
         else
           const SpotPriceBlock(signal: quote),
-        if (live != null) _LiveDayBar(live: live) else const DayMoveBar(signal: quote),
+        if (live == null) const DayMoveBar(signal: quote),
         TimeframeSwitch(
           active: _timeframe,
           onChanged: (tf) => setState(() => _timeframe = tf),
@@ -456,16 +456,61 @@ Widget _agreeRow(
   /// the model's defaults would put `+12.40` and `+0.29%` in front of a live
   /// trader. Everything else (eyebrow, mono hero, gutter, wrap meta) is the same
   /// Harbor language, and the day move is simply absent rather than derived.
-class _LiveQuoteHero extends StatelessWidget {
-  const _LiveQuoteHero({required this.live});
+/// Live quote + day bar with their own 1-second repaint.
+///
+/// Values move only when ticks land (the provider republishes on roughly a
+/// 30-second cycle, so faster polling would be theater), but the block
+/// repaints every second so ages and countdowns never look stuck. Reads the
+/// poller without listening — data changes still arrive through the normal
+/// notify path — so the rest of the screen is untouched by each tick.
+class _LiveQuoteBlock extends StatefulWidget {
+  const _LiveQuoteBlock();
+
+  @override
+  State<_LiveQuoteBlock> createState() => _LiveQuoteBlockState();
+}
+
+class _LiveQuoteBlockState extends State<_LiveQuoteBlock> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final live = context.read<LiveData>();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _LiveQuoteHero(live: live),
+        _LiveDayBar(live: live),
+      ],
+    );
+  }
+}
+
+class _LiveQuoteHero extends StatelessWidget {  const _LiveQuoteHero({required this.live});
 
   final LiveData live;
 
   @override
   Widget build(BuildContext context) {
     final price = live.price;
-  final priceIsLive = live.priceIsLive;
-  final priceAgeSeconds = live.priceAgeSeconds;
+    final priceIsLive = live.priceIsLive;
+    final priceAgeSeconds = live.priceAgeSeconds;
+    final moveFraction = live.dayMoveFraction;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 14),
       child: Column(
@@ -487,15 +532,37 @@ class _LiveQuoteHero extends StatelessWidget {
               ),
             )
           else
-            Text(
-              formatPrice(price),
-              style: const TextStyle(
-                fontFamily: 'Space Mono',
-                fontSize: 32,
-                height: 1,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -1.5,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  formatPrice(price),
+                  style: const TextStyle(
+                    fontFamily: 'Space Mono',
+                    fontSize: 32,
+                    height: 1,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -1.5,
+                  ),
+                ),
+                // Day change vs the same reference as the day bar. Absent
+                // (no reference on file) it stays empty rather than borrowing
+                // a fixture percent.
+                if (moveFraction != null) ...[
+                  const SizedBox(width: 9),
+                  Text(
+                    '${moveFraction < 0 ? '-' : '+'}'
+                    '${(moveFraction.abs() * 100).toStringAsFixed(2)}%',
+                    style: TextStyle(
+                      fontFamily: 'Space Mono',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: moveFraction < 0 ? harborShort : harborLong,
+                    ),
+                  ),
+                ],
+              ],
             ),
           const SizedBox(height: 8),
           Text(
@@ -541,10 +608,12 @@ class _LiveQuoteHero extends StatelessWidget {
 
 /// Live day bar: the session range the pipeline actually observed.
 ///
-/// The day move prints `—` because the feed publishes no session open. Deriving
-/// one from the range (or carrying the offline literal) would put a number on
-/// screen that no observation supports (product rule 2). Mirrors [DayMoveBar]:
-/// ink surface, 16px radius, eyebrow label over a Space Mono value.
+/// The day move prints against the previous session's close (the last stored
+/// print before the 18:00 New York open), falling back to the session's first
+/// print, and `—` when the database holds neither. It is never derived from
+/// the range: extremes are not an open or a close (product rule 2). Mirrors
+/// [DayMoveBar]: ink surface, 16px radius, eyebrow label over a Space Mono
+/// value.
 class _LiveDayBar extends StatelessWidget {
   const _LiveDayBar({required this.live});
 
@@ -562,12 +631,20 @@ class _LiveDayBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Expanded(child: _cell('Day Move', '—')),
+            Expanded(child: _cell('Day Move', _move)),
             _cell('Range', _range),
           ],
         ),
       ),
     );
+  }
+
+  /// Signed points move vs the reference, or an honest `—` with no reference.
+  String get _move {
+    final move = live.dayMove;
+    if (move == null) return '—';
+    final sign = move < 0 ? '-' : '+';
+    return '$sign${move.abs().toStringAsFixed(2)}';
   }
 
   /// `4,266.90 — 4,286.40`, or an honest `—` until the pipeline has observed

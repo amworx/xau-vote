@@ -1251,3 +1251,39 @@
      (guard line, meta line), lib/models/display_models.dart (formatter),
      test/live_mode_test.dart
    - **tags:** countdown, ticking, frozen-clock, widgetspan, testable-clock
+
+## EVT-20261007-0228 radar values fixed: server-side session stats + filled day move + 1s repaint
+
+   - **mode:** BUILD
+   - **action:** User reported wrong price/high/low/range, then blank day
+     move, then demanded >=1s updates. Found the range read newest-N rows
+     through the PostgREST page cap, silently shrinking the window as the
+     session grew (morning spike fell out by afternoon). Fix: new
+     xv_session_stats RPC (0026 + grant 0027) aggregates lo/hi/first-print/
+     prev-close in one round trip; LiveData re-anchors every slow poll and
+     folds each price tick locally between polls. Day move now reads vs the
+     previous close (pinned per session so retention pruning cannot march it
+     mid-session), blank only with no reference. Quote+day bar repaint every
+     second on their own ticker (values move with ticks; the feeds cap at
+     ~30s/60s so sub-second data does not exist at $0 - stated, not faked).
+   - **verified live:** v14 clean install, verified-fresh process: RANGE
+     4,068.18-4,170.50 == RPC truth to the cent; DAY MOVE -48.79 ==
+     price-prev_close exact; hero % -1.17% consistent; ticks track across
+     screenshots; countdowns tick. App suite 273 green, analyzer clean,
+     xau_core 291 green (incl. 3 new sessionStartUtc tests).
+   - **process hygiene (hard lesson):** an afternoon of ghost screenshots -
+     installs do not kill running processes, `am start` re-attaches with a
+     "top-most instance" warning my truncated output hid, and versionCode 11
+     on every build made dumpsys useless. From now: full outputs, pidof
+     before/after every kill/start, version bump per test build, uninstall
+     (not install -r) for clean verification. Also: LIVE=true is mandatory -
+     builds without it are mock (the 4278.30 web incident).
+   - **files:** supabase/migrations/0026_session_stats_rpc.sql,
+     0027_session_stats_grant.sql, supabase/functions (unchanged),
+     src/xau_core/lib/analysis/session.dart (+sessionStartUtc),
+     src/xau_core/test/session_test.dart,
+     src/app/lib/data/live_repository.dart (+sessionStats/sessionPrices/
+     previousClose), src/app/lib/data/live_data.dart (tracker, pinning,
+     shared tick path), src/app/lib/screens/radar_screen.dart (move, hero
+     pct, 1s quote block), src/app/test/* (fold/pin/blank tests)
+   - **tags:** radar, range, day-move, rpc, postgrest-cap, pinning, 1s-ticker, process-hygiene

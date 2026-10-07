@@ -160,4 +160,23 @@ void main() {
       expect(newYorkTime(next).weekday, DateTime.sunday);
     });
   });
+
+  group('session start bounds the trading day', () {
+    test('Wednesday afternoon belongs to the previous evening open (EDT)', () {
+      // Oct 7 2026 20:20 UTC = 16:20 New York: today's session opened
+      // 18:00 New York YESTERDAY = 22:00 UTC.
+      expect(sessionStartUtc(utc(2026, 10, 7, 20, 20)), utc(2026, 10, 6, 22));
+    });
+
+    test('winter uses the 23:00 UTC open (EST)', () {
+      // Jan 15 2026 20:00 UTC = 15:00 New York: session opened Jan 14
+      // 18:00 EST = 23:00 UTC.
+      expect(sessionStartUtc(utc(2026, 1, 15, 20)), utc(2026, 1, 14, 23));
+    });
+
+    test('just after the open belongs to this evening, not yesterday', () {
+      // Oct 7 2026 22:30 UTC = 18:30 New York: session opened 30 min ago.
+      expect(sessionStartUtc(utc(2026, 10, 7, 22, 30)), utc(2026, 10, 7, 22));
+    });
+  });
 }

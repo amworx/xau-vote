@@ -163,7 +163,20 @@ class _SlowRepository implements LiveRepository {
   }) async =>
       (price: null, at: null, live: false);
   @override
-  Future<({double low, double high})?> sessionRange() async => null;
+  Future<({double low, double high})?> sessionRange({required DateTime since}) async => null;
+
+  @override
+  Future<List<({DateTime at, double price})>> sessionPrices({
+    required DateTime since,
+  }) async => const [];
+
+  @override
+  Future<double?> previousClose({required DateTime sessionStart}) async => null;
+
+  @override
+  Future<({double? low, double? high, double? firstPrint, double? prevClose})>
+      sessionStats({required DateTime since}) async =>
+          (low: null, high: null, firstPrint: null, prevClose: null);
 
   /// No active signal, so the independence and contributor reads are never
   /// reached.

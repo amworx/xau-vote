@@ -57,6 +57,7 @@ class _StubRepository implements LiveRepository {
     this.price,
     this.low,
     this.high,
+    this.prevClose,
     this.signal,
     this.historyRows = const [],
     this.sentimentRows = const SentimentLayers.empty(),
@@ -90,9 +91,14 @@ class _StubRepository implements LiveRepository {
   /// contributing sources the backend did not report.
   final List<DisplaySource> contributors;
 
-  final double? price;
+  double? price;
+
   final double? low;
   final double? high;
+
+  /// Previous session close for the day-move reference. Mutable so a test can
+  /// prove the reference pins per session instead of chasing the database.
+  double? prevClose;
   final DisplaySignal? signal;
   final List<DisplayHistoryEntry> historyRows;
 
@@ -146,12 +152,43 @@ class _StubRepository implements LiveRepository {
   bool livePrice = true;
 
   @override
-  Future<({double low, double high})?> sessionRange() async {
+  Future<({double low, double high})?> sessionRange({required DateTime since}) async {
     _guard();
     final l = low;
     final h = high;
     if (l == null || h == null) return null;
     return (low: l, high: h);
+  }
+
+  @override
+  Future<List<({DateTime at, double price})>> sessionPrices({
+    required DateTime since,
+  }) async {
+    _guard();
+    final l = low;
+    final h = high;
+    if (l == null || h == null) return const [];
+    final now = DateTime.now().toUtc();
+    // Newest first, like production: high then low.
+    return [(at: now, price: h), (at: now, price: l)];
+  }
+
+  @override
+  Future<({double? low, double? high, double? firstPrint, double? prevClose})>
+      sessionStats({required DateTime since}) async {
+    _guard();
+    final l = low;
+    final h = high;
+    if (l == null || h == null) {
+      return (low: null, high: null, firstPrint: null, prevClose: null);
+    }
+    return (low: l, high: h, firstPrint: l, prevClose: prevClose);
+  }
+
+  @override
+  Future<double?> previousClose({required DateTime sessionStart}) async {
+    _guard();
+    return prevClose;
   }
 
   @override
@@ -457,6 +494,8 @@ LiveData _populated() {
       events: const [_liveEvent],
       results: const [_liveResult],
       digest: const [_liveDigest],
+      // Previous session close: the day move reads against it.
+      prevClose: 4295.00,
       // 9 distinct ideas from 4 independent sources, with 6 sources enabled.
       // Deliberately different numbers: the poller must show partial
       // agreement, and a fixture where both counts match would hide the
@@ -911,15 +950,18 @@ void main() {
         findsNothing,
         reason: 'the fixture price must never reach a live screen',
       );
+      // Day change vs the stub's previous close (4312.45 − 4295.00): the
+      // hero shows the measured percent, never the fixture's +0.29%.
+      expect(find.text('+0.41%'), findsOneWidget);
       expect(
         find.text('+0.29%'),
         findsNothing,
-        reason: 'no session open is published, so no percentage is derived',
+        reason: 'the fixture percent must never reach a live screen',
       );
 
-      // Day bar: the observed range, and an honest `—` for the unmeasured day
-      // move.
+      // Day bar: the observed range, and the measured move vs prev close.
       expect(find.text('+12.40'), findsNothing);
+      expect(find.text('+17.45'), findsOneWidget);
       expect(find.text('4,300.10 — 4,320.90'), findsOneWidget);
 
       // Verdict levels are WITHHELD. The engine still computes a stop plan,
@@ -1050,6 +1092,76 @@ void main() {
       // The screen is not replaced: the trader still sees what he had.
       expect(find.text('4,312.45'), findsOneWidget);
       expect(find.text('15M Consensus Setup'), findsOneWidget);
+    });
+
+    testWidgets('ticks fold into the range and move without a new poll', (
+      tester,
+    ) async {
+      final repo = _StubRepository(
+        price: 4312.45,
+        low: 4300.10,
+        high: 4320.90,
+        prevClose: 4295.00,
+      );
+      final live = LiveData(repository: repo);
+      addTearDown(live.dispose);
+      await _pumpLive(tester, live);
+
+      expect(find.text('4,300.10 — 4,320.90'), findsOneWidget);
+      expect(find.text('+17.45'), findsOneWidget);
+
+      // A new high ticks in: the range widens and the move follows, all from
+      // the tick itself — no history re-read, no extra network. The slow
+      // re-anchor keeps the tick (4325.90 − 4295.00 = +30.90, +0.72%).
+      repo.price = 4320.90 + 5.00;
+      await live.refresh();
+      // The quote block repaints on its own 1s ticker rather than on the
+      // notify path, so advance the clock past one tick.
+      await tester.pump(const Duration(seconds: 2));
+
+      expect(find.text('4,300.10 — 4,325.90'), findsOneWidget);
+      expect(find.text('+30.90'), findsOneWidget);
+      expect(find.text('+0.72%'), findsOneWidget);
+    });
+
+    testWidgets('no reference, no move: blank instead of a derived number', (
+      tester,
+    ) async {
+      // A price with no session history and no previous close. Ticks still
+      // fold extremes (the range reads the ticks), but the move has nothing
+      // to measure against, so it stays blank and the hero shows no percent.
+      final live = LiveData(
+        repository: _StubRepository(price: 4312.45),
+      );
+      addTearDown(live.dispose);
+      await _pumpLive(tester, live);
+
+      expect(find.text('4,312.45 — 4,312.45'), findsOneWidget);
+      expect(find.textContaining('%'), findsNothing);
+    });
+
+    testWidgets('the move reference pins per session, not per poll', (
+      tester,
+    ) async {
+      final repo = _StubRepository(
+        price: 4312.45,
+        low: 4300.10,
+        high: 4320.90,
+        prevClose: 4295.00,
+      );
+      final live = LiveData(repository: repo);
+      addTearDown(live.dispose);
+      await _pumpLive(tester, live);
+      expect(find.text('+17.45'), findsOneWidget);
+
+      // The backend's close shifts (retention pruning, late corrections):
+      // the displayed move must not follow it mid-session.
+      repo.prevClose = 4300.00;
+      await live.refresh();
+      await tester.pump(const Duration(seconds: 2));
+
+      expect(find.text('+17.45'), findsOneWidget);
+      expect(find.text('+12.45'), findsNothing);
     });
   });
 

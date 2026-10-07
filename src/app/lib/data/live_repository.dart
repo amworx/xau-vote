@@ -79,22 +79,99 @@ class LiveRepository {
 
   /// Session high/low derived from stored snapshots (the DB has no range
   /// column; this is real observed data, not an estimate).
-  Future<({double low, double high})?> sessionRange() async {
+  ///
+  /// Bounded by [since] — the session start — so a thin trailing window can
+  /// never masquerade as the day's range. Rows before the open belong to the
+  /// previous session and are excluded, even when the table holds them.
+  /// Reads the full window in pages: PostgREST caps page size well below a
+  /// full session's row count, and a single capped page silently shrinks the
+  /// range as the session grows.
+  Future<({double low, double high})?> sessionRange({required DateTime since}) async {
+    final rows = await sessionPrices(since: since);
+    if (rows.isEmpty) return null;
+    var lo = rows.first.price;
+    var hi = rows.first.price;
+    for (final r in rows) {
+      if (r.price < lo) lo = r.price;
+      if (r.price > hi) hi = r.price;
+    }
+    return (low: lo, high: hi);
+  }
+
+  /// Session range + day-move references in one round trip.
+  ///
+  /// Aggregated by `xv_session_stats` inside the database. Client-side paging
+  /// hit the PostgREST page cap and silently shrank the window as the session
+  /// grew (the morning spike fell out of the newest-N rows by afternoon),
+  /// so the database — which sees every row — computes the extremes and the
+  /// references instead. All four figures are observed data, never estimates.
+  Future<({double? low, double? high, double? firstPrint, double? prevClose})>
+      sessionStats({required DateTime since}) async {
+    final r = await _client.rpc(
+      'xv_session_stats',
+      params: {'p_since': since.toIso8601String()},
+    );
+    final rows = (r as List).cast<Row>();
+    if (rows.isEmpty) {
+      return (low: null, high: null, firstPrint: null, prevClose: null);
+    }
+    final row = rows.first;
+    return (
+      low: _toDouble(row['lo']),
+      high: _toDouble(row['hi']),
+      firstPrint: _toDouble(row['first_print']),
+      prevClose: _toDouble(row['prev_close']),
+    );
+  }
+
+  /// Every stored print inside the session window, newest first.
+  ///
+  /// Paginated: a 23h session holds ~2800 rows against a 1000-row page cap,
+  /// so one page would cut the morning off by afternoon. Pages stop at the
+  /// window edge or after 6 pages (generous headroom, bounded cost).
+  Future<List<({DateTime at, double price})>> sessionPrices({
+    required DateTime since,
+  }) async {
+    const page = 1000;
+    final out = <({DateTime at, double price})>[];
+    for (var p = 0; p < 6; p++) {
+      final r = await _client
+          .from('market_snapshots')
+          .select('price,timestamp')
+          .eq('symbol', 'XAUUSD')
+          .gte('timestamp', since.toIso8601String())
+          .order('timestamp', ascending: false)
+          .range(p * page, (p + 1) * page - 1);
+      final rows = (r as List).map((row) {
+        final m = row as Row;
+        return (
+          at: DateTime.tryParse('${m['timestamp']}')?.toUtc(),
+          price: _toDouble(m['price']),
+        );
+      }).where((e) => e.at != null && e.price != null).map(
+        (e) => (at: e.at!, price: e.price!),
+      ).toList();
+      if (rows.isEmpty) break;
+      out.addAll(rows);
+      if (rows.length < page) break;
+    }
+    return out;
+  }
+
+  /// Last stored print strictly before [sessionStart]: the previous session's
+  /// close, the honest reference for the day move. Null on a fresh database
+  /// with no prior session — the UI then says so instead of inventing one.
+  Future<double?> previousClose({required DateTime sessionStart}) async {
     final r = await _client
         .from('market_snapshots')
         .select('price')
         .eq('symbol', 'XAUUSD')
+        .lt('timestamp', sessionStart.toIso8601String())
         .order('timestamp', ascending: false)
-        .limit(500);
-    final values = (r as List)
-        .map((row) => _toDouble((row as Row)['price']))
-        .whereType<double>()
-        .toList();
-    if (values.isEmpty) return null;
-    return (
-      low: values.reduce((a, b) => a < b ? a : b),
-      high: values.reduce((a, b) => a > b ? a : b),
-    );
+        .limit(1)
+        .maybeSingle();
+    if (r == null) return null;
+    return _toDouble(r['price']);
   }
 
   // -------------------------------------------------------------- consensus
