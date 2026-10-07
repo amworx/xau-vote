@@ -940,3 +940,45 @@ the $0 free-only directive, and there is no free tier, trial path, or
 redistributable data to evaluate. Nothing to integrate, nothing to scrape
 (the repo contains no data surface at all). Events stay on Finance Calendar;
 news stays empty until a licensable $0 provider exists.
+
+## D-20261007-022 - l3vlup-skills reviewed: APPROVED as calendar validator + macro research
+
+**decided:** 2026-10-07
+
+**reviewed:** `https://github.com/Surojitc/l3vlup-skills` README (licence,
+method, sources), plus live fetches of `data/calendar.auto.json`
+(generatedAt 2026-10-07T12:10:45Z) and `data/macro.auto.json`
+(generatedAt 2026-10-05, 11 series).
+
+**licence:** Code MIT. Data redistributes official/public-domain source data
+with per-record source name + URL; "attribution appreciated, never required".
+US federal sources (Treasury, BLS, BEA, Fed) are public domain. Collection
+hygiene is good: manager sites with anti-scraping terms are recorded as
+excluded, gaps stay gaps. Verdict: compatible with the $0 directive and the
+licensing gate. Attribution will be given voluntarily anyway (cheap, correct).
+
+**calendar file:** US BLS schedule + FOMC + BoE MPC dates, ET wall-clock
+times, importance flags, daily refresh. Spot cross-check passed: CPI Oct 14
+08:30 ET == Finance Calendar Oct 14 12:30 UTC. Schedule only: no actuals, no
+consensus, US/Eurozone/UK only.
+
+**macro file:** 11 weekly/monthly series (Treasury 10Y/2Y, curve, CPI,
+unemployment, ECB/ONS/BoE equivalents) with per-point dates and provenance.
+Cadence fits slow context only. Per-series staleness varies (ez-hicp last
+2025-12) - any consumer must check freshness per series, never assume the
+file-level generatedAt covers every row.
+
+**approved roles:**
+1. Calendar cross-check (step 8 operationalized): compare Finance Calendar
+   HIGH USD dates against these official-schedule dates; log discrepancies for
+   manual official-issuer check. NEVER auto-switch on a mismatch - a third
+   party`s error must not flap the guard.
+2. Macro research / slow-context input candidate (methodology decision
+   required before any layer use; weights are fixed).
+
+**explicitly not approved:** votes, levels, headlines, confirmation, sole
+dependency. Upstream is a one-person repo with no SLA - it validates, it does
+not lead. Finance Calendar stays the primary convenience layer.
+
+**caveats on record:** ET times need EST/EDT conversion (existing DST logic
+covers it); no SLA/uptime; single maintainer (bus factor).
