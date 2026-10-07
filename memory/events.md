@@ -1167,3 +1167,30 @@
      v3 impact-blind matching). 15 noisy first-run rows deleted before the
      matcher was fixed; clean baseline re-run verified.
    - **tags:** validation, crosscheck, calendar, step-8
+
+## EVT-20261007-0225 browser testing works; first run caught a CORS-only outage
+
+   - **mode:** BUILD
+   - **action:** User asked to test in browser instead of per-change APK
+     installs. Made it real: update_service.dart was the only non-web import
+     (dart:io throughout); added update_io_stub.dart behind a conditional
+     import so it compiles for web while remaining Android-only by
+     construction (main provides no UpdateService without a manifest URL).
+     Lesson: conditional imports resolve the DEFAULT uri in analysis - stub
+     first broke every VM type; dart:io first works everywhere.
+   - **proving run caught a real bug:** the web build rendered fully but showed
+     "Provider unreachable" while the phone was live. Root cause: price-live
+     was called with the key in an `apikey` header, forcing a CORS preflight
+     the gateway answers without echoing the header - every browser refused
+     while Android (no preflight) worked. Fixed by sending the public anon
+     key as a query parameter with zero custom headers (simple GET, no
+     preflight), pinned by a MockClient regression test asserting URL shape
+     and header absence.
+   - **workflow from here:** `flutter build web --release` + serve build/web
+     on 8901, drive at http://10.10.0.4:8901/ via DevTools (MCP browser
+     reaches LAN, not localhost; Start-Job does not survive between shell
+     calls so the server runs via detached Start-Process).
+   - **files:** lib/services/update_service.dart, lib/services/update_io_stub.dart (new),
+     lib/data/live_repository.dart, test/live_mode_test.dart
+   - **tests:** app suite green incl. new preflight-shape test.
+   - **tags:** web-testing, cors, conditional-imports

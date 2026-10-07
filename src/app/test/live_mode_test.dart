@@ -26,7 +26,10 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:xau_core/xau_core.dart' hide Direction;
 import 'package:xauvote/data/live_data.dart';
 import 'package:xauvote/data/live_repository.dart';
@@ -630,6 +633,40 @@ void main() {
       // Still open: silence again.
       live.checkSession(at: DateTime.utc(2026, 10, 6, 22, 5));
       expect(notifications, 1);
+    });
+
+    test('price-live is a simple GET so browsers skip the preflight', () async {
+      // Regression: the call sent the key as an `apikey` header, which forces
+      // a CORS preflight the gateway answers without echoing the header. Every
+      // browser then refused the call while the phone worked, and the web
+      // build silently fell back to snapshots. The key travels in the query
+      // string with no custom headers, which browsers send preflight-free.
+      Uri? gotUri;
+      Map<String, String>? gotHeaders;
+      final client = MockClient((request) async {
+        gotUri = request.url;
+        gotHeaders = Map.of(request.headers);
+        return http.Response(
+          '{"price":4170.30,"live":true,"measuredAt":"2026-10-06T20:00:00Z"}',
+          200,
+        );
+      });
+      addTearDown(client.close);
+      final repo = LiveRepository(
+        SupabaseClient('https://example.supabase.co', 'anon-key'),
+        client,
+      );
+
+      final quote = await repo.directSpotPrice();
+
+      expect(quote.price, 4170.30);
+      expect(quote.live, isTrue);
+      expect(gotUri!.path, endsWith('/price-live'));
+      // The key travels in the query string (value is empty in tests: the
+      // publishable key arrives via --dart-define at build time). What this
+      // pins is the mechanism - query, never a custom header.
+      expect(gotUri!.queryParameters, contains('apikey'));
+      expect(gotHeaders!.keys.map((k) => k.toLowerCase()), isNot(contains('apikey')));
     });
   });
 

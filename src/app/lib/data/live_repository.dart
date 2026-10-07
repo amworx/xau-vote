@@ -848,10 +848,17 @@ class LiveRepository {
     Duration timeout = const Duration(seconds: 12),
   }) async {
     try {
-      final res = await _http
-          .get(Uri.parse('$_supabaseFunctionsUrl/price-live'),
-              headers: {'apikey': _anonKey})
-          .timeout(timeout);
+      // The key travels as a query parameter with NO custom headers, so the
+      // browser treats this as a simple GET and skips the CORS preflight.
+      // Sending it as an `apikey` header instead triggers a preflight that
+      // the gateway answers without echoing the header, and every browser
+      // then refuses the call - found because the web build silently fell
+      // back to snapshots while the phone worked. The key is the public
+      // anon key (shipped in the bundle by design), so a URL parameter
+      // exposes nothing that is not already public.
+      final uri = Uri.parse('$_supabaseFunctionsUrl/price-live')
+          .replace(queryParameters: {'apikey': _anonKey});
+      final res = await _http.get(uri).timeout(timeout);
       if (res.statusCode != 200) throw StateError('HTTP ${res.statusCode}');
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       final price = _toDouble(body['price']);

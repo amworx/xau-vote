@@ -26,7 +26,13 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+
+// `dart:io` does not exist on web. The conditional import keeps this file
+// compiling for browser testing: on web every io.* member is a stub that
+// throws if touched (see update_io_stub.dart). That is safe because the
+// updater is Android-only and `main.dart` provides no UpdateService on web,
+// so the stubs are unreachable by construction.
+import 'dart:io' if (dart.library.html) 'update_io_stub.dart' as io;
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
@@ -59,7 +65,7 @@ class InstallResult {
   bool get needsPermission => outcome == InstallOutcome.needsPermission;
 }
 
-/// Platform bridge for the two things only Android can answer.
+/// io.Platform bridge for the two things only Android can answer.
 class UpdatePlatform {
   const UpdatePlatform();
 
@@ -74,7 +80,7 @@ class UpdatePlatform {
   Future<InstalledVersion?> installedVersion() async {
     // Not Android (web, desktop) or not yet bound: there is no installed
     // version to read, which is different from an error.
-    if (!Platform.isAndroid) return null;
+    if (!io.Platform.isAndroid) return null;
     try {
       final result = await channel
           .invokeMapMethod<String, String>('installedVersion');
@@ -371,11 +377,11 @@ class UpdateService extends ChangeNotifier {
 
   final Uri _manifestUrl;
 
-  /// Platform bridge. Public so tests can substitute a fake.
+  /// io.Platform bridge. Public so tests can substitute a fake.
   final UpdatePlatform platform;
 
   /// Where finished APKs are written. Null resolves to the app cache dir.
-  final Directory? downloadDir;
+  final io.Directory? downloadDir;
 
   /// Test seam: overrides the manifest fetch without a network.
   final UpdateProbe? probe;
@@ -402,26 +408,26 @@ class UpdateService extends ChangeNotifier {
   /// lookup that broke the app in the first place was never covered: the
   /// injected branch returns before the platform is ever consulted.
   @visibleForTesting
-  Future<Directory> platformTargetDir() async {
-    final base = Directory.systemTemp;
-    final dir = Directory('${base.path}${Platform.pathSeparator}updates');
+  Future<io.Directory> platformTargetDir() async {
+    final base = io.Directory.systemTemp;
+    final dir = io.Directory('${base.path}${io.Platform.pathSeparator}updates');
     if (!await dir.exists()) await dir.create(recursive: true);
     return dir;
   }
 
   /// Where the APK is written.
   ///
-  /// `Directory.systemTemp` IS the app's private cache directory on Android
+  /// `io.Directory.systemTemp` IS the app's private cache directory on Android
   /// (`/data/user/0/<pkg>/cache`), which is exactly what
   /// `res/xml/update_paths.xml` exposes to the FileProvider as `<cache-path>`.
   ///
   /// This used to read `$HOME` / `$USERPROFILE` / `$TMPDIR` out of
-  /// `Platform.environment`. Android sets NONE of those in an app process, so
+  /// `io.Platform.environment`. Android sets NONE of those in an app process, so
   /// the lookup threw `StateError` before a single byte was requested — which
   /// is exactly the reported symptom: "check for updates" worked (a plain GET)
   /// while download did nothing at all. Even had `TMPDIR` been set, appending
   /// `.cache` to a temp directory would not have matched `<cache-path>`.
-  Future<Directory> _targetDir() async {
+  Future<io.Directory> _targetDir() async {
     final injected = downloadDir;
     if (injected != null) return injected;
     return platformTargetDir();
@@ -436,7 +442,7 @@ class UpdateService extends ChangeNotifier {
           ? await override(_manifestUrl)
           : await _clientFactory().get(_manifestUrl);
       if (response.statusCode != 200) {
-        throw HttpException('update check failed (HTTP ${response.statusCode})');
+        throw io.HttpException('update check failed (HTTP ${response.statusCode})');
       }
       final decoded = jsonDecode(response.body);
       if (decoded is! Map<String, Object?>) {
@@ -514,7 +520,7 @@ class UpdateService extends ChangeNotifier {
     final release = _state.release;
     await _deleteQuietly(release == null ? null : await _apkFileFor(release));
     await _deleteQuietly(
-      _state.installPath == null ? null : File(_state.installPath!),
+      _state.installPath == null ? null : io.File(_state.installPath!),
     );
     _emit(UpdateState(status: DownloadState.idle, release: release));
   }
@@ -524,7 +530,7 @@ class UpdateService extends ChangeNotifier {
   /// Cancel and the download loop can both reach the same writer. Closing twice
   /// throws, so this is the only place that touches the writer on the cancel
   /// path.
-  static Future<void> _closeSink(IOSink? sink) async {
+  static Future<void> _closeSink(io.IOSink? sink) async {
     if (sink == null) return;
     try {
       await sink.flush();
@@ -538,7 +544,7 @@ class UpdateService extends ChangeNotifier {
   ///
   /// Cancellation races the download loop, which may remove the file itself, so
   /// "not found" is a success rather than an error to surface to the user.
-  static Future<void> _deleteQuietly(File? file) async {
+  static Future<void> _deleteQuietly(io.File? file) async {
     if (file == null) return;
     try {
       if (await file.exists()) await file.delete();
@@ -590,7 +596,7 @@ class UpdateService extends ChangeNotifier {
   http.Client? _activeClient;
 
   /// The open writer, so [cancel] can release the file before deleting it.
-  IOSink? _activeSink;
+  io.IOSink? _activeSink;
 
   /// The download currently running, awaited by [cancel] so the two never
   /// touch the same writer concurrently.
@@ -628,13 +634,13 @@ class UpdateService extends ChangeNotifier {
       final started = resumed ? existing : 0;
       var received = started;
 
-      // APPEND on resume. `openWrite()` defaults to `FileMode.write`, which
+      // APPEND on resume. `openWrite()` defaults to `io.FileMode.write`, which
       // TRUNCATES — and the server was asked for bytes from `existing` onward,
       // so truncating left a file holding only the tail. The download itself
       // was fine; the SHA-256 check then failed on a resume that had actually
       // transferred correctly.
       final sink = file.openWrite(
-        mode: resumed ? FileMode.append : FileMode.write,
+        mode: resumed ? io.FileMode.append : io.FileMode.write,
       );
       _activeSink = sink;
       final declared = response.contentLength;
@@ -668,7 +674,7 @@ class UpdateService extends ChangeNotifier {
       _activeSink = null;
 
       if (declared != null && received < started + declared) {
-        throw HttpException(
+        throw io.HttpException(
           'incomplete download ($received of ${started + declared} bytes)',
         );
       }
@@ -697,10 +703,10 @@ class UpdateService extends ChangeNotifier {
   }
 
   /// The APK path for [release], so download, resume and cancel agree on it.
-  Future<File> _apkFileFor(ReleaseInfo release) async {
+  Future<io.File> _apkFileFor(ReleaseInfo release) async {
     final dir = await _targetDir();
-    return File(
-      '${dir.path}${Platform.pathSeparator}xv-${release.version}.apk',
+    return io.File(
+      '${dir.path}${io.Platform.pathSeparator}xv-${release.version}.apk',
     );
   }
 
@@ -716,7 +722,7 @@ class UpdateService extends ChangeNotifier {
 
   /// Fails closed: an APK whose digest does not match the manifest is never
   /// offered for install and is deleted.
-  Future<void> _verify(File file, ReleaseInfo release) async {
+  Future<void> _verify(io.File file, ReleaseInfo release) async {
     final digest = await sha256OfFile(file);
     if (digest.toLowerCase() != release.sha256) {
       await file.delete();
@@ -753,7 +759,7 @@ class UpdateService extends ChangeNotifier {
 }
 
 /// Streaming SHA-256 of [file], so a large APK is never held in memory.
-Future<String> sha256OfFile(File file) async {
+Future<String> sha256OfFile(io.File file) async {
   final digest = await sha256.bind(file.openRead()).first;
   return digest.toString();
 }
