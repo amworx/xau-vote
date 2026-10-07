@@ -75,13 +75,21 @@ class SourcesScreen extends StatelessWidget {
     // pipeline has a figure and it rests on internal material only.
     final awaitingExternal =
         live != null && (live.independence?.isAwaitingExternalSources ?? false);
+    // No active signal means no agreement figure exists at all - not zero
+    // agreement, just nothing to measure. 'NO SIGNAL' states that; the '—'
+    // this screen used to print read as a broken widget rather than a state.
+    // Same for independence with no voters: 'NO VOTERS' names the absence
+    // instead of leaving a dash to interpret.
     final agreement = live != null
         ? (signal == null
-              ? '—'
+              ? 'NO SIGNAL'
               : awaitingExternal
                   ? 'INTERNAL ONLY'
                   : '${bandLabel(signal.band)} ${signal.strength}')
         : _agreement;
+    final independenceValue = live != null
+        ? (signal == null ? 'NO VOTERS' : '—')
+        : _independence;
     return ListView(
       key: const PageStorageKey<String>('sources'),
       padding: const EdgeInsets.only(bottom: 18),
@@ -93,7 +101,7 @@ class SourcesScreen extends StatelessWidget {
           agreeing,
           total,
           enabled,
-          independence: live != null ? '—' : _independence,
+          independence: independenceValue,
           agreement: agreement,
           awaitingExternal: awaitingExternal,
         ),

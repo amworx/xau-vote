@@ -1040,3 +1040,34 @@
      with all client changes. Backend: migrations through 0023, price-live v2,
      build-consensus v5, goldhunts-sync v1, outcome-recorder v10.
    - **tags:** handoff, pause, resume
+
+## EVT-20261006-0220 Sources: resume-refresh, fenced slow sections, named empty header
+
+   - **mode:** BUILD
+   - **action:** Two user-reported Sources defects, both confirmed by code
+     reading before fixing.
+   - **defect 1 (stale until manual pull):** timers do not fire while the app
+     is backgrounded, so a returning user reads hours-old slow sections until
+     the next 5-minute beat lands. Fix: LiveData observes app lifecycle and
+     runs a slow refresh on resume. No fast-cadence changes.
+   - **defect 1b (hardening):** slow sections shared one try block, so one
+     failing read starved the rest until a lucky full-success pull. Each
+     section is now fenced: failures keep previous values and are named in the
+     error line, and a partial run no longer clears the error state while full
+     success still does.
+   - **defect 2 (0/0 with dashes):** with no signal the header printed bare
+     0/0 plus dashes that read as a broken widget. Counts stay truthful; the
+     tiles now state the absence (NO SIGNAL / NO VOTERS) alongside the existing
+     empty-state line.
+   - **owner decision recorded:** FXScalpers reply will not be shared; owner
+     asserts permission settled and takes full responsibility. Licence file
+     closed by owner assertion (amendment to D-017/D-019).
+   - **files:** src/app/lib/data/live_data.dart,
+     src/app/lib/screens/sources_screen.dart,
+     src/app/test/live_mode_test.dart, memory/decisions.md
+   - **tests:** app 267. Analyzer clean. New: resume-refresh, section
+     isolation, header empty-state widget tests.
+   - **device:** rebuilt + installed; fresh launch verified (EUROPE pill, live
+     price). Sources section on-device proof still needs the owner`s hand -
+     adb taps would not switch tabs.
+   - **tags:** sources, resume-refresh, fault-isolation, empty-state

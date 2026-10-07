@@ -896,3 +896,13 @@ exactly this check.
 (with attribution), polled hourly at most. NOT approved as: event authority
 over official sources, sole input to any trading rule, or a weekend/holiday
 oracle for gold.
+
+### Status change - owner assumes responsibility, evidence waived by owner order
+
+Owner declines to share the FXScalpers reply text, declares the permission
+settled ("consider it done"), and takes full responsibility for any future
+issues on this part. The licence file is therefore closed BY OWNER ASSERTION,
+not by archived evidence. Nothing in the pipeline changes: curation protocol,
+two-pass approval, and the three-switch gate all stand. If a dispute ever
+arises, the project cannot evidence scope - that risk now sits explicitly with
+the owner, by their stated choice.

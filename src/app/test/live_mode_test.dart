@@ -65,6 +65,7 @@ class _StubRepository implements LiveRepository {
     this.provenance = const [],
     this.contributors = const [],
     this.goldHunts = const [],
+    this.failSlowSections = const {},
   });
 
   // Defaults are unused by the populated fixture, which supplies both
@@ -98,6 +99,11 @@ class _StubRepository implements LiveRepository {
   /// Gold Hunts session views. Empty by default: a stub must not invent an
   /// external publisher the backend did not report.
   final List<GoldHuntsSessionView> goldHunts;
+
+  /// Slow-section names that throw instead of answering. Lets a test fail one
+  /// section (history, events, digest, session-view) while the rest succeed,
+  /// proving a hiccup in one cannot starve the others.
+  final Set<String> failSlowSections;
 
   /// When set, every read throws — the failed-poll case.
   Object? failWith;
@@ -149,12 +155,18 @@ class _StubRepository implements LiveRepository {
   @override
   Future<List<GoldHuntsSessionView>> goldHuntsSessionViews({int limit = 10}) async {
     _guard();
+    if (failSlowSections.contains('session-view')) {
+      throw StateError('session-view down');
+    }
     return goldHunts;
   }
 
   @override
   Future<List<DisplayHistoryEntry>> history({int limit = 50}) async {
     _guard();
+    if (failSlowSections.contains('history')) {
+      throw StateError('history down');
+    }
     return historyRows;
   }
 
@@ -167,12 +179,18 @@ class _StubRepository implements LiveRepository {
   @override
   Future<List<DisplayEvent>> upcomingEvents({int limit = 20}) async {
     _guard();
+    if (failSlowSections.contains('events')) {
+      throw StateError('events down');
+    }
     return events;
   }
 
   @override
   Future<List<DisplayDigestTheme>> latestDigest() async {
     _guard();
+    if (failSlowSections.contains('digest')) {
+      throw StateError('digest down');
+    }
     return digest;
   }
 
@@ -728,6 +746,82 @@ void main() {
 
       expect(find.text('No open session calls reported.'), findsOneWidget);
       expect(find.text('Label: BEARISH'), findsNothing);
+    });
+
+    test('returning to the app refreshes slow sections without a pull', () async {
+      // Reported: Sources sat stale until a manual pull. Timers do not fire
+      // while backgrounded, so this is the resume path doing its job.
+      final now = DateTime.now().toUtc();
+      final live = LiveData(
+        repository: _StubRepository(
+          goldHunts: [
+            GoldHuntsSessionView(
+              providerId: 'gh-1',
+              direction: 'RANGING',
+              session: 'LONDON',
+              publishedAt: now.subtract(const Duration(minutes: 40)),
+              dataAsOf: now.subtract(const Duration(minutes: 40)),
+            ),
+          ],
+        ),
+      );
+      addTearDown(live.dispose);
+      expect(live.goldHunts, isEmpty);
+
+      live.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      // The resume poll is fire-and-forget; let it land.
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(live.goldHunts, hasLength(1));
+      expect(live.goldHunts.first.direction, 'RANGING');
+    });
+
+    test('one failing slow section cannot starve the rest', () async {
+      // Previously a single throwing read aborted the whole slow block, so a
+      // hiccup in events could freeze the session view until a lucky manual
+      // pull. Each section is fenced now.
+      final now = DateTime.now().toUtc();
+      final live = LiveData(
+        repository: _StubRepository(
+          failSlowSections: {'events'},
+          goldHunts: [
+            GoldHuntsSessionView(
+              providerId: 'gh-1',
+              direction: 'BEARISH',
+              session: 'NY',
+              publishedAt: now.subtract(const Duration(minutes: 40)),
+              dataAsOf: now.subtract(const Duration(minutes: 40)),
+            ),
+          ],
+        ),
+      );
+      addTearDown(live.dispose);
+      await live.refresh();
+
+      // The session view landed despite the events outage...
+      expect(live.goldHunts, hasLength(1));
+      // ...and the failure is named instead of swallowed or fatal.
+      expect(live.error, contains('events'));
+    });
+
+    testWidgets('the voter header names its emptiness instead of dashing it', (
+      tester,
+    ) async {
+      // Reported: the header showed bare 0/0 with dashes that read as a
+      // broken widget. The counts stay truthful; the tiles now state why
+      // there is nothing to measure.
+      final live = LiveData(repository: _StubRepository());
+      addTearDown(live.dispose);
+      await _pumpLive(tester, live);
+      await tester.tap(find.byKey(const ValueKey('nav-SOURCES')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('0 / 0'), findsOneWidget);
+      expect(find.text('NO SIGNAL'), findsOneWidget);
+      expect(find.text('NO VOTERS'), findsOneWidget);
+      expect(
+        find.text('No active signal — nothing to attribute yet'),
+        findsOneWidget,
+      );
     });
   });
   // `mockMode` is a compile-time flag, so a test cannot flip the build. What

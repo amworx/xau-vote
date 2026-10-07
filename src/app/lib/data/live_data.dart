@@ -14,7 +14,7 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:xau_core/analysis/independence.dart';
 import 'package:xau_core/analysis/session.dart';
@@ -23,7 +23,7 @@ import 'live_repository.dart';
 import '../models/display_models.dart';
 
 /// Snapshot of everything the screens read in live mode.
-class LiveData extends ChangeNotifier {
+class LiveData extends ChangeNotifier with WidgetsBindingObserver {
   LiveData({SupabaseClient? client, LiveRepository? repository, DateTime Function()? clock})
     : _repo = repository ?? LiveRepository(client),
       _clock = clock ?? DateTime.now;
@@ -62,6 +62,22 @@ class LiveData extends ChangeNotifier {
   bool? _lastSessionOpen;
 
   static const _sessionWatchInterval = Duration(seconds: 10);
+
+  /// Whether the lifecycle observer is registered. Guards double registration
+  /// across repeated startPolling calls.
+  bool _observingLifecycle = false;
+
+  /// Refresh slow sections when the app comes back to the foreground.
+  ///
+  /// Reported: Sources (and every slow section) sat stale until a manual
+  /// pull. Timers do not fire while the app is backgrounded, so a returning
+  /// user reads whatever was last fetched - possibly hours old - until the
+  /// next 5-minute beat happens to land. Resuming with a slow refresh closes
+  /// that gap without touching the fast cadences.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _pollSlow();
+  }
 
   /// Slow cadence: calendar, history, news digest.
   Timer? _slowTimer;
@@ -168,6 +184,12 @@ class LiveData extends ChangeNotifier {
     _slowTimer?.cancel();
     _priceTimer?.cancel();
     _sessionTimer?.cancel();
+    // Registered once: startPolling is idempotent and addObserver would
+    // otherwise stack duplicate callbacks.
+    if (!_observingLifecycle) {
+      WidgetsBinding.instance.addObserver(this);
+      _observingLifecycle = true;
+    }
     _fastTimer = Timer.periodic(Duration(seconds: seconds), (_) => _pollFast());
     // Scheduled calendar and history rows change on the order of minutes to
     // hours. Re-reading them on every price tick was the cause of the Events
@@ -251,6 +273,10 @@ class LiveData extends ChangeNotifier {
     _priceTimer = null;
     _sessionTimer?.cancel();
     _sessionTimer = null;
+    if (_observingLifecycle) {
+      WidgetsBinding.instance.removeObserver(this);
+      _observingLifecycle = false;
+    }
   }
 
   /// Full read, used by pull-to-refresh and by the slow poll.
@@ -339,22 +365,45 @@ class LiveData extends ChangeNotifier {
         _contributors = const [];
       }
 
+      var slowFailed = false;
       if (includeSlowSections) {
-        // Scheduled releases, the closed-setup log and the news digest. Slow
-        // by nature, so they are only re-read on the slow cadence or on an
-        // explicit pull.
-        _history = await _repo.history();
-        _events = await _repo.upcomingEvents();
-        _digest = await _repo.latestDigest();
+        // Scheduled releases, the closed-setup log, the news digest and the
+        // external session view. Slow by nature, so they are only re-read on
+        // the slow cadence, on resume, or on an explicit pull.
+        //
+        // Each section is fenced: previously one failing read aborted the
+        // rest, so a hiccup in history could starve the session view (or vice
+        // versa) until a manual pull happened to succeed end to end. A failed
+        // section keeps its previous value and is named in the error line.
+        var slowFailures = <String>[];
+        Future<void> guarded(String name, Future<void> Function() fn) async {
+          try {
+            await fn();
+          } catch (e) {
+            slowFailed = true;
+            slowFailures.add('$name: $e');
+          }
+        }
+
+        await guarded('history', () async { _history = await _repo.history(); });
+        await guarded('events', () async { _events = await _repo.upcomingEvents(); });
+        await guarded('digest', () async { _digest = await _repo.latestDigest(); });
         // External session view, same slow cadence: the provider regenerates
         // hourly, so reading it faster only rebuilds the section against
         // unchanged rows.
-        _goldHunts = await _repo.goldHuntsSessionViews();
+        await guarded('session-view',
+            () async { _goldHunts = await _repo.goldHuntsSessionViews(); });
+        if (slowFailed) {
+          _error = 'Slow refresh partial: ${slowFailures.join(' · ')}';
+        }
         changed = true;
       }
 
       _lastUpdated = DateTime.now();
-      _error = null;
+      // A partial slow failure above already wrote an honest _error; clearing
+      // it here would report success for a run that was not one. A fully
+      // successful run still clears a stale error as before.
+      if (!includeSlowSections || !slowFailed) _error = null;
       // Deliberately NOT marked as changed. Bumping the freshness stamp alone
       // is not a data change, and notifying on it rebuilt every screen - the
       // Events list visibly several times a minute - for a timestamp that had
