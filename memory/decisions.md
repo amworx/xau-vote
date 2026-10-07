@@ -995,3 +995,33 @@ covers it); no SLA/uptime; single maintainer (bus factor).
      from the BLS public API (keyless, US public domain) under a strict
      vintage rule; Results tab reads actual-carrying rows with UNSCORED
      (never "in line") when no forecast exists.
+
+## D-20261007-024 biquote.io price-feed licensing review (Gate: APPROVED with conditions)
+
+   - **Verdict:** APPROVED as a production price provider (primary candidate),
+     gold-api.com retained as fallback. Review of live endpoint + Terms of
+     Use (2026-09-30) on 2026-10-07.
+   - **Grant (explicit, in writing):** commercial AND non-commercial use, no
+     key/signup; display to end users incl. paying/authenticated; cache/store
+     quotes; 15,000 req/min/IP; SignalR stream currently unmetered (prefer
+     for live). Attribution appreciated, not required (we attribute anyway).
+   - **Prohibited (we comply):** no resale of the raw feed via our own public
+     API/bulk downloads; no misrepresentation as exchange-licensed data;
+     derived signals/charts are ours. We display inside the product only.
+   - **Residual risks recorded:** (1) data aggregated from third-party
+     sources incl. broker MT5 feeds; biquote grants only what it holds and a
+     source may be pulled anytime -> gold-api fallback stays mandatory, and
+     a dead feed must read as outage, never as flat price. (2) No SLA; terms
+     changeable anytime -> re-check terms on any integration change and if
+     biquote behavior shifts. (3) Indicative only -> label as reference, keep
+     the OANDA lesson: display MID only, never bid/ask/spread on screen.
+   - **Rejected in the same review:** goldprice.dev free tier FAILS the gate
+     (ToS S6: free = personal/non-commercial/internal, no redistribution to
+     third parties; commercial needs paid Pro). xaus.com: endpoint live but
+     NO licensing terms found -> candidate only, needs written confirmation
+     before any production use. GoldAPI.io/metalcharts free quotas
+     (100-200 req/month) unusable for ticking.
+   - **Implementation note:** REST first (no new dependencies); WebSocket
+     later only with explicit approval (needs signalr client dependency +
+     background-lifecycle design). Poll 5s against quoteAgeSeconds, not
+     blind interval.

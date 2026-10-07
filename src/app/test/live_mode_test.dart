@@ -139,17 +139,20 @@ class _StubRepository implements LiveRepository {
   /// called from a unit test; a test that wants the fallback sets [livePrice]
   /// false.
   @override
-  Future<({double? price, DateTime? at, bool live})> directSpotPrice({
+  Future<({double? price, DateTime? at, bool live, String? source})> directSpotPrice({
     Duration timeout = const Duration(seconds: 12),
   }) async {
     _guard();
     final p = price;
-    if (p == null) return (price: null, at: null, live: false);
-    return (price: p, at: DateTime(2026, 10, 2, 12, 0), live: livePrice);
+    if (p == null) return (price: null, at: null, live: false, source: null);
+    return (price: p, at: DateTime(2026, 10, 2, 12, 0), live: livePrice, source: priceSource);
   }
   /// Whether [directSpotPrice] reports a live read. False exercises the
   /// stored-snapshot fallback.
   bool livePrice = true;
+
+  /// Provenance the stubbed tick claims. The caption must show it.
+  String? priceSource = 'biquote';
 
   @override
   Future<({double low, double high})?> sessionRange({required DateTime since}) async {
@@ -945,6 +948,8 @@ void main() {
       // Price hero.
       expect(find.text('XAUUSD · SPOT GOLD'), findsOneWidget);
       expect(find.text('4,312.45'), findsOneWidget);
+      // Provenance rides with the tick: the caption names the source.
+      expect(find.textContaining('biquote'), findsOneWidget);
       expect(
         find.text('4,278.30'),
         findsNothing,

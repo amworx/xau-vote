@@ -1287,3 +1287,40 @@
      shared tick path), src/app/lib/screens/radar_screen.dart (move, hero
      pct, 1s quote block), src/app/test/* (fold/pin/blank tests)
    - **tags:** radar, range, day-move, rpc, postgrest-cap, pinning, 1s-ticker, process-hygiene
+
+## EVT-20261007-0229 inspected external free-gold-API advice, verified each claim live
+
+   - **mode:** RESEARCH
+   - **action:** User pasted external advice (4 free gold APIs). Verified all
+     four endpoints live + read the actual ToS for three. Corrections: (1)
+     goldprice.dev free tier bans redistribution to third parties (ToS S6) -
+     the advice omitted this, and it disqualifies free use in our published
+     app. (2) biquote 15k/min + unmetered WS confirmed in their ToS; its MT5
+     broker sourcing is covered by an explicit display/commercial grant, but
+     the third-party-source caveat is recorded. (3) xaus.com has no findable
+     licence text - usable only after written confirmation. (4) gold-api.com
+     "unlimited" is real but the feed republishes ~30s - the ceiling stands.
+   - **result:** D-20261007-024 approves biquote (REST-first) with gold-api
+     as mandatory fallback. No code written; implementation awaits user
+     go-ahead.
+   - **tags:** licensing-review, price-feed, biquote, verification
+
+## EVT-20261007-0230 biquote live as primary price (2s-old ticks)
+
+   - **mode:** BUILD
+   - **action:** User approved biquote integration. price-live now tries
+     biquote first (mid only, gated on stale=false and quote age <=20s by
+     both their clock and ours, 8s fetch timeout, never throws past the
+     gold-api fallback), gold-api second, stored snapshot last. Cache 5s.
+     App plumbs the source label through to the Radar caption
+     ("Live - biquote - 4s ago") as the ToS-appreciated attribution.
+   - **verified live:** price-live returns source=biquote ageSeconds=2
+     (was 22-28s); direct biquote mid 4105.45 age 0s confirms the read;
+     v15 clean install, verified-fresh process: caption names biquote,
+     price/range/move/% all correct, countdowns tick. App suite 273 green,
+     analyzer clean.
+   - **files:** supabase/functions/price-live/index.ts,
+     src/app/lib/data/live_repository.dart (+source),
+     src/app/lib/data/live_data.dart (+priceSource),
+     src/app/lib/screens/radar_screen.dart (caption), tests (stub + caption)
+   - **tags:** biquote, price-feed, provenance, attribution

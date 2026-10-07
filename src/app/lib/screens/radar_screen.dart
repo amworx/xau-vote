@@ -569,13 +569,18 @@ class _LiveQuoteHero extends StatelessWidget {  const _LiveQuoteHero({required t
             // Say where the number actually came from AND how old it is. A
             // slow-moving price looks frozen whether the feed is healthy or
             // dead, so the age - ticking off the provider's own clock, never
-            // the poll time - is the proof of life. A stale fallback keeps its
-            // honest label rather than borrowing the live one.
+            // the poll time - is the proof of life. The source rides along
+            // (biquote, gold-api) so the provenance is on screen; a stale
+            // fallback keeps its honest label rather than borrowing the live
+            // one. Attribution for the primary feed lives here, on the price
+            // itself, per its terms.
             price == null
                 ? 'No market snapshot stored yet — the first tick appears here.'
                 : priceIsLive
                     ? (priceAgeSeconds != null
-                        ? 'Live from the price provider · ${priceAgeSeconds}s ago.'
+                        ? (live.priceSource != null
+                            ? 'Live · ${live.priceSource} · ${priceAgeSeconds}s ago.'
+                            : 'Live from the price provider · ${priceAgeSeconds}s ago.')
                         : 'Live from the price provider.')
                     : 'Provider unreachable — showing the latest stored snapshot.',
             style: const TextStyle(fontFamily: 'Sora', fontSize: 11, color: harborFaint),

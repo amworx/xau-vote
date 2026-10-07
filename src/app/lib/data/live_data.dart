@@ -93,6 +93,15 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
   /// unreachable. The UI must not present a stale number as live.
   bool _priceIsLive = false;
 
+  /// Who priced the current tick (biquote, gold-api, ...). Shown next to the
+  /// age so the provenance is on screen. Null for the stored fallback and
+  /// before the first tick.
+  String? _priceSource;
+
+  /// The tick's provenance for the caption. Null reads as the generic
+  /// provider line so a missing source never blanks the caption.
+  String? get priceSource => _priceSource;
+
   /// Age of [price] against the provider's own timestamp, in whole seconds.
   ///
   /// This is what makes a slow-moving price verifiably alive: gold can sit
@@ -255,7 +264,7 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
   /// Shared by the 5s price ticker and the full refresh so both paths fold
   /// ticks identically (tests drive it through [refresh]). Returns whether
   /// anything the screens show actually moved.
-  bool _applyPrice(double? price, DateTime? at, bool live) {
+  bool _applyPrice(double? price, DateTime? at, bool live, String? source) {
     if (price == null) return false;
     var moved = false;
     if (price != _price) {
@@ -268,6 +277,12 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
       // held steady for a minute is different evidence from a value that has
       // not been re-confirmed in a minute.
       _priceIsLive = live;
+    }
+    // A provider flip (biquote to gold-api fallback) changes the caption even
+    // when the number holds still.
+    if (source != _priceSource) {
+      _priceSource = source;
+      moved = true;
     }
     if (_sessionLow == null || price < _sessionLow!) {
       _sessionLow = price;
@@ -282,7 +297,7 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> _pollPrice() async {
     final price = await _repo.directSpotPrice();
-    if (_applyPrice(price.price, price.at, price.live)) notifyListeners();
+    if (_applyPrice(price.price, price.at, price.live, price.source)) notifyListeners();
   }
 
   Future<void> _pollFast() =>
@@ -355,7 +370,7 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
       // Folds through the same tick path as the price ticker (extremes move
       // with it, no extra network).
       final price = await _repo.directSpotPrice();
-      if (_applyPrice(price.price, price.at, price.live)) changed = true;
+      if (_applyPrice(price.price, price.at, price.live, price.source)) changed = true;
       _priceIsLive = price.live;
 
       // A null signal is a legitimate "no setup right now" — clear it rather

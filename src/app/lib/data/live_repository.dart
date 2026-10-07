@@ -929,7 +929,7 @@ class LiveRepository {
   ///
   /// If this call fails, the stored snapshot is still better than an empty
   /// screen, but it is NOT live and is reported as such (product rule 2).
-  Future<({double? price, DateTime? at, bool live})> directSpotPrice({
+  Future<({double? price, DateTime? at, bool live, String? source})> directSpotPrice({
     // 12s, not 6s. A cold Edge Function start was observed taking longer than
     // 6s, which produced a spurious fallback on an otherwise healthy path. The
     // price is on a 5s timer, so one slow start must not read as an outage.
@@ -954,7 +954,10 @@ class LiveRepository {
       final live = body['live'] == true;
       final at = DateTime.tryParse('${body['measuredAt']}')?.toUtc() ??
           DateTime.now().toUtc();
-      return (price: price, at: at, live: live);
+      // Who priced this tick (biquote, gold-api, stored-snapshot...). Shown
+      // next to the age so the provenance is on screen, not in a log.
+      final source = body['source'] is String ? body['source'] as String : null;
+      return (price: price, at: at, live: live, source: source);
     } catch (err) {
       // Log the reason rather than swallowing it. A bare `catch (_)` here is
       // what made a real on-device failure look like a design decision: the app
@@ -963,7 +966,7 @@ class LiveRepository {
       // string carries nothing sensitive.
       debugPrint('directSpotPrice: live read failed, using stored snapshot: $err');
       final stored = await latestPrice();
-      return (price: stored?.price, at: stored?.at, live: false);
+      return (price: stored?.price, at: stored?.at, live: false, source: null);
     }
   }
 
