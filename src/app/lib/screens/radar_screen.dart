@@ -636,7 +636,7 @@ class _LiveDayBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Expanded(child: _cell('Day Move', _move)),
+            Expanded(child: _cell('Day Move', _move, sub: _moveSub)),
             _cell('Range', _range),
           ],
         ),
@@ -652,6 +652,16 @@ class _LiveDayBar extends StatelessWidget {
     return '$sign${move.abs().toStringAsFixed(2)}';
   }
 
+  /// The anchor the move is measured against, so a move that tracks the price
+  /// while the range sits still reads as what it is: price minus a fixed
+  /// reference, not a number derived from the extremes.
+  String? get _moveSub {
+    final ref = live.dayReference;
+    if (ref == null) return null;
+    final kind = live.dayReferenceIsClose ? 'close' : 'first print';
+    return 'vs $kind ${formatPrice(ref)}';
+  }
+
   /// `4,266.90 — 4,286.40`, or an honest `—` until the pipeline has observed
   /// enough snapshots to bound the session.
   String get _range {
@@ -661,7 +671,7 @@ class _LiveDayBar extends StatelessWidget {
     return '${formatPrice(low)} — ${formatPrice(high)}';
   }
 
-  Widget _cell(String label, String value) {
+  Widget _cell(String label, String value, {String? sub}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -678,6 +688,17 @@ class _LiveDayBar extends StatelessWidget {
             color: Colors.white,
           ),
         ),
+        if (sub != null)
+          Text(
+            sub,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontFamily: 'Space Mono',
+              fontSize: 9,
+              color: inkMuted,
+            ),
+          ),
       ],
     );
   }

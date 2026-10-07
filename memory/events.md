@@ -1324,3 +1324,21 @@
      src/app/lib/data/live_data.dart (+priceSource),
      src/app/lib/screens/radar_screen.dart (caption), tests (stub + caption)
    - **tags:** biquote, price-feed, provenance, attribution
+
+## EVT-20261007-0231 day-move anchor made visible
+
+   - **mode:** BUILD
+   - **action:** User read correct behavior as a bug: the move tracks every
+     price tick against a fixed reference while the extremes only widen, but
+     the reference was invisible so it looked arbitrary. Verified on device
+     first (two shots 9s apart: move -46.51 -> -46.61 exactly matching price
+     -0.10, reference pinned at 4152.47, extremes static - all correct).
+     Fix is display-only: the Day Move cell now carries "vs close 4,152.47"
+     (or "vs first print ..." on fallback, nothing with no reference), and
+     LiveData exposes the reference kind. Math untouched.
+   - **verified:** analyzer clean, 273 tests green (anchor + no-anchor
+     cases); v16 clean install, verified-fresh process shows the anchor and
+     consistent figures.
+   - **files:** lib/data/live_data.dart (+dayReference/dayReferenceIsClose),
+     lib/screens/radar_screen.dart (_cell sub, _moveSub), test
+   - **tags:** day-move, provenance-display, ux-clarity

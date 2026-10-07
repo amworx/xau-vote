@@ -127,6 +127,16 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
   double? _dayReference;
   DateTime? _refSince;
 
+  /// Whether the reference is a real previous close (true) or the session's
+  /// first print (false). The caption names which so the move is auditable.
+  bool _refIsClose = false;
+
+  /// The reference the day move is measured against, for the caption.
+  double? get dayReference => _dayReference;
+
+  /// True when [dayReference] is the previous close, false for first-print.
+  bool get dayReferenceIsClose => _refIsClose;
+
   /// Day move in price points, or null when no reference exists. Never
   /// derived from the range: low/high extremes are not an open or a close.
   double? get dayMove {
@@ -470,6 +480,7 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
           // would drift with no price movement at all.
           if (_dayReference == null || _refSince != since) {
             _dayReference = stats.prevClose ?? stats.firstPrint;
+            _refIsClose = stats.prevClose != null;
             _refSince = since;
           }
         });

@@ -967,6 +967,9 @@ void main() {
       // Day bar: the observed range, and the measured move vs prev close.
       expect(find.text('+12.40'), findsNothing);
       expect(find.text('+17.45'), findsOneWidget);
+      // The anchor is on screen: the move tracks the price against this
+      // fixed reference, independent of the extremes.
+      expect(find.text('vs close 4,295.00'), findsOneWidget);
       expect(find.text('4,300.10 — 4,320.90'), findsOneWidget);
 
       // Verdict levels are WITHHELD. The engine still computes a stop plan,
@@ -1143,6 +1146,8 @@ void main() {
 
       expect(find.text('4,312.45 — 4,312.45'), findsOneWidget);
       expect(find.textContaining('%'), findsNothing);
+      // No reference, so no anchor line either.
+      expect(find.textContaining('vs '), findsNothing);
     });
 
     testWidgets('the move reference pins per session, not per poll', (
