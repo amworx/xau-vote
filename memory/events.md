@@ -1071,3 +1071,12 @@
      price). Sources section on-device proof still needs the owner`s hand -
      adb taps would not switch tabs.
    - **tags:** sources, resume-refresh, fault-isolation, empty-state
+
+## EVT-20261007-0221 FXScalpers dropped by owner order
+
+   - **mode:** BUILD
+   - **action:** Owner ended the candidacy after all three pipes closed
+     (manual refused, operator favour declined, scraping rejected). Set
+     sources.enabled = false for FXScalpers; row retained as history.
+     Verified: zero ideas, zero approvals, consensus behaviour unchanged.
+   - **tags:** fxscalpers, dropped, owner-order

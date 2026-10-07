@@ -906,3 +906,15 @@ not by archived evidence. Nothing in the pipeline changes: curation protocol,
 two-pass approval, and the three-switch gate all stand. If a dispute ever
 arises, the project cannot evidence scope - that risk now sits explicitly with
 the owner, by their stated choice.
+
+### Closed 2026-10-07 - FXScalpers dropped by owner order
+
+Owner: "forget about fxscalpers". Manual entry refused, operator favour
+declined, automated collection non-compliant - every pipe closed, so the
+candidacy ends here rather than lingering as a dormant maybe.
+
+`sources.enabled` set false. The row is kept as registry history (reviewed,
+independent, unlicensable-in-practice), not deleted, so the story stays
+queryable. Zero ideas ever entered, zero signals ever emitted from it - there
+is nothing to unwind. Voter count returns to zero external voters; consensus
+behaviour is unchanged (NO_SOURCES).
