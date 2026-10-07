@@ -1025,3 +1025,29 @@ covers it); no SLA/uptime; single maintainer (bus factor).
      later only with explicit approval (needs signalr client dependency +
      background-lifecycle design). Poll 5s against quoteAgeSeconds, not
      blind interval.
+
+## D-20261007-025 issuer-RSS news licensing review (Gate: APPROVED)
+
+   - **Verdict:** APPROVED for production collection + in-app display of
+     headlines with source citation and original links. No full-text display
+     ever (headlines + feed summaries + links only).
+   - **US federal feeds (Fed press_monetary + speeches, BLS empsit + cpi,
+     BEA releases):** US government works are public domain (17 U.S.C.
+     S105); agencies ask for citation, no endorsement implied. We cite the
+     agency on every row and link the official URL. Gate passes by statute.
+   - **MINING.com gold feed:** publisher policy expressly permits businesses/
+     websites to serve feed content to their own users with link-back to
+     MINING.com for full viewing (verified verbatim 2026-10-07). Our news
+     cards show headline + source + OPEN ORIGINAL link. Compliant by
+     construction. NOTE: feed 403s edge IPs at collection time - tolerated
+     with visible warnings; rows appear if/when collection succeeds.
+   - **BLS caveat:** bot-walls some clients (403 from workstation); edge
+     runtime fetches fine. Parser hardened for unclosed entries + href-only
+     links (found via in-situ diagnostics, not guessing). If BLS rows stop,
+     the warning names the feed - a visible gap, never silent.
+   - **Rejected in the same review:** goldprice.dev free (no redistribution,
+     ToS S6), Kitco (no redistribution grant found), Treasury RSS (406 from
+     here - revisit), ECB (secondary, unneeded).
+   - **Follow-ups:** Treasury/ECB feeds if macro coverage gaps appear;
+     digest theme mapping is keyword-loose (BEA PCE under "Gold flows") -
+     acceptable with evidence links, tighten later.

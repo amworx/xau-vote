@@ -1354,9 +1354,9 @@ void main() {
 
       await _openTab(tester, 'NEWS');
       expect(find.text('No digest published yet.'), findsOneWidget);
-      // The silence states its cause: no licensed feed, not a broken widget.
-      // Both empty notes say it (digest + headlines), so two matches.
-      expect(find.textContaining('licensed news'), findsNWidgets(2));
+      // The silence states its cause: collection has not run yet, not a
+      // broken widget. Both empty notes say it (digest + headlines).
+      expect(find.textContaining('once the'), findsNWidgets(2));
       expect(find.text('No headlines collected.'), findsOneWidget);
     });
   });

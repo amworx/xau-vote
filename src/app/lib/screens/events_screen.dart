@@ -576,9 +576,8 @@ class _EventsScreenState extends State<EventsScreen> {
         if (themes.isEmpty)
           const _SilenceNote(
             'No digest published yet.',
-            detail: 'Themes are summarized here once licensed news articles '
-                'arrive. None is feeding at zero cost - GNews free is '
-                'non-commercial.',
+            detail: 'Themes are summarized here once the hourly digest runs '
+                'over collected issuer headlines.',
           )
         else
           for (final theme in themes) ...[
@@ -632,8 +631,8 @@ class _EventsScreenState extends State<EventsScreen> {
         if (headlines.isEmpty)
           const _SilenceNote(
             'No headlines collected.',
-            detail: 'Headlines appear here with their source once a licensed '
-                'news provider runs. None is active.',
+            detail: 'Headlines appear here with their source once the '
+                '30-minute issuer collection runs.',
           )
         else
           for (final headline in headlines) ...[

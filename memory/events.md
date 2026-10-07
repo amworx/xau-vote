@@ -1342,3 +1342,26 @@
    - **files:** lib/data/live_data.dart (+dayReference/dayReferenceIsClose),
      lib/screens/radar_screen.dart (_cell sub, _moveSub), test
    - **tags:** day-move, provenance-display, ux-clarity
+
+## EVT-20261007-0232 news tab filled with licensed issuer headlines
+
+   - **mode:** BUILD
+   - **action:** User researched free news options (Fed/BLS/BEA/Treasury RSS +
+     MINING.com). Verified each live: Fed/BEA/MINING-main OK, BLS 403 from
+     workstation but 200 from edge, MINING gold-tag 404 (used commodity/gold
+     which works from here but 403s edge), Treasury 406. Implemented
+     RssIssuerProvider in news-collect (Fed monetary + speeches with
+     relevance gates, BLS empsit + cpi, BEA, MINING gold) with per-feed
+     tolerance, feed counts + named warnings. Debugged BLS silence in situ:
+     unclosed entries (split parsing) then a real one-line bug where the
+     href fallback only ran for truthy-but-bad urls, dropping all href-only
+     BLS links. Result: 90 articles (Fed 19 incl. today''s FOMC minutes,
+     BLS 24 NFP+CPI, BEA 47); digest themes now evidence real issuer URLs.
+     App empty-state copy updated (licensed feeds active).
+   - **verified:** run responses with feedCounts; DB spot checks (NFP
+     +29,000 Oct 2, CPI rows); digest 5 themes with real evidence;
+     analyzer clean, 273 tests green; v17 installed (NEWS visual left to
+     owner - tabs untappable via adb).
+   - **files:** supabase/functions/news-collect/index.ts,
+     src/app/lib/screens/events_screen.dart (copy), tests, memory
+   - **tags:** news, rss, licensing, bls-debugging, in-situ-diagnostics
