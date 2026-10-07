@@ -246,19 +246,29 @@ class _RadarScreenState extends State<RadarScreen> {
   /// live it names the next real scheduled USD release, and nothing at all when
   /// the calendar has no HIGH/MED entry. Context only — it never votes and it
   /// never creates, suppresses or flips a setup (rule 9).
+  ///
+  /// The live countdown is an [EventCountdown]: a plain text here froze
+  /// between data polls, because LiveData does not rebuild on unchanged
+  /// polls. The mock line stays plain text — a fixture has no live deadline.
   Widget? _caution(LiveData? live, RadarScenario scenario) {
-    String? text;
+    DisplayEvent? next;
+    String? mockText;
     if (live != null) {
       for (final event in live.events) {
         if (event.currency != 'USD') continue;
         if (event.impact == EventImpact.low) continue;
-        text = 'Caution: ${event.title} in ${formatCountdown(event.startsIn)}';
+        next = event;
         break;
       }
     } else if (scenario == RadarScenario.strong || scenario == RadarScenario.developing) {
-      text = 'Caution: Retail Sales in 42m';
+      mockText = 'Caution: Retail Sales in 42m';
     }
-    if (text == null) return null;
+    if (next == null && mockText == null) return null;
+    const style = TextStyle(
+      fontFamily: 'Space Mono',
+      fontSize: 10,
+      color: harborDim,
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
@@ -267,15 +277,29 @@ class _RadarScreenState extends State<RadarScreen> {
           const Icon(HarborIcons.bell, size: 10, color: harborWarn),
           const SizedBox(width: 5),
           Flexible(
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: 'Space Mono',
-                fontSize: 10,
-                color: harborDim,
-              ),
-            ),
+            child: mockText != null
+                ? Text(
+                    mockText,
+                    textAlign: TextAlign.center,
+                    style: style,
+                  )
+                : Text.rich(
+                    TextSpan(
+                      style: style,
+                      children: [
+                        TextSpan(text: 'Caution: ${next!.title} in '),
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: EventCountdown(
+                            startsIn: next.startsIn,
+                            prefix: '',
+                            style: style.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
           ),
         ],
       ),

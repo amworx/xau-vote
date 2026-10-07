@@ -279,11 +279,16 @@ class _EventsScreenState extends State<EventsScreen> {
     };
     // "WATCHING" counts releases whose alerts are on. The blackout countdown is
     // reported independently, because silencing an alert does not disarm the
-    // guard.
+    // guard. It is an EventCountdown, not interpolated text: a plain string
+    // here froze between data polls.
     final summary = StringBuffer('$scope · $watching WATCHING');
     if (silenced > 0) summary.write(' · $silenced SILENCED');
-    summary.write(
-      next == null ? ' · BLACKOUT —' : ' · BLACKOUT ${formatCountdown(next.startsIn)}',
+    summary.write(next == null ? ' · BLACKOUT —' : ' · BLACKOUT ');
+    const summaryStyle = TextStyle(
+      fontFamily: 'Sora',
+      fontSize: 9,
+      height: 1.35,
+      color: inkMuted,
     );
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 18),
@@ -317,16 +322,27 @@ class _EventsScreenState extends State<EventsScreen> {
                     color: Colors.white,
                   ),
                 ),
-                Text(
-                  summary.toString(),
+                Text.rich(
+                  TextSpan(
+                    style: summaryStyle,
+                    children: [
+                      TextSpan(text: summary.toString()),
+                      if (next != null)
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: EventCountdown(
+                            startsIn: next.startsIn,
+                            prefix: '',
+                            style: summaryStyle.copyWith(
+                              fontFamily: 'Space Mono',
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: 'Sora',
-                    fontSize: 9,
-                    height: 1.35,
-                    color: inkMuted,
-                  ),
                 ),
               ],
             ),
@@ -763,15 +779,29 @@ class _MetaLine extends StatelessWidget {
           ),
         ),
         HarborChip(impactLabel(event.impact), fontSize: 8),
-        Text(
-          event.isPast ? 'released' : 'in ${formatCountdown(event.startsIn)}',
-          style: const TextStyle(
-            fontFamily: 'Space Mono',
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: harborDim,
+        // Self-ticking countdown: a plain 'in …' string here froze between
+        // data polls. Past releases stay plain text — nothing ticks toward
+        // a date that already happened.
+        if (event.isPast)
+          const Text(
+            'released',
+            style: TextStyle(
+              fontFamily: 'Space Mono',
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: harborDim,
+            ),
+          )
+        else
+          EventCountdown(
+            startsIn: event.startsIn,
+            style: const TextStyle(
+              fontFamily: 'Space Mono',
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: harborDim,
+            ),
           ),
-        ),
       ],
     );
   }

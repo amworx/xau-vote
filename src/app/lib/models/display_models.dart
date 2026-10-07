@@ -574,7 +574,7 @@ class DisplayNewsItem {
 ///
 /// * under an hour → `MM:SS`
 /// * under a day  → `HH:MM:SS`
-/// * a day or more → `6d 03:20` (days and hours only; seconds on a multi-day
+/// * a day or more → `6d 03h` (days and hours only; seconds on a multi-day
 ///   countdown are noise, and ticking them implies false precision)
 ///
 /// Negative durations clamp to `00:00`.
@@ -586,7 +586,7 @@ String formatCountdown(Duration remaining) {
   if (s >= 86400) {
     final d = s ~/ 86400;
     final h = ((s % 86400) ~/ 3600).toString().padLeft(2, '0');
-    return '${d}d $h:h';
+    return '${d}d ${h}h';
   }
 
   // An hour or more: HH:MM:SS.

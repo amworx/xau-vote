@@ -1022,7 +1022,10 @@ void main() {
     testWidgets('events annotate the card but never vote (rule 9)', (tester) async {
       await _pumpLive(tester, _populated());
 
-      expect(find.text('Caution: CPI y/y in 12:41'), findsOneWidget);
+      // Title and countdown are separate spans now (the clock ticks on its
+      // own), so assert both halves rather than one frozen string.
+      expect(find.textContaining('Caution: CPI y/y in'), findsOneWidget);
+      expect(find.text('12:41'), findsWidgets);
       expect(find.text('Caution: Retail Sales in 42m'), findsNothing);
       expect(find.text('Hawkish Fed repricing'), findsOneWidget);
     });
@@ -1179,7 +1182,13 @@ void main() {
 
       expect(find.text('MACRO CONTEXT · NEVER VOTES'), findsOneWidget);
       expect(find.text('CPI y/y'), findsWidgets);
-      expect(find.text('HIGH+MED · 1 WATCHING · BLACKOUT 12:41'), findsOneWidget);
+      expect(find.text('HIGH+MED · 1 WATCHING · BLACKOUT —'), findsNothing);
+      // Guard static half plus the self-ticking clock as separate spans.
+      expect(find.textContaining('1 WATCHING · BLACKOUT'), findsOneWidget);
+      expect(find.text('12:41'), findsOneWidget);
+      // Two self-ticking clocks show the same release: the blackout card's
+      // and the row's. Both must render — a missing one is a frozen one.
+      expect(find.text('in 12:41'), findsNWidgets(2));
       expect(find.text('NEXT HIGH-IMPACT'), findsOneWidget);
       // No fixture releases borrow in.
       expect(find.text('NFP — Non-Farm Payrolls'), findsNothing);
@@ -1230,8 +1239,50 @@ void main() {
     });
   });
 
-  group('Settings holds no pipeline data', () {
-    testWidgets('renders identically live, with no LIVE/MOCK banner', (tester) async {
+  group('countdowns tick on their own clock', () {
+    testWidgets('seconds move with no data poll and no ancestor rebuild', (
+      tester,
+    ) async {
+      // The injected clock stands in for wall time: advancing it plus the
+      // fake-async scheduler is exactly what five real seconds do to the
+      // production widget (default clock, real timer).
+      var now = DateTime.utc(2026, 10, 7, 12);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: EventCountdown(
+              startsIn: const Duration(minutes: 12, seconds: 41),
+              now: () => now,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('in 12:41'), findsOneWidget);
+
+      // Five seconds pass, nothing else happens — no poll, no setState above.
+      now = now.add(const Duration(seconds: 5));
+      await tester.pump(const Duration(seconds: 5));
+      expect(find.text('in 12:36'), findsOneWidget);
+      expect(find.text('in 12:41'), findsNothing);
+    });
+
+    testWidgets('a multi-day countdown shows days, not a frozen second hand', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: EventCountdown(
+              startsIn: Duration(days: 6, hours: 3, minutes: 20),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('in 6d 03h'), findsOneWidget);
+    });
+  });
+
+  group('Settings holds no pipeline data', () {    testWidgets('renders identically live, with no LIVE/MOCK banner', (tester) async {
       await _pumpLive(tester, _empty());
       await _openTab(tester, 'SETTINGS');
 

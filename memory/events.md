@@ -1225,3 +1225,29 @@
      lib/data/live_data.dart, lib/models/display_models.dart,
      lib/screens/events_screen.dart, test/live_mode_test.dart
    - **tags:** results, bls, actuals, surprise-honesty, vintage-rule
+
+## EVT-20261007-0227 all countdowns tick on their own clock
+
+   - **mode:** BUILD
+   - **action:** User reported every countdown static. Two root causes: (1)
+     EventCountdown ticked to the next minute boundary while DISPLAYING
+     seconds, freezing up to 60s at a time; (2) the Radar caution line,
+     Events guard summary, row meta lines, and Signal guardrail bar were
+     plain interpolated text that only refreshed when LiveData notified -
+     which it deliberately does not do on unchanged polls. Fix: sub-day
+     countdowns tick every second; all four static sites converted to
+     self-ticking EventCountdown (inline via RichText WidgetSpan where the
+     clock sits mid-sentence); widget gained a style override + injectable
+     clock for tests. Also fixed a latent formatter bug: multi-day printed
+     "6d 03:h" (dropped minutes) instead of "6d 03h".
+   - **verified:** analyzer clean; 270 tests green incl. two new ones - one
+     advances the injected clock 5s with no poll and asserts 12:41->12:36,
+     one pins the multi-day format. Fresh APK installed on the phone.
+     Honest limit: no sub-day HIGH countdown is live right now (next is Oct
+     14 CPI), so second-hand movement on device can only be eyeballed once a
+     nearer release exists; the ticking proof is the automated test.
+   - **files:** lib/widgets/harbor_widgets.dart (EventCountdown, guardrail
+     bar), lib/screens/radar_screen.dart (caution), lib/screens/events_screen.dart
+     (guard line, meta line), lib/models/display_models.dart (formatter),
+     test/live_mode_test.dart
+   - **tags:** countdown, ticking, frozen-clock, widgetspan, testable-clock

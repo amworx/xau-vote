@@ -1515,15 +1515,37 @@ class EventGuardrailBar extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
-                      Text(
-                        '${event.currency} ${impactLabel(event.impact)} '
-                        'impact event in ${formatCountdown(event.startsIn)}'
-                        ' · View event',
-                        style: const TextStyle(
-                          fontFamily: 'Sora',
-                          fontSize: 9,
-                          height: 1.35,
-                          color: inkMuted,
+                      // The countdown ticks on its own: interpolated text here
+                      // froze between data polls, and a blackout clock that
+                      // does not move reads as a dead guard.
+                      Text.rich(
+                        TextSpan(
+                          style: const TextStyle(
+                            fontFamily: 'Sora',
+                            fontSize: 9,
+                            height: 1.35,
+                            color: inkMuted,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: '${event.currency} ${impactLabel(event.impact)} '
+                                  'impact event in ',
+                            ),
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: EventCountdown(
+                                startsIn: event.startsIn,
+                                prefix: '',
+                                style: const TextStyle(
+                                  fontFamily: 'Space Mono',
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: inkMuted,
+                                ),
+                              ),
+                            ),
+                            const TextSpan(text: ' · View event'),
+                          ],
                         ),
                       ),
                     ],
@@ -1834,16 +1856,35 @@ class MacroBackdropStrip extends StatelessWidget {
   }
 }
 
-/// Live 1-second countdown to [startsIn] from first build (addendum §5.1).
+/// Live countdown to [startsIn] from first build (addendum §5.1).
 ///
-/// The target is pinned in [initState] so rebuilds don't shift it. Tests
-/// must use `tester.pump()` (not `pumpAndSettle`) while this is mounted —
-/// the periodic timer never lets the frame scheduler settle.
+/// The target is pinned in [initState] so rebuilds don't shift it, and the
+/// widget carries its own second-ticker: countdown text must never depend on
+/// an ancestor rebuild, because LiveData deliberately does not notify when a
+/// poll changes nothing — every countdown that waited on a data rebuild
+/// froze on flat data (reported as stuck clocks app-wide). Tests must use
+/// `tester.pump()` (not `pumpAndSettle`) while this is mounted — the
+/// periodic timer never lets the frame scheduler settle.
 class EventCountdown extends StatefulWidget {
-  const EventCountdown({super.key, required this.startsIn, this.prefix = 'in '});
+  const EventCountdown({
+    super.key,
+    required this.startsIn,
+    this.prefix = 'in ',
+    this.style,
+    this.now = DateTime.now,
+  });
 
   final Duration startsIn;
   final String prefix;
+
+  /// Text style for the countdown. Defaults to the mono countdown style;
+  /// pass the surrounding text's style when embedding inline so the clock
+  /// does not shout. The elapsed state always renders [harborDim].
+  final TextStyle? style;
+
+  /// Clock, injectable so tests can advance time without waiting for it.
+  /// Production always passes the real clock (the default).
+  final DateTime Function() now;
 
   @override
   State<EventCountdown> createState() => _EventCountdownState();
@@ -1862,17 +1903,19 @@ class _EventCountdownState extends State<EventCountdown> {
     // tick is scheduled a full period after the previous one *fires*, not
     // after the previous deadline), which is what made the seconds appear to
     // stutter or skip.
-    _target = DateTime.now().add(widget.startsIn);
+    _target = widget.now().add(widget.startsIn);
     _remaining = widget.startsIn;
     _scheduleTick();
   }
 
   /// Rebuild cadence follows the magnitude of the countdown.
   ///
-  /// Ticking a multi-day countdown once a second rebuilt the whole Events list
-  /// hundreds of times for a value whose seconds are never displayed. A
-  /// sub-day countdown still ticks each second because that is what the user
-  /// is actually watching.
+  /// Sub-day countdowns render seconds (`MM:SS`, `HH:MM:SS`), so every second
+  /// changes the text and the ticker runs each second. (An earlier version
+  /// ticked to the next minute boundary instead and froze the seconds for up
+  /// to a minute — reported as a stuck clock.) Multi-day countdowns show days
+  /// and hours only, so they re-pin once a minute. Each tick rebuilds only
+  /// this Text, never the surrounding list.
   void _scheduleTick() {
     _timer?.cancel();
     _timer = Timer.periodic(_tickInterval(_remaining), (_) => _onTick());
@@ -1881,23 +1924,14 @@ class _EventCountdownState extends State<EventCountdown> {
   static const _second = Duration(seconds: 1);
   static const _minute = Duration(minutes: 1);
 
-  /// Next deadline that changes the rendered text.
-  ///
-  /// Computed from the target rather than the interval alone, so the first tick
-  /// lands on the visible boundary instead of one interval later.
   Duration _tickInterval(Duration remaining) {
     if (!countdownTicksSeconds(remaining)) return _minute;
-    final s = remaining.inSeconds;
-    // Under a minute only the seconds change; past a minute the minute can
-    // roll over first, so tick no later than that boundary.
-    if (s <= 60) return _second;
-    final secondsToNextMinute = s % 60;
-    return Duration(seconds: secondsToNextMinute == 0 ? 60 : secondsToNextMinute);
+    return _second;
   }
 
   void _onTick() {
     if (!mounted) return;
-    final next = _target.difference(DateTime.now());
+    final next = _target.difference(widget.now());
     // Past the target: stop rebuilding entirely rather than ticking at zero
     // forever, and show the elapsed state instead.
     setState(() {
@@ -1922,7 +1956,7 @@ class _EventCountdownState extends State<EventCountdown> {
     // otherwise the countdown keeps ticking toward a stale deadline and drifts
     // away from the server's answer.
     if (old.startsIn != widget.startsIn) {
-      _target = DateTime.now().add(widget.startsIn);
+      _target = widget.now().add(widget.startsIn);
       _remaining = widget.startsIn;
       _scheduleTick();
     }
@@ -1939,15 +1973,17 @@ class _EventCountdownState extends State<EventCountdown> {
     // Elapsed, not upcoming. Rendered neutrally so a finished countdown can
     // never read as an imminent red one.
     final elapsed =
-        _remaining == Duration.zero && _target.difference(DateTime.now()).isNegative;
+        _remaining == Duration.zero && _target.difference(widget.now()).isNegative;
+    final base = widget.style ??
+        const TextStyle(
+          fontFamily: 'Space Mono',
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: harborShort,
+        );
     return Text(
       elapsed ? 'released' : '${widget.prefix}${formatCountdown(_remaining)}',
-      style: TextStyle(
-        fontFamily: 'Space Mono',
-        fontSize: 12,
-        fontWeight: FontWeight.w700,
-        color: elapsed ? harborDim : harborShort,
-      ),
+      style: base.copyWith(color: elapsed ? harborDim : base.color),
     );
   }
 }
