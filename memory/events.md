@@ -1080,3 +1080,33 @@
      sources.enabled = false for FXScalpers; row retained as history.
      Verified: zero ideas, zero approvals, consensus behaviour unchanged.
    - **tags:** fxscalpers, dropped, owner-order
+
+## EVT-20261007-0222 Finance Calendar provider live; Events has a real calendar
+
+   - **mode:** BUILD
+   - **action:** Implemented directive step 7 (Finance Calendar) after the D-020
+     review: FinanceCalendarProvider in fetch-events, deployed, first run
+     upserted 16 real rows, xv-fetch-events cron re-enabled (hourly :07),
+     attribution line on the Events screen.
+   - **mapping honesty points:** no currency field in payload - derived from
+     title prefixes for majors, UNKNOWN otherwise (fail closed under the
+     USD/EUR/GBP chips; never guessed). consensus/prior/actual stored only
+     when numeric (provider sends strings like "6.4% unemployment" or null);
+     surprise therefore reads unavailable until real figures arrive. all-day
+     rows take date at 00:00 UTC. Impact unknown defaults LOW (can never trip
+     the blackout guard). Provider-consensus TEXT ("Hold at 3.50%-3.75%") is
+     deliberately not stored - no column, display deferred until a real need.
+   - **guard note:** build-consensus blackout does not filter currency, so a
+     HIGH non-USD release (e.g. Canada Labour Force Oct 9, Australia Oct 14)
+     will suppress emission like a US one. Kept as-is: conservative direction
+     (suppresses, never creates), gold reacts to major global prints. Recorded
+     here rather than silently changed.
+   - **not device-verified:** adb taps still would not switch tabs, so the
+     Events/Sources on-phone sighting remains with the owner. Widget tests
+     cover rendering; DB rows verified by query.
+   - **files:** supabase/functions/fetch-events/index.ts,
+     supabase/migrations/0023_finance_calendar_provider.sql (applied),
+     src/app/lib/screens/events_screen.dart
+   - **deployed:** fetch-events (FinanceCalendar default; FMP still gated).
+   - **tests:** app 267 green, analyzer clean.
+   - **tags:** finance-calendar, events, blackout-guard, attribution

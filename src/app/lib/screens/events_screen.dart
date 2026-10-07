@@ -155,6 +155,21 @@ class _EventsScreenState extends State<EventsScreen> {
           1 => _resultsPane(),
           _ => _newsPane(),
         },
+        // Licence attribution (D-20261006-020): Finance Calendar data is free
+        // for any use on condition of a visible link. Shown on every tab since
+        // all three panes read the same calendar - and only the calendar panes
+        // use it, so the news digest carries no misplaced credit.
+        const SizedBox(height: 12),
+        const Center(
+          child: Text(
+            'Calendar data: Finance Calendar (financecalendar.com).',
+            style: TextStyle(
+              fontFamily: 'Space Mono',
+              fontSize: 9,
+              color: harborFaint,
+            ),
+          ),
+        ),
       ],
     );
   }
