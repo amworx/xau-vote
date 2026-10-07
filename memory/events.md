@@ -1142,3 +1142,28 @@
      (provider:none, stored:0); fetch-events verified (25 rows).
    - **tests:** app 267 green, analyzer clean.
    - **tags:** fabrication-incident, news-seeder, honest-empty, coverage
+
+## EVT-20261007-0224 calendar cross-check live; first findings triaged, cron daily
+
+   - **mode:** BUILD
+   - **action:** Built directive step 8 (official-source validation) as
+     calendar-crosscheck: daily Finance Calendar HIGH USD vs l3vlup
+     official-schedule comparison, findings to calendar_discrepancies (0024),
+     cron xv-calendar-crosscheck 07:30 UTC. Never auto-corrects; questions
+     only.
+   - **matcher lessons from first runs (kept):** match presence across impact
+     scales (FC calls PPI medium, validator high - a scale difference is
+     judgment, not a factual gap); window the reverse check to our fetch range
+     (validator file spans months; flagging November in October is noise);
+     ET->UTC with real DST math.
+   - **first findings (2, both triaged DISMISSED with notes):** retail sales has
+     no validator counterpart (Census, outside l3vlup BLS/BEA/Fed sources -
+     standing limitation: Census releases cannot be validated this way); state
+     employment Oct 20 has no FC counterpart (Tier-2 BLS FC does not curate -
+     no guard impact). Neither is a data error; both stay as documented rows.
+   - **files:** supabase/functions/calendar-crosscheck/index.ts (new),
+     supabase/migrations/0024_calendar_discrepancies.sql (new, applied)
+   - **deployed:** calendar-crosscheck v3 (v1 unwindowed, v2 windowed,
+     v3 impact-blind matching). 15 noisy first-run rows deleted before the
+     matcher was fixed; clean baseline re-run verified.
+   - **tags:** validation, crosscheck, calendar, step-8
