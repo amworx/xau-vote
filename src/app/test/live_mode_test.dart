@@ -1395,8 +1395,7 @@ void main() {
     });
   });
 
-  group('countdowns tick on their own clock', () {
-    testWidgets('seconds move with no data poll and no ancestor rebuild', (
+  group('countdowns tick on their own clock', () {    testWidgets('seconds move with no data poll and no ancestor rebuild', (
       tester,
     ) async {
       // The injected clock stands in for wall time: advancing it plus the

@@ -322,27 +322,30 @@ class _EventsScreenState extends State<EventsScreen> {
                     color: Colors.white,
                   ),
                 ),
-                Text.rich(
-                  TextSpan(
-                    style: summaryStyle,
-                    children: [
-                      TextSpan(text: summary.toString()),
-                      if (next != null)
-                        WidgetSpan(
-                          alignment: PlaceholderAlignment.middle,
-                          child: EventCountdown(
-                            startsIn: next.startsIn,
-                            prefix: '',
-                            style: summaryStyle.copyWith(
-                              fontFamily: 'Space Mono',
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                // Static text and ticking clock as SIBLINGS, never an inline
+                // WidgetSpan: RichText ellipsis mis-measures the span on some
+                // rebuilds, and the line flickered between one and two lines
+                // on every poll — a growing/shrinking bar pushing the list.
+                // A Wrap lays out deterministically: same width, same lines,
+                // every frame.
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text(
+                      summary.toString(),
+                      style: summaryStyle,
+                    ),
+                    if (next != null)
+                      EventCountdown(
+                        startsIn: next.startsIn,
+                        prefix: '',
+                        style: summaryStyle.copyWith(
+                          fontFamily: 'Space Mono',
+                          fontWeight: FontWeight.w700,
                         ),
-                    ],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
               ],
             ),
