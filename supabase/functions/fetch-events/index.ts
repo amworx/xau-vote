@@ -152,6 +152,24 @@ export class ManualSeed implements EventProvider {
  * - impact strings map explicitly; unrecognized defaults to LOW, which can
  *   never trip the blackout guard.
  */
+/** Decode HTML entities the publisher leaves in titles/actuals
+ *  (`Citizens&#8217; Holiday`). Stored decoded so the app never shows markup;
+ *  unknown entities are left verbatim rather than guessed. */
+export function decodeEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_m, n) => {
+      const cp = parseInt(n, 10);
+      return Number.isFinite(cp) && cp > 0 && cp < 0x110000
+        ? String.fromCodePoint(cp)
+        : _m;
+    })
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'");
+}
+
 export class FinanceCalendarProvider implements EventProvider {
   readonly name = 'finance-calendar';
 
@@ -199,11 +217,15 @@ export class FinanceCalendarProvider implements EventProvider {
     const body = (await r.json()) as { events?: unknown };
     if (!Array.isArray(body.events)) throw new Error('unexpected calendar shape');
     return (body.events as Array<Record<string, unknown>>).map((row, i) => {
-      const title = typeof row['title'] === 'string' && row['title'].length > 0
+      const titleRaw = typeof row['title'] === 'string' && row['title'].length > 0
         ? row['title']
         : typeof row['name'] === 'string' && row['name'].length > 0
           ? row['name']
           : 'Untitled event';
+      // Publisher titles carry HTML entities; stored decoded (existing rows
+      // clean themselves on the next hourly upsert, which always rewrites
+      // the title).
+      const title = decodeEntities(titleRaw);
       const url = typeof row['url'] === 'string' ? row['url'] : null;
       const slug = url?.match(/\/event\/([^/]+)\/?$/)?.[1];
       const date = typeof row['date'] === 'string' ? row['date'] : from;
@@ -214,8 +236,10 @@ export class FinanceCalendarProvider implements EventProvider {
         typeof v === 'number' && Number.isFinite(v) ? v : null;
       // Publisher actuals arrive as descriptive text, never numbers — carry
       // them verbatim. num() above would silently drop them to null.
-      const txt = (v: unknown): string | null =>
-        typeof v === 'string' && v.trim().length > 0 ? v.trim() : null;
+      const txt = (v: unknown): string | null => {
+        if (typeof v !== 'string' || v.trim().length === 0) return null;
+        return decodeEntities(v.trim());
+      };
       const actualText = txt(row['actual']);
       return {
         externalId: `fc-${slug ?? `${date}-${i}`}`,

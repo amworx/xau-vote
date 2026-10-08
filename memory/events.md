@@ -1406,3 +1406,20 @@
      lib/screens/history_screen.dart (caption), supabase/functions/
      outcome-recorder (ACAO), tests
    - **tags:** browser-testing, cors, headlines, results-dates, coverage-honesty
+
+## EVT-20261008-0235 entity decoding at ingest; results-tab grey-box report open
+
+   - **mode:** BUILD
+   - **action:** User reported an expanding grey box on Results that shows/
+     hides. Inspected the live Results tab in the demo (keyboard navigation
+     mapped): guard bar compact, result cards correct with dates, wording,
+     provenance, UNSCORED - no defect visible across captures. Fixed one real
+     visible defect found en route: publisher HTML entities shown raw
+     ("Citizens&#8217;") - now decoded at ingest in fetch-events with
+     automatic backfill of existing rows (verified 0 entity rows remain).
+     NOTE: phone runs v17 (adb down, v18+ never installed) so the grey box
+     may be stale-client behavior; demo is current. Asked user for the
+     trigger (scroll/tab-switch/pull timing) to reproduce.
+   - **files:** supabase/functions/fetch-events/index.ts (decodeEntities),
+     memory
+   - **tags:** entities, results-tab, unverified-report, stale-client
