@@ -495,7 +495,11 @@ class LiveRepository {
 
   // ----------------------------------------------------------------- events
 
-  Future<List<DisplayEvent>> upcomingEvents({int limit = 20}) async {
+  /// Upcoming releases, soonest first. The window is the provider's 14-day
+  /// fetch; the limit sits above it so the query never silently truncates
+  /// the far end (the screen's own chips and impact floor do the filtering,
+  /// and say so).
+  Future<List<DisplayEvent>> upcomingEvents({int limit = 50}) async {
     final r = await _client
         .from('economic_events')
         .select('*')
@@ -570,6 +574,44 @@ class LiveRepository {
         // Never coerce an unknown pressure into a directional claim.
         return NewsPressure.unclear;
     }
+  }
+
+  /// Latest collected headlines, newest first. Title + source + link only —
+  /// the app never stores or shows article bodies. Age always travels with
+  /// the row so a stale headline reads as old, never as breaking.
+  Future<List<DisplayNewsItem>> latestHeadlines({int limit = 15}) async {
+    final r = await _client
+        .from('news_articles')
+        .select('title,source_name,url,published_at,collected_at')
+        .order('published_at', ascending: false, nullsFirst: false)
+        .limit(limit);
+    return (r as List).map((row) {
+      final m = row as Row;
+      final at = DateTime.tryParse('${m['published_at'] ?? m['collected_at'] ?? ''}');
+      return DisplayNewsItem(
+        source: '${m['source_name'] ?? 'Unknown'}',
+        title: '${m['title'] ?? 'Untitled'}',
+        ageText: _ageText(at),
+        url: '${m['url'] ?? ''}',
+      );
+    }).toList();
+  }
+
+  /// Human age for a headline timestamp. Null (undated row) reads as
+  /// undated — never as "just now", which would promote an unknown age to
+  /// breaking news.
+  static String _ageText(DateTime? at) {
+    if (at == null) return 'date unknown';
+    final mins = DateTime.now().toUtc().difference(at.toUtc()).inMinutes;
+    if (mins < 1) return 'just now';
+    if (mins < 60) return '${mins}m ago';
+    final hours = mins ~/ 60;
+    if (hours < 24) return '${hours}h ago';
+    final days = hours ~/ 24;
+    if (days < 30) return '${days}d ago';
+    final months = days ~/ 30;
+    if (months < 12) return '${months}mo ago';
+    return '${days ~/ 365}y ago';
   }
 
   // --------------------------------------------------------------- mapping
@@ -690,6 +732,7 @@ class LiveRepository {
       actualText: _wordedText(r['actual_text']),
       actualSource: _wordedText(r['actual_source']),
       surprise: _surprise(r['surprise'] as String?),
+      startsAtUtc: startsAt,
       outlook: outlook,
     );
   }

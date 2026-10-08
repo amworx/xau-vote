@@ -217,6 +217,12 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
   List<DisplayEvent> get events => _events;
   List<DisplayDigestTheme> get digest => _digest;
 
+  /// Collected headlines, newest first. Title + source + age + link — the
+  /// collected rows finally reach the screen instead of stopping in the
+  /// table while the tab insists nothing was collected.
+  List<DisplayNewsItem> _headlines = const [];
+  List<DisplayNewsItem> get headlines => _headlines;
+
   /// Released events carrying actuals, newest first. The Results tab reads
   /// these - never the scheduled rows. An event without an actual is not a
   /// result, and reusing an upcoming release as one would present a forecast
@@ -453,6 +459,7 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
         await guarded('events', () async { _events = await _repo.upcomingEvents(); });
         await guarded('results', () async { _results = await _repo.resultEvents(); });
         await guarded('digest', () async { _digest = await _repo.latestDigest(); });
+        await guarded('headlines', () async { _headlines = await _repo.latestHeadlines(); });
         // Session extremes + day-move reference, re-anchored against full
         // session history. Between these runs the price ticker folds ticks in
         // locally, so the range is never older than the newest tick; this

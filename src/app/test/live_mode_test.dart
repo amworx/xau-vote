@@ -64,6 +64,7 @@ class _StubRepository implements LiveRepository {
     this.events = const [],
     this.results = const [],
     this.digest = const [],
+    this.headlines = const [],
     this.failWith,
     this.agreement = (distinctIdeas: 0, distinctSources: 0),
     this.enabledSources = 1,
@@ -108,6 +109,10 @@ class _StubRepository implements LiveRepository {
   /// Released rows for the Results tab. Empty by default: a stub must not
   /// invent scored releases the backend did not report.
   final List<DisplayEvent> results;
+
+  /// Collected headlines. Empty by default: a stub must not invent coverage
+  /// the collector did not write.
+  final List<DisplayNewsItem> headlines;
   final List<DisplayDigestTheme> digest;
 
   /// Gold Hunts session views. Empty by default: a stub must not invent an
@@ -249,6 +254,15 @@ class _StubRepository implements LiveRepository {
       throw StateError('digest down');
     }
     return digest;
+  }
+
+  @override
+  Future<List<DisplayNewsItem>> latestHeadlines({int limit = 15}) async {
+    _guard();
+    if (failSlowSections.contains('headlines')) {
+      throw StateError('headlines down');
+    }
+    return headlines;
   }
 
   // ---------------------------------------------------------------- analysis
@@ -434,12 +448,15 @@ const _liveEvent = DisplayEvent(
 /// A scored release: issuer numeric plus the publisher's wording. Forecast is
 /// null (the feed carries none), so the row must render UNSCORED, never
 /// "in line" — in-line claims a comparison that never happened.
-const _liveResult = DisplayEvent(
+/// DateTime.utc is not a const constructor, so this fixture is final, not
+/// const — the values are still fixed.
+final _liveResult = DisplayEvent(
   id: 'live-res-cpi',
   title: 'US CPI Report August 2026',
   currency: 'USD',
   impact: EventImpact.high,
-  startsIn: Duration(days: -56),
+  startsIn: const Duration(days: -56),
+  startsAtUtc: DateTime.utc(2026, 8, 12, 12, 30),
   actual: '334.98',
   actualText: '+3.4% YoY, +0.1% MoM',
   actualSource: 'BLS CUUR0000SA0 (public domain, ref 2026-M08)',
@@ -449,6 +466,14 @@ const _liveDigest = DisplayDigestTheme(
   theme: 'Hawkish Fed repricing',
   pressure: NewsPressure.hawkish,
   evidenceCount: 3,
+);
+
+/// A collected headline: title + source + age + link, never article text.
+const _liveHeadline = DisplayNewsItem(
+  source: 'Federal Reserve Board',
+  title: 'Federal Reserve issues FOMC statement',
+  ageText: '2h ago',
+  url: 'https://www.federalreserve.gov/monetary20260916a.htm',
 );
 
 const _liveHistory = [
@@ -495,8 +520,9 @@ LiveData _populated() {
       signal: _liveSignal,
       historyRows: _liveHistory,
       events: const [_liveEvent],
-      results: const [_liveResult],
+      results: [_liveResult],
       digest: const [_liveDigest],
+      headlines: const [_liveHeadline],
       // Previous session close: the day move reads against it.
       prevClose: 4295.00,
       // 9 distinct ideas from 4 independent sources, with 6 sources enabled.
@@ -1324,13 +1350,21 @@ void main() {
       expect(find.textContaining('BLS CUUR0000SA0'), findsOneWidget);
       // No forecast on file: unscored, never "in line".
       expect(find.textContaining('UNSCORED'), findsOneWidget);
+      // The card anchors the print in time — a figure without a date reads
+      // as happening now.
+      expect(find.text('Released 12 Aug · 12:30 UTC'), findsOneWidget);
       expect(find.text('CPI y/y'), findsNothing);
 
       await _openTab(tester, 'NEWS');
       expect(find.text('Hawkish Fed repricing'), findsOneWidget);
       // The theme shows what it stands on, so it reads as a summary.
       expect(find.textContaining('linked article'), findsOneWidget);
-      expect(find.text('No headlines collected.'), findsOneWidget);
+      // Collected headlines reach the screen with source and age — and no
+      // fixture headline borrows in.
+      expect(find.text('Federal Reserve issues FOMC statement'), findsOneWidget);
+      expect(find.textContaining('FEDERAL RESERVE BOARD'), findsOneWidget);
+      expect(find.textContaining('2h ago'), findsOneWidget);
+      expect(find.text('No headlines collected.'), findsNothing);
       expect(find.text('Gold holds range ahead of US payrolls data'), findsNothing);
     });
 

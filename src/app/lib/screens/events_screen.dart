@@ -113,11 +113,11 @@ class _EventsScreenState extends State<EventsScreen> {
     return live != null ? live.digest : MockFixtures.digestThemes;
   }
 
-  /// Collected headlines. The snapshot carries the digest themes only, so a
-  /// live build reports no headlines rather than the fixture set.
+  /// Collected headlines, newest first with ages. The rows the collector
+  /// writes finally reach the screen instead of stopping in the table.
   List<DisplayNewsItem> get _headlines {
     final live = _live;
-    return live != null ? const <DisplayNewsItem>[] : MockFixtures.headlines;
+    return live != null ? live.headlines : MockFixtures.headlines;
   }
 
   /// The soonest USD HIGH event — the only combination that pauses new signals.
@@ -369,6 +369,23 @@ class _EventsScreenState extends State<EventsScreen> {
       children: [
         _nextBlackoutCard(next),
         const SizedBox(height: 10),
+        // Coverage, stated plainly: the row set is the majors window (USD /
+        // EUR / GBP, HIGH+MED by default), not the whole calendar. Anything
+        // the chips and impact floor hide is counted here, never silently
+        // dropped from the trader's mental model.
+        if (_allEvents.length > events.length)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              'Showing ${events.length} of ${_allEvents.length} upcoming — '
+              'filters hide the rest.',
+              style: const TextStyle(
+                fontFamily: 'Space Mono',
+                fontSize: 10,
+                color: harborDim,
+              ),
+            ),
+          ),
         if (events.isEmpty)
           (_live?.loading ?? false)
               ? const SkeletonEventList()
@@ -494,7 +511,8 @@ class _EventsScreenState extends State<EventsScreen> {
                 ),
                 const SizedBox(height: 9),
                 Text(
-                  'A ${event.actual ?? '—'} · F ${event.forecast ?? '—'} · '
+                  'A ${event.actual ?? event.actualText ?? '—'} · '
+                  'F ${event.forecast ?? '—'} · '
                   'P ${event.previous ?? '—'}',
                   style: const TextStyle(
                     fontFamily: 'Space Mono',
@@ -502,6 +520,19 @@ class _EventsScreenState extends State<EventsScreen> {
                     color: harborDim,
                   ),
                 ),
+                // When the release happened. A figure without a date reads
+                // as happening now; the trader must know which print this is.
+                if (event.startsAtUtc != null) ...[
+                  const SizedBox(height: 7),
+                  Text(
+                    _releasedLabel(event.startsAtUtc!),
+                    style: const TextStyle(
+                      fontFamily: 'Space Mono',
+                      fontSize: 10,
+                      color: harborDim,
+                    ),
+                  ),
+                ],
                 // Publisher wording and figure provenance. A worded figure is
                 // the publisher's text, never parsed into the numeric above;
                 // a sourced figure names the issuer series and reference
@@ -544,6 +575,19 @@ class _EventsScreenState extends State<EventsScreen> {
         ],
       ],
     );
+  }
+
+  /// When a scored release happened, UTC. A figure without a date reads as
+  /// happening now, so the Results card always carries this line.
+  static String _releasedLabel(DateTime at) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    final t = at.toUtc();
+    final hh = t.hour.toString().padLeft(2, '0');
+    final mm = t.minute.toString().padLeft(2, '0');
+    return 'Released ${t.day} ${months[t.month - 1]} · $hh:$mm UTC';
   }
 
   /// A released figure that beat or missed its forecast is volatility

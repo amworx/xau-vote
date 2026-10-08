@@ -381,6 +381,7 @@ class DisplayEvent {
     this.actualSource,
     this.surprise,
     this.outlook,
+    this.startsAtUtc,
     this.alertsEnabled = true,
   });
 
@@ -405,6 +406,11 @@ class DisplayEvent {
   /// ref 2026-M08)". Null for publisher-worded figures, whose provenance is
   /// the calendar provider itself.
   final String? actualSource;
+
+  /// The release instant in UTC. Null for fixtures that only carry a relative
+  /// offset. The Results tab renders it so a scored release is anchored in
+  /// time — a figure without a date reads as happening now.
+  final DateTime? startsAtUtc;
 
   /// Post-release flag: 'hot' | 'cold' | 'inline' | null (no result yet).
   /// Volatility context only — never a direction.

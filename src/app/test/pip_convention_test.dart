@@ -125,8 +125,8 @@ const _prose = {
   'Entry, stop and targets withheld — not yet validated against a forward',
   // The History bento hero caption. Explanatory copy that carries the hit-rate
   // denominator, and is designed to wrap to two lines. The constant
-  // `Closed signals: ` prefix lets it be skipped whatever the counts are.
-  'Closed signals: ',
+  // `Last 50 closed signals: ` prefix lets it be skipped whatever the counts are.
+  'Last 50 closed signals: ',
 };
 
 void main() {

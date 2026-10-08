@@ -229,8 +229,9 @@ class _StatHeader extends StatelessWidget {
           suffix: rate == null ? '' : '%',
           caption: s.resolved == 0
               ? 'Closed signals: none in this window yet.'
-              : 'Closed signals: ${s.tpHits} of ${s.resolved} hit a TP. '
-                  'Open setups excluded.',
+              : 'Last 50 closed signals: ${s.tpHits} of ${s.resolved} hit a TP. '
+                  'Open setups excluded. Most rows are no-vote expiries — '
+                  'the engine declining to trade, not losing trades.',
         ),
         StatsGrowth(
           eyebrow: s.netIsWindowTotal ? 'Net pips · 7-day window' : 'Net pips · window',
