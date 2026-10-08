@@ -823,7 +823,14 @@ async function settle(db: ReturnType<typeof createClient>): Promise<Response> {
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body, null, 2), {
     status,
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      // Browsers refuse to read the response without this, so the web build's
+      // forward record silently stops while Android works. Same rule as
+      // price-live: short-lived JSON, no shared caching.
+      'access-control-allow-origin': '*',
+      'cache-control': 'no-store',
+    },
   });
 }
 

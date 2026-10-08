@@ -1380,3 +1380,29 @@
      sideload APK + honest notes.
    - **files:** release v1.0.10 (app 1.0.10+18), memory
    - **tags:** key-rotation, vault, release, github-release
+
+## EVT-20261007-0234 browser round: CORS fix verified, keyboard nav mapped, 4 user questions answered in code
+
+   - **mode:** BUILD
+   - **action:** User asked 4 questions (signals provenance, news freshness,
+     results missing dates/figures, upcoming coverage). Answered each in
+     code: (1) History header now states "Last 50 closed signals" + what
+     no-vote expiries mean. (2) Wired the missing headlines pipeline
+     (repo.latestHeadlines -> LiveData slow section -> NEWS tab) - articles
+     existed but nothing read them. (3) Results cards show release date/time
+     + publisher wording as the figure fallback. (4) Upcoming states its
+     coverage ("11 of 24 - filters hide the rest") and repo limit raised
+     past the window. Fixed a second CORS outage found via DevTools network
+     (outcome-recorder POST refused on web; plain-HTTP call + ACAO header on
+     the function) - verified POST 200 in browser. Keyboard Tab+Enter drives
+     bottom-nav tabs in the demo (sub-tab pills are not focusable).
+   - **verified:** analyzer clean, suite green (incl. updated NEWS/Results/
+     prose-skip tests); browser network all-200 incl. headlines query,
+     session-stats RPC, outcome-recorder POST; screenshots of Radar,
+     Upcoming (coverage note live), History (new caption live).
+   - **files:** lib/data/outcome_recorder.dart, lib/data/live_repository.dart
+     (+latestHeadlines), lib/data/live_data.dart (+headlines), lib/screens/
+     events_screen.dart (headlines wiring, results date/wording, coverage),
+     lib/screens/history_screen.dart (caption), supabase/functions/
+     outcome-recorder (ACAO), tests
+   - **tags:** browser-testing, cors, headlines, results-dates, coverage-honesty

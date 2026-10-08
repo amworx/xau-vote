@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
 
 import 'live_repository.dart';
+import '../config.dart' as config;
 import 'package:xau_core/xau_core.dart';
 
 /// Writes each engine decision to the outcome recorder so it can be scored.
@@ -34,18 +36,7 @@ import 'package:xau_core/xau_core.dart';
 ///
 /// Protocol: docs/outcome-recorder-protocol.md
 class OutcomeRecorder {
-  OutcomeRecorder([SupabaseClient? client]) : _client = client;
-
-  final SupabaseClient? _client;
-
-  /// Resolved lazily, never in the constructor.
-  ///
-  /// `Supabase.instance.client` throws when the app has not been initialised,
-  /// which is the case in unit tests and in any tool that merely constructs an
-  /// [AnalysisService]. Touching it at construction time made merely building a
-  /// service fail; touching it here means a failed lookup is caught by [record]
-  /// and costs nothing.
-  SupabaseClient get _db => _client ?? Supabase.instance.client;
+  OutcomeRecorder();
 
   /// Decision key already submitted this session. The server dedupes on
   /// `decision_key` too; this just avoids a pointless round trip every 60s.
@@ -140,7 +131,24 @@ class OutcomeRecorder {
       if (key == _lastSubmittedKey) return null;
       _lastSubmittedKey = key;
 
-      await _db.functions.invoke('outcome-recorder', body: payload);
+      // Plain HTTP, not `functions.invoke`: the SDK sends the key as headers
+      // plus a JSON content-type, which forces a CORS preflight the gateway
+      // answers without echoing — every browser then refuses the call while
+      // Android works, and the validation record silently stops on web. Key
+      // as a query parameter with a text/plain body is a simple request (no
+      // preflight); the function parses the body as JSON either way. Same
+      // path on all platforms so web and phone cannot diverge again. URL and
+      // key come from the build config, exactly like the price-live call.
+      final uri = Uri.parse('${config.supabaseUrl}/functions/v1/outcome-recorder')
+          .replace(queryParameters: {'apikey': config.supabasePublishableKey});
+      final res = await http
+          .post(uri,
+              headers: {'Content-Type': 'text/plain'},
+              body: jsonEncode(payload))
+          .timeout(const Duration(seconds: 12));
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        throw StateError('outcome-recorder HTTP ${res.statusCode}');
+      }
 
       return key;
     } catch (e) {
