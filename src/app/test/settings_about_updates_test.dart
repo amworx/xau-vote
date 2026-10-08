@@ -53,10 +53,28 @@ void main() {
     testWidgets('the existing settings groups are still intact',
         (tester) async {
       await _pumpSettings(tester);
-      // Regression guard: adding groups must not displace these. Matched
+      // Regression guard: adding groups must not displace these. Groups below
+      // the fold are built lazily, so each is revealed before asserting —
+      // position in the scroll is not part of the contract. Matched
       // case-insensitively on the eyebrow text so the assertion does not
       // depend on which middle-dot codepoint the title happens to use.
       expect(find.text('TIMEFRAMES'), findsOneWidget);
+      // The new display-only indicators group lives between Display and
+      // Notifications without displacing either. Revealed top-down: the
+      // helper only scrolls downward, so an upward target would never come
+      // into view.
+      await _reveal(tester, find.text('INDICATORS · DISPLAY ONLY'));
+      expect(find.text('INDICATORS · DISPLAY ONLY'), findsOneWidget);
+      expect(find.text('Direction · EMA + structure'), findsOneWidget);
+      await _reveal(
+        tester,
+        find.byWidgetPredicate(
+          (w) =>
+              w is Text &&
+              w.data != null &&
+              w.data!.toUpperCase().startsWith('NOTIFICATIONS'),
+        ),
+      );
       expect(
         find.byWidgetPredicate(
           (w) =>

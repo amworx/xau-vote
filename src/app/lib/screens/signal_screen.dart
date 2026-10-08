@@ -32,6 +32,7 @@ import '../models/display_models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/harbor_widgets.dart';
+import '../widgets/regime_card.dart';
 import '../widgets/skeleton.dart';
 
 class SignalScreen extends StatelessWidget {
@@ -184,6 +185,15 @@ class SignalScreen extends StatelessWidget {
               ),
             ),
         ],
+        // Market regime, read-only context under the verdict (mockup 13R).
+        // Renders with or without an active setup: the market always has a
+        // regime, and its absence would read as missing data rather than as
+        // "no context". Never votes, never confirms, never flips.
+        const SizedBox(height: 13),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 18),
+          child: RegimeSection(),
+        ),
       ],
     );
   }

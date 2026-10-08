@@ -58,10 +58,32 @@ class AnalysisService extends ChangeNotifier {
   String? _error;
   Timer? _timer;
 
-  /// Cached result, or null before the first successful scan.
-  ScanResult? get result => _cached;
+  /// Regime inputs behind the most recent refresh, per timeframe. Pure
+  /// classification of what the market is doing — context for the Signal
+  /// screen, never an input to the scan above or to consensus.
+  RegimeParams _regimeParams = const RegimeParams();
+  Map<Tf, TimeframeBars> _regimeBars = const {};
+  Map<Tf, RegimeReading> _regime = const {};
 
-  /// The §5.1 layers behind the most recent scan, or null before the first one.
+  /// Cached regime per timeframe, or empty before the first refresh.
+  Map<Tf, RegimeReading> get regime => _regime;
+
+  /// The params the cached regime was computed with.
+  RegimeParams get regimeParams => _regimeParams;
+
+  /// Recompute the regime with new params against the last fetched bars.
+  /// Notifies only when the params actually changed; the Signal screen calls
+  /// this when indicator settings change so customization applies without
+  /// waiting for the next 60s poll.
+  void setRegimeParams(RegimeParams params) {
+    if (params == _regimeParams) return;
+    _regimeParams = params;
+    _computeRegime();
+    notifyListeners();
+  }
+
+  /// Cached result, or null before the first successful scan.
+  ScanResult? get result => _cached;  /// The §5.1 layers behind the most recent scan, or null before the first one.
   ///
   /// Exposed separately from [result] because the layers carry the evidence -
   /// the percentile, the target range, the as-of dates - that lets the UI show
@@ -77,6 +99,20 @@ class AnalysisService extends ChangeNotifier {
 
   /// True when a venue spread was genuinely measured on the most recent scan.
   bool get hasGenuineSpread => _cached?.spread.isGenuine ?? false;
+
+  /// Regime for the cached bars with the current params. Skips timeframes
+  /// with no bars, so a thin series reads as absent rather than neutral.
+  void _computeRegime() {
+    final since = sessionStartUtc(DateTime.now().toUtc());
+    final out = <Tf, RegimeReading>{};
+    for (final tf in [Tf.m5, Tf.m15, Tf.h1]) {
+      final bars = _regimeBars[tf]?.bars ?? const [];
+      if (bars.isEmpty) continue;
+      out[tf] = computeRegime(bars,
+          params: _regimeParams, sessionStart: since);
+    }
+    _regime = out;
+  }
 
   /// Runs one scan and replaces the cache.
   Future<ScanResult?> refresh() async {
@@ -192,6 +228,8 @@ class AnalysisService extends ChangeNotifier {
         sentimentAgrees: scan.sentimentAgrees,
       );
       _cachedAt = DateTime.now();
+      _regimeBars = bars;
+      _computeRegime();
       // Notify after the state is fully written so a listener never observes a
       // half-updated snapshot.
       notifyListeners();

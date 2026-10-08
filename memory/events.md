@@ -1462,3 +1462,25 @@
      re-cut to the approved layers + sentiment feed toggles. Verified by
      screenshot (sections + settings). No app code touched; awaiting build
      approval.
+
+## EVT-20261008-0239 regime stack implemented from mockup 13R (Phase 1)
+
+   - **mode:** BUILD
+   - **action:** User approved implementation pixel-by-pixel. Built: xau_core
+     regime engine (VWAP session-anchored with volume honesty, activity
+     ratio, fractal structure classification, 4-vote agreement with MIXED
+     default, RSI 65/35 lean bands, ADX strength-only) + 11 engine tests;
+     AnalysisService per-TF regime map; AppState indicator prefs (7 toggles,
+     14 params, persistence, reset); Signal context card (two-panel gradient
+     summary, tiles with gauges, TF pills, pending sentiment card);
+     Settings customization group with steppers. Sentiment feeds deferred
+     to Phase 2 (needs user FRED key + COT job) - card shows pending,
+     never sample values.
+   - **verified:** analyzer clean; app 281 + engine 302 green; browser demo
+     on REAL bars: MIXED 2/4 split card with sensible note, tiles, TF pills.
+     Fixed along the way: VWAP equality counts neutral (test caught it);
+     summary fixed-height against stretch crash in lists.
+   - **files:** xau_core/lib/analysis/regime.dart + test, app
+     models/regime_display + test, widgets/regime_card, screens
+     signal/settings, state/app_state, data/analysis_service
+   - **tags:** indicators, regime, mockup-13R, phase-1

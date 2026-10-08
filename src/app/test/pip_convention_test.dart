@@ -127,6 +127,11 @@ const _prose = {
   // denominator, and is designed to wrap to two lines. The constant
   // `Last 50 closed signals: ` prefix lets it be skipped whatever the counts are.
   'Last 50 closed signals: ',
+  // The regime card's pending + disclaimer lines. Explanatory copy by the same
+  // rule: sentences, not figures.
+  'Waiting for bars',
+  'Computed from live bars',
+  'Display only. Consensus math',
 };
 
 void main() {

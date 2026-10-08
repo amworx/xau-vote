@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/display_models.dart';
+import '../data/analysis_service.dart';
 import '../services/notification_service.dart';
 import '../services/update_service.dart';
 import '../state/app_state.dart';
@@ -107,6 +108,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: 'Display',
           children: [_PipConventionPills()],
         ),
+        const _IndicatorGroup(),
         _Group(
           title: 'Notifications · signals',
           children: [
@@ -703,6 +705,225 @@ class _RowLabels extends StatelessWidget {
   }
 }
 
+/// Indicator display settings (mockup 13R). Toggles hide tiles, steppers
+/// reshape the readings. Display ONLY — consensus math, guard and validation
+/// never read these, and the group says so.
+class _IndicatorGroup extends StatelessWidget {
+  const _IndicatorGroup();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    return _Group(
+      title: 'Indicators · display only',
+      children: [
+        _IndicatorToggle(
+          title: 'Direction · EMA + structure',
+          subtitle: 'Regime scaffolding',
+          value: state.indDirection,
+          onChanged: (v) => _apply(context, state, () => state.setIndDirection(v)),
+        ),
+        _IndicatorParams(children: [
+          _ParamStepper(label: 'FAST', value: '${state.emaFast}', onMinus: () => _apply(context, state, () => state.setEmaFast((state.emaFast - 1).clamp(2, 200))), onPlus: () => _apply(context, state, () => state.setEmaFast((state.emaFast + 1).clamp(2, 200)))),
+          _ParamStepper(label: 'MID', value: '${state.emaMid}', onMinus: () => _apply(context, state, () => state.setEmaMid((state.emaMid - 5).clamp(2, 200))), onPlus: () => _apply(context, state, () => state.setEmaMid((state.emaMid + 5).clamp(2, 200)))),
+          _ParamStepper(label: 'TREND', value: '${state.emaTrend}', onMinus: () => _apply(context, state, () => state.setEmaTrend((state.emaTrend - 10).clamp(2, 400))), onPlus: () => _apply(context, state, () => state.setEmaTrend((state.emaTrend + 10).clamp(2, 400)))),
+          _ParamStepper(label: 'SWINGS', value: '${state.swings}', onMinus: () => _apply(context, state, () => state.setSwings((state.swings - 1).clamp(1, 10))), onPlus: () => _apply(context, state, () => state.setSwings((state.swings + 1).clamp(1, 10)))),
+        ]),
+        _IndicatorToggle(
+          title: 'ADX strength',
+          subtitle: 'Is the move strong enough to matter',
+          value: state.indAdx,
+          onChanged: (v) => _apply(context, state, () => state.setIndAdx(v)),
+        ),
+        _IndicatorParams(children: [
+          _ParamStepper(label: 'PERIOD', value: '${state.adxPeriod}', onMinus: () => _apply(context, state, () => state.setAdxPeriod((state.adxPeriod - 1).clamp(2, 50))), onPlus: () => _apply(context, state, () => state.setAdxPeriod((state.adxPeriod + 1).clamp(2, 50)))),
+          _ParamStepper(label: 'STRONG ≥', value: state.adxStrong.toStringAsFixed(0), onMinus: () => _apply(context, state, () => state.setAdxStrong((state.adxStrong - 1).clamp(5, 50))), onPlus: () => _apply(context, state, () => state.setAdxStrong((state.adxStrong + 1).clamp(5, 50)))),
+        ]),
+        _IndicatorToggle(
+          title: 'RSI condition',
+          subtitle: 'Momentum state, not a trigger',
+          value: state.indRsi,
+          onChanged: (v) => _apply(context, state, () => state.setIndRsi(v)),
+        ),
+        _IndicatorParams(children: [
+          _ParamStepper(label: 'PERIOD', value: '${state.rsiPeriod}', onMinus: () => _apply(context, state, () => state.setRsiPeriod((state.rsiPeriod - 1).clamp(2, 50))), onPlus: () => _apply(context, state, () => state.setRsiPeriod((state.rsiPeriod + 1).clamp(2, 50)))),
+          _ParamStepper(label: 'OVERBOUGHT', value: state.rsiOb.toStringAsFixed(0), onMinus: () => _apply(context, state, () => state.setRsiOb((state.rsiOb - 5).clamp(state.rsiOs + 5, 95))), onPlus: () => _apply(context, state, () => state.setRsiOb((state.rsiOb + 5).clamp(state.rsiOs + 5, 95)))),
+          _ParamStepper(label: 'OVERSOLD', value: state.rsiOs.toStringAsFixed(0), onMinus: () => _apply(context, state, () => state.setRsiOs((state.rsiOs - 5).clamp(5, state.rsiOb - 5))), onPlus: () => _apply(context, state, () => state.setRsiOs((state.rsiOs + 5).clamp(5, state.rsiOb - 5)))),
+        ]),
+        _IndicatorToggle(
+          title: 'MACD transition',
+          subtitle: 'Acceleration, not direction',
+          value: state.indMacd,
+          onChanged: (v) => _apply(context, state, () => state.setIndMacd(v)),
+        ),
+        _IndicatorParams(children: [
+          _ParamStepper(label: 'FAST', value: '${state.macdFast}', onMinus: () => _apply(context, state, () => state.setMacdFast((state.macdFast - 1).clamp(2, 50))), onPlus: () => _apply(context, state, () => state.setMacdFast((state.macdFast + 1).clamp(2, 50)))),
+          _ParamStepper(label: 'SLOW', value: '${state.macdSlow}', onMinus: () => _apply(context, state, () => state.setMacdSlow((state.macdSlow - 1).clamp(3, 100))), onPlus: () => _apply(context, state, () => state.setMacdSlow((state.macdSlow + 1).clamp(3, 100)))),
+          _ParamStepper(label: 'SIGNAL', value: '${state.macdSignal}', onMinus: () => _apply(context, state, () => state.setMacdSignal((state.macdSignal - 1).clamp(2, 50))), onPlus: () => _apply(context, state, () => state.setMacdSignal((state.macdSignal + 1).clamp(2, 50)))),
+        ]),
+        _IndicatorToggle(
+          title: 'VWAP + activity',
+          subtitle: 'Session reference + tick participation',
+          value: state.indVwap,
+          onChanged: (v) => _apply(context, state, () => state.setIndVwap(v)),
+        ),
+        _IndicatorParams(children: [
+          _ParamStepper(label: 'LOOKBACK', value: '${state.actLookback}', onMinus: () => _apply(context, state, () => state.setActLookback((state.actLookback - 5).clamp(5, 100))), onPlus: () => _apply(context, state, () => state.setActLookback((state.actLookback + 5).clamp(5, 100)))),
+        ]),
+        _IndicatorToggle(
+          title: 'ATR',
+          subtitle: 'Room-to-move context',
+          value: state.indAtr,
+          onChanged: (v) => _apply(context, state, () => state.setIndAtr(v)),
+        ),
+        _IndicatorParams(children: [
+          _ParamStepper(label: 'PERIOD', value: '${state.atrPeriod}', onMinus: () => _apply(context, state, () => state.setAtrPeriod((state.atrPeriod - 1).clamp(2, 50))), onPlus: () => _apply(context, state, () => state.setAtrPeriod((state.atrPeriod + 1).clamp(2, 50)))),
+        ]),
+        _IndicatorToggle(
+          title: 'Slow sentiment feeds',
+          subtitle: 'COT · DXY · yields · VIX — on/off only',
+          value: state.indSentiment,
+          onChanged: (v) => _apply(context, state, () => state.setIndSentiment(v)),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _apply(context, state, state.resetIndicatorDefaults),
+                  child: const Text('Reset defaults'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(14, 0, 14, 12),
+          child: Text(
+            'Display only. Consensus math, guard and validation never read these.',
+            style: TextStyle(fontFamily: 'Space Mono', fontSize: 9, color: harborDim),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Writes the setting, persists it, and recomputes the regime with the new
+  /// params when the analysis service is present (offline builds have none).
+  static void _apply(BuildContext context, AppState state, void Function() write) {
+    write();
+    try {
+      Provider.of<AnalysisService?>(context, listen: false)
+          ?.setRegimeParams(state.toRegimeParams());
+    } catch (_) {
+      // No service mounted (offline build, tests): the setting still holds.
+    }
+  }
+}
+
+class _IndicatorToggle extends StatelessWidget {
+  const _IndicatorToggle({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ToggleRow(title: title, subtitle: subtitle, value: value, onChanged: onChanged);
+  }
+}
+
+class _IndicatorParams extends StatelessWidget {
+  const _IndicatorParams({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+      child: Wrap(spacing: 14, runSpacing: 8, children: children),
+    );
+  }
+}
+
+class _ParamStepper extends StatelessWidget {
+  const _ParamStepper({
+    required this.label,
+    required this.value,
+    required this.onMinus,
+    required this.onPlus,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onMinus;
+  final VoidCallback onPlus;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontFamily: 'Space Mono', fontSize: 8, color: harborFaint, letterSpacing: 0.5),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _StepButton(label: '−', onTap: onMinus),
+            Container(
+              constraints: const BoxConstraints(minWidth: 30),
+              alignment: Alignment.center,
+              child: Text(
+                value,
+                style: const TextStyle(fontFamily: 'Space Mono', fontSize: 10, fontWeight: FontWeight.w700),
+              ),
+            ),
+            _StepButton(label: '+', onTap: onPlus),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  const _StepButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(7),
+      child: Container(
+        width: 22,
+        height: 22,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: harborLine),
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Text(label, style: const TextStyle(fontSize: 13, color: harborInk)),
+      ),
+    );
+  }
+}
 /// Target-scope selector (spec §10). [HarborPill] is the same control the
 /// Radar card and the Signal screen use, so one selection is mirrored on all
 /// three: it writes straight to [AppState.targets] and narrows the visible

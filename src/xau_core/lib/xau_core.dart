@@ -15,6 +15,7 @@ export 'analysis/event_outlook.dart';
 // unambiguous instead of silently shadowing one with the other.
 export 'analysis/independence.dart' hide IndependenceResult;
 export 'analysis/indicators.dart';
+export 'analysis/regime.dart';
 export 'analysis/scanner.dart';
 export 'analysis/session.dart';
 export 'analysis/stop_plan.dart';
