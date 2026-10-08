@@ -137,6 +137,13 @@ class _EventsScreenState extends State<EventsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // The guard line belongs to the Upcoming tab: it counts down a blackout
+    // for releases that have not happened yet. Above past results it is
+    // irrelevant chrome on a ticking rebuild — and a flicker source — so it
+    // renders only where its information lives.
+    final guard = _tab == 0
+        ? [const SizedBox(height: 10), _guardLine()]
+        : const <Widget>[];
     return ListView(
       key: const PageStorageKey<String>('events'),
       // Horizontal gutters belong to the shared chrome (header 18px, cards
@@ -147,8 +154,7 @@ class _EventsScreenState extends State<EventsScreen> {
         _tabBar(),
         const SizedBox(height: 11),
         _filterCard(),
-        const SizedBox(height: 10),
-        _guardLine(),
+        ...guard,
         const SizedBox(height: 10),
         switch (_tab) {
           0 => _upcomingPane(),
