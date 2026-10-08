@@ -83,13 +83,15 @@ p.sub{font-family:'Space Mono',monospace; font-size:10px; color:var(--dim); marg
 .mini .mv{font-family:'Space Mono',monospace; font-size:10px; margin-top:2px;}
 .mini .md{font-family:'Space Mono',monospace; font-size:8px; color:var(--faint); margin-top:2px;}
 .sumcard{display:flex !important; padding:0 !important; overflow:hidden; border:0 !important;
-  border-radius:18px !important; box-shadow:0 10px 28px rgba(13,21,38,.22);}
-.sumside{width:86px; flex:none; display:flex; align-items:center; justify-content:center;
-  font-size:30px; font-weight:800; color:rgba(255,255,255,.95);}
+  border-radius:18px !important; box-shadow:0 10px 28px rgba(13,21,38,.22); height:208px !important;}
+.sumside{width:96px; flex:none; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; color:rgba(255,255,255,.95);}
+.sumside .glyph{font-size:28px; font-weight:800; line-height:1;}
+.sumside .pct{font-family:'Space Mono',monospace; font-size:16px; font-weight:700; line-height:1;}
 .sumside.g-bull{background:linear-gradient(160deg,#12B981 0%,#0B6E4F 100%);}
 .sumside.g-bear{background:linear-gradient(160deg,#E05252 0%,#8E2B2B 100%);}
 .sumside.g-mixed{background:linear-gradient(160deg,#8FA0B8 0%,#4A586E 100%);}
-.summain{flex:1; background:var(--ink); color:#fff; padding:14px 14px 13px;}
+.summain{flex:1; min-width:0; background:var(--ink); color:#fff; padding:14px 14px 13px; overflow:hidden;}
 .hidden{display:none !important;}
 </style>
 </head>
@@ -111,11 +113,11 @@ p.sub{font-family:'Space Mono',monospace; font-size:10px; color:var(--dim); marg
     </div>
 
     <div class="tile sumcard" id="sumcard">
-      <div class="sumside g-bull" data-sumside>▲</div>
+      <div class="sumside g-bull" data-sumside><span class="glyph" data-sumglyph>▲</span><span class="pct" data-sumpct>75%</span></div>
       <div class="summain">
         <div class="tftag" data-tftag style="display:inline-block; margin-bottom:8px; background:rgba(255,255,255,.14); color:#fff;">15M</div>
         <div style="font-size:26px; font-weight:800; letter-spacing:-.5px;" data-sumstate>BULLISH LEAN</div>
-        <div style="font-family:'Space Mono',monospace; font-size:13px; font-weight:700; margin-top:4px;" data-sumfrac>3 of 4 · 75% agree</div>
+        <div style="font-family:'Space Mono',monospace; font-size:13px; font-weight:700; margin-top:4px;" data-sumfrac>3 of 4 agree</div>
         <div class="note" style="color:#A9B6CB; margin-top:8px;" data-sumnote>Bullish across direction, momentum and intraday; RSI undecided. Trend strong — moves have follow-through.</div>
         <div class="note" style="color:#7C8AA0; margin-top:6px;">A read of the dashboard, not a setup. Trades come from independent-source consensus only.</div>
       </div>
@@ -282,15 +284,15 @@ const tfData = {
   '5M':  {dir:['Price > 20 > 50 · HH / HL','BULLISH','bull'], adx:['22.1','44.2%','FIRM','info'],
           rsi:['63.1','63.1%','NEUTRAL','neutral'], macd:['+0.18','64%','BUILDING','bull'],
           vwap:['+0.04%'], act:['1.9×','ELEVATED','info'], atr:['0.96'],
-          sum:['BULLISH LEAN','3 of 4 · 75% agree','Bullish but stretched — late longs pay more.']},
+          sum:['BULLISH LEAN','3 of 4 agree','Bullish but stretched — late longs pay more.','75%']},
   '15M': {dir:['Price > 20 > 50 > 200 · HH / HL','BULLISH','bull'], adx:['28.4','56.8%','STRONG','bull'],
           rsi:['58.4','58.4%','NEUTRAL','neutral'], macd:['+0.42','82%','BUILDING','bull'],
           vwap:['+0.08%'], act:['1.6×','ELEVATED','info'], atr:['1.84'],
-          sum:['BULLISH LEAN','3 of 4 · 75% agree','Bullish across direction, momentum and intraday; RSI undecided. Trend strong — moves have follow-through.']},
+          sum:['BULLISH LEAN','3 of 4 agree','Bullish across direction, momentum and intraday; RSI undecided. Trend strong — moves have follow-through.','75%']},
   '1H':  {dir:['Price > 50 · 20 < 50 · mixed','RANGING','neutral'], adx:['16.3','32.6%','WEAK','neutral'],
           rsi:['47.9','47.9%','NEUTRAL','neutral'], macd:['−0.11','44%','FADING','bear'],
           vwap:['−0.05%'], act:['0.8×','QUIET','neutral'], atr:['3.42'],
-          sum:['MIXED — NO LEAN','2 of 4 · bearish half','Bearish momentum inside a ranging structure. Nothing to lean on.']}
+          sum:['MIXED — NO LEAN','2 of 4 · split','Bearish momentum inside a ranging structure. Nothing to lean on.','50%']}
 };
 document.querySelectorAll('#tfbar button').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('#tfbar button').forEach(x => x.classList.remove('on'));
@@ -325,7 +327,8 @@ document.querySelectorAll('#tfbar button').forEach(b => b.addEventListener('clic
   const st = d.sum[0];
   const cls = st.indexOf('BULLISH') === 0 ? 'g-bull' : (st.indexOf('BEARISH') === 0 ? 'g-bear' : 'g-mixed');
   side.className = 'sumside ' + cls;
-  side.textContent = cls === 'g-bull' ? '▲' : (cls === 'g-bear' ? '▼' : '●');  const aT = document.querySelector('.tile[data-ind="act"]');
+  side.querySelector('[data-sumglyph]').textContent = cls === 'g-bull' ? '▲' : (cls === 'g-bear' ? '▼' : '●');
+  side.querySelector('[data-sumpct]').textContent = d.sum[3];  const aT = document.querySelector('.tile[data-ind="act"]');
   aT.querySelector('[data-val]').textContent = d.act[0];
   const ast = aT.querySelector('[data-state]'); ast.textContent = d.act[1]; ast.className = 'pill ' + d.act[2];
   document.querySelector('.tile[data-ind="atr"] [data-val]').textContent = d.atr[0];
