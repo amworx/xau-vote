@@ -1450,3 +1450,15 @@
      touches consensus math, guard, or validation; values computed from
      real bars (600-deep history exists). Awaiting user approval/changes
      before any implementation.
+
+## EVT-20261008-0238 mockup 13R reflects the approved regime stack
+
+   - **mode:** PLAN
+   - **action:** User confirmed both questions (drop BB/Stoch for ADX+VWAP;
+     FRED key acceptable). Rebuilt the mockup as 13R: regime-worded tiles
+     only (bullish/bearish/ranging - LONG/SHORT reserved for consensus),
+     timeframe tag on every technical reading, slow-sentiment minis with
+     their own cadence labels, activity renamed from volume, settings
+     re-cut to the approved layers + sentiment feed toggles. Verified by
+     screenshot (sections + settings). No app code touched; awaiting build
+     approval.
