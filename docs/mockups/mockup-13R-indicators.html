@@ -102,6 +102,14 @@ p.sub{font-family:'Space Mono',monospace; font-size:10px; color:var(--dim); marg
       <button data-tf="1H">1H</button>
     </div>
 
+    <div class="tile" id="sumcard" style="background:var(--ink); border-color:var(--ink); color:#fff;">
+      <div class="tftag" data-tftag style="display:inline-block; margin-bottom:8px; background:rgba(255,255,255,.14); color:#fff;">15M</div>
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.5px;" data-sumstate>BULLISH LEAN</div>
+      <div style="font-family:'Space Mono',monospace; font-size:13px; font-weight:700; margin-top:4px;" data-sumfrac>3 of 4 · 75% agree</div>
+      <div class="note" style="color:#A9B6CB; margin-top:8px;" data-sumnote>Bullish across direction, momentum and intraday; RSI undecided. Trend strong — moves have follow-through.</div>
+      <div class="note" style="color:#7C8AA0; margin-top:6px;">A read of the dashboard, not a setup. Trades come from independent-source consensus only.</div>
+    </div>
+
     <div class="secttl">Direction <span class="tftag" data-tftag>15M</span></div>
     <div class="tile" data-ind="dir">
       <div class="thead"><span class="tname">EMA stack + structure</span><span class="pill bull" data-state>BULLISH</span></div>
@@ -262,13 +270,16 @@ p.sub{font-family:'Space Mono',monospace; font-size:10px; color:var(--dim); marg
 const tfData = {
   '5M':  {dir:['Price > 20 > 50 · HH / HL','BULLISH','bull'], adx:['22.1','44.2%','FIRM','info'],
           rsi:['63.1','63.1%','NEUTRAL','neutral'], macd:['+0.18','64%','BUILDING','bull'],
-          vwap:['+0.04%'], act:['1.9×','ELEVATED','info'], atr:['0.96']},
+          vwap:['+0.04%'], act:['1.9×','ELEVATED','info'], atr:['0.96'],
+          sum:['BULLISH LEAN','3 of 4 · 75% agree','Bullish but stretched — late longs pay more.']},
   '15M': {dir:['Price > 20 > 50 > 200 · HH / HL','BULLISH','bull'], adx:['28.4','56.8%','STRONG','bull'],
           rsi:['58.4','58.4%','NEUTRAL','neutral'], macd:['+0.42','82%','BUILDING','bull'],
-          vwap:['+0.08%'], act:['1.6×','ELEVATED','info'], atr:['1.84']},
+          vwap:['+0.08%'], act:['1.6×','ELEVATED','info'], atr:['1.84'],
+          sum:['BULLISH LEAN','3 of 4 · 75% agree','Bullish across direction, momentum and intraday; RSI undecided. Trend strong — moves have follow-through.']},
   '1H':  {dir:['Price > 50 · 20 < 50 · mixed','RANGING','neutral'], adx:['16.3','32.6%','WEAK','neutral'],
           rsi:['47.9','47.9%','NEUTRAL','neutral'], macd:['−0.11','44%','FADING','bear'],
-          vwap:['−0.05%'], act:['0.8×','QUIET','neutral'], atr:['3.42']}
+          vwap:['−0.05%'], act:['0.8×','QUIET','neutral'], atr:['3.42'],
+          sum:['MIXED — NO LEAN','2 of 4 · bearish half','Bearish momentum inside a ranging structure. Nothing to lean on.']}
 };
 document.querySelectorAll('#tfbar button').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('#tfbar button').forEach(x => x.classList.remove('on'));
@@ -295,7 +306,10 @@ document.querySelectorAll('#tfbar button').forEach(b => b.addEventListener('clic
   mT.querySelector('[data-needle]').style.left = d.macd[1];
   const ms = mT.querySelector('[data-state]'); ms.textContent = d.macd[2]; ms.className = 'pill ' + d.macd[3];
   const vT = document.querySelector('.tile[data-ind="vwap"] [data-val]'); if (vT) vT.textContent = d.vwap[0];
-  const aT = document.querySelector('.tile[data-ind="act"]');
+  const sc = document.getElementById('sumcard');
+  sc.querySelector('[data-sumstate]').textContent = d.sum[0];
+  sc.querySelector('[data-sumfrac]').textContent = d.sum[1];
+  sc.querySelector('[data-sumnote]').textContent = d.sum[2];  const aT = document.querySelector('.tile[data-ind="act"]');
   aT.querySelector('[data-val]').textContent = d.act[0];
   const ast = aT.querySelector('[data-state]'); ast.textContent = d.act[1]; ast.className = 'pill ' + d.act[2];
   document.querySelector('.tile[data-ind="atr"] [data-val]').textContent = d.atr[0];
