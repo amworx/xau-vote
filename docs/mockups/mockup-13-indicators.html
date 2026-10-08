@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#E9ECEF">
+<title>XV Mockup 13 — Indicators (proposal)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9ECEF; --card:#FFFFFF; --ink:#0D1526; --dim:#5A6B84; --faint:#8FA0B8;
+  --line:#D5DCE6; --accent:#2347F5; --accent-ink:#FFFFFF;
+  --long:#0E9F6E; --long-soft:#DFF5EA; --short:#E05252; --short-soft:#FBE3E3;
+  --warn:#B7791F; --warn-soft:#FBF3DF; --chip:#EEF1F6;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+body{margin:0; background:#0D1526; font-family:'Sora',system-ui,sans-serif; color:var(--ink);
+  display:flex; justify-content:center; padding:24px 12px 48px;}
+.phone{width:390px; max-width:100%; background:var(--bg); border-radius:34px; overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,.5);}
+.statusbar{display:flex; justify-content:space-between; padding:12px 22px 4px; font-size:11px; color:var(--dim); font-weight:600;}
+.screen{padding:10px 18px 26px; max-height:760px; overflow-y:auto;}
+.eyebrow{font-size:9px; letter-spacing:1.4px; font-weight:700; color:var(--faint); margin:16px 0 8px;}
+.eyebrow.red{color:var(--short);}
+.card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 14px 13px; margin-bottom:10px;}
+.row{display:flex; align-items:center; gap:9px;}
+.grow{flex:1; min-width:0;}
+.t-title{font-size:12px; font-weight:700;}
+.t-sub{font-family:'Space Mono',monospace; font-size:10px; color:var(--dim); margin-top:2px;}
+.t-val{font-family:'Space Mono',monospace; font-size:15px; font-weight:700;}
+.pill{font-family:'Space Mono',monospace; font-size:8px; font-weight:700; letter-spacing:.6px;
+  padding:4px 8px; border-radius:999px; white-space:nowrap;}
+.pill.long{background:var(--long-soft); color:var(--long);}
+.pill.short{background:var(--short-soft); color:var(--short);}
+.pill.neutral{background:var(--chip); color:var(--dim);}
+.pill.info{background:#E8EEFB; color:var(--accent);}
+.pill.warn{background:var(--warn-soft); color:var(--warn);}
+.note{font-family:'Space Mono',monospace; font-size:9.5px; color:var(--dim); line-height:1.55;}
+.tfbar{display:flex; background:var(--chip); border-radius:12px; padding:3px; gap:3px; margin-bottom:10px;}
+.tfbar button{flex:1; border:0; background:transparent; border-radius:9px; padding:7px 0;
+  font-family:'Sora',sans-serif; font-size:11px; font-weight:700; color:var(--dim); cursor:pointer;}
+.tfbar button.on{background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.gauge{position:relative; height:6px; border-radius:99px; background:var(--chip); margin-top:9px;}
+.gauge .fill{position:absolute; left:0; top:0; bottom:0; border-radius:99px; background:var(--dim);}
+.gauge .mark{position:absolute; top:-3px; width:2px; height:12px; background:var(--faint); border-radius:2px;}
+.gauge .needle{position:absolute; top:-4px; width:4px; height:14px; border-radius:2px; background:var(--ink);}
+.gauge .mid{position:absolute; top:0; bottom:0; width:1px; background:var(--line);}
+.ticks{display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:8px; color:var(--faint); margin-top:3px;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.tile{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 12px 11px;}
+.tile.off{opacity:.45;}
+.tile .thead{display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;}
+.tile .tname{font-size:11px; font-weight:800; letter-spacing:.2px;}
+.tile .tparams{font-family:'Space Mono',monospace; font-size:9px; color:var(--faint); margin-bottom:6px;}
+.setrow{display:flex; align-items:center; gap:10px; padding:11px 2px; border-bottom:1px solid var(--line);}
+.setrow:last-child{border-bottom:0;}
+.dot{width:8px; height:8px; border-radius:99px; flex:none;}
+.switch{margin-left:auto; width:40px; height:23px; border-radius:99px; background:#C7D0DD; position:relative; cursor:pointer; transition:background .15s; flex:none;}
+.switch::after{content:''; position:absolute; top:2.5px; left:3px; width:18px; height:18px; border-radius:99px; background:#fff; transition:left .15s; box-shadow:0 1px 3px rgba(0,0,0,.25);}
+.switch.on{background:var(--long);}
+.switch.on::after{left:19px;}
+.stepper{display:flex; align-items:center; gap:6px; font-family:'Space Mono',monospace; font-size:10px;}
+.stepper button{width:22px; height:22px; border-radius:7px; border:1px solid var(--line); background:#fff;
+  font-size:13px; line-height:1; color:var(--ink); cursor:pointer;}
+.stepper .pv{min-width:30px; text-align:center; font-weight:700;}
+.params{display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:8px;}
+.param{display:flex; flex-direction:column; gap:4px;}
+.param label{font-family:'Space Mono',monospace; font-size:8px; color:var(--faint); letter-spacing:.5px;}
+.btnrow{display:flex; gap:8px; margin-top:12px;}
+.btn{flex:1; border-radius:12px; padding:11px 0; font-family:'Sora',sans-serif; font-size:12px; font-weight:700; cursor:pointer; border:1px solid var(--line); background:#fff; color:var(--ink);}
+.btn.primary{background:var(--ink); color:#fff; border-color:var(--ink);}
+.banner{background:#FFF6E5; border:1px solid #EBD9A8; color:#7A5B16; border-radius:12px;
+  font-family:'Space Mono',monospace; font-size:9.5px; line-height:1.6; padding:10px 12px; margin-bottom:4px;}
+h2.sec{font-size:13px; font-weight:800; letter-spacing:.3px; margin:20px 0 2px;}
+p.sub{font-family:'Space Mono',monospace; font-size:10px; color:var(--dim); margin:0 0 4px;}
+.hidden{display:none !important;}
+select.tf{background:transparent; border:0; font:inherit; color:inherit; cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:14</span><span>XV · mockup 13 · proposal, not in app</span></div>
+  <div class="screen">
+
+    <div class="banner">MOCKUP — indicator signals + user customization.<br>Nothing below is wired to data or to the app. Approve the design first.</div>
+
+    <h2 class="sec">A · Signal screen — indicator confluence</h2>
+    <p class="sub">New card under the verdict · 15M default · context only, never votes</p>
+    <div class="eyebrow red">Indicators · context only · never votes</div>
+
+    <div class="tfbar" id="tfbar">
+      <button data-tf="15M" class="on">15M</button>
+      <button data-tf="5M">5M</button>
+      <button data-tf="1H">1H</button>
+    </div>
+
+    <div class="grid2" id="tiles">
+      <div class="tile" data-ind="rsi">
+        <div class="thead"><span class="tname">RSI</span><span class="pill neutral" data-state>NEUTRAL</span></div>
+        <div class="tparams" data-params>14 · OB 70 / OS 30</div>
+        <div class="t-val" data-val>58.4</div>
+        <div class="gauge"><div class="fill" data-fill style="left:30%;right:30%;background:#C7D0DD"></div>
+          <div class="mark" style="left:30%"></div><div class="mark" style="left:70%"></div>
+          <div class="needle" data-needle style="left:58.4%"></div></div>
+        <div class="ticks"><span>0</span><span>30</span><span>50</span><span>70</span><span>100</span></div>
+      </div>
+      <div class="tile" data-ind="macd">
+        <div class="thead"><span class="tname">MACD</span><span class="pill long" data-state>LONG</span></div>
+        <div class="tparams" data-params>12 · 26 · 9</div>
+        <div class="t-val" data-val>+0.42</div>
+        <div class="gauge"><div class="mid" style="left:50%"></div>
+          <div class="fill" data-fill style="left:50%;right:18%;background:var(--long)"></div>
+          <div class="needle" data-needle style="left:82%"></div></div>
+        <div class="ticks"><span>−histo</span><span>0</span><span>+histo</span></div>
+      </div>
+      <div class="tile" data-ind="bb">
+        <div class="thead"><span class="tname">Bollinger</span><span class="pill neutral" data-state>NEUTRAL</span></div>
+        <div class="tparams" data-params>20 · 2.0σ</div>
+        <div class="t-val" data-val>62% up band</div>
+        <div class="gauge"><div class="fill" data-fill style="left:0;right:38%;background:#C7D0DD"></div>
+          <div class="needle" data-needle style="left:62%"></div></div>
+        <div class="ticks"><span>lower</span><span>mid</span><span>upper</span></div>
+      </div>
+      <div class="tile" data-ind="stoch">
+        <div class="thead"><span class="tname">Stochastic</span><span class="pill warn" data-state>NEAR OB</span></div>
+        <div class="tparams" data-params>14 · 3 · 3 · OB 80</div>
+        <div class="t-val" data-val>74.2</div>
+        <div class="gauge"><div class="fill" data-fill style="left:20%;right:20%;background:#C7D0DD"></div>
+          <div class="mark" style="left:20%"></div><div class="mark" style="left:80%"></div>
+          <div class="needle" data-needle style="left:74.2%"></div></div>
+        <div class="ticks"><span>0</span><span>20</span><span>50</span><span>80</span><span>100</span></div>
+      </div>
+      <div class="tile" data-ind="ema">
+        <div class="thead"><span class="tname">EMA stack</span><span class="pill long" data-state>LONG</span></div>
+        <div class="tparams" data-params>20 / 50</div>
+        <div class="t-val" data-val>20 &gt; 50</div>
+        <div class="note" style="margin-top:8px" data-val2>Fast above slow — trend up</div>
+      </div>
+      <div class="tile" data-ind="atr">
+        <div class="thead"><span class="tname">ATR</span><span class="pill info" data-state>RANGE INFO</span></div>
+        <div class="tparams" data-params>14</div>
+        <div class="t-val" data-val>1.84</div>
+        <div class="note" style="margin-top:8px">Typical 15M excursion — sizes stops, never direction</div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:8px">Computed from live 15M bars · 214 bars · updated 12s ago. Indicators annotate the chart. They never vote, never confirm, never flip a setup.</div>
+
+    <h2 class="sec">B · Settings — indicator customization</h2>
+    <p class="sub">Toggles + parameters · display only — consensus math untouched</p>
+    <div class="card" style="padding:4px 14px 10px;">
+      <div class="setrow" data-set="rsi">
+        <div class="dot" style="background:var(--accent)"></div>
+        <div class="grow"><div class="t-title">RSI</div><div class="t-sub">Momentum · overbought / oversold</div>
+          <div class="params">
+            <div class="param"><label>PERIOD</label><div class="stepper"><button data-s="rsi-p" data-d="-1">−</button><span class="pv" id="rsi-p">14</span><button data-s="rsi-p" data-d="1">+</button></div></div>
+            <div class="param"><label>OVERBOUGHT</label><div class="stepper"><button data-s="rsi-ob" data-d="-5">−</button><span class="pv" id="rsi-ob">70</span><button data-s="rsi-ob" data-d="5">+</button></div></div>
+            <div class="param"><label>OVERSOLD</label><div class="stepper"><button data-s="rsi-os" data-d="-5">−</button><span class="pv" id="rsi-os">30</span><button data-s="rsi-os" data-d="5">+</button></div></div>
+          </div>
+        </div>
+        <div class="switch on" data-toggle="rsi"></div>
+      </div>
+      <div class="setrow" data-set="macd">
+        <div class="dot" style="background:var(--long)"></div>
+        <div class="grow"><div class="t-title">MACD</div><div class="t-sub">Trend · histogram vs signal</div>
+          <div class="params">
+            <div class="param"><label>FAST</label><div class="stepper"><button data-s="macd-f" data-d="-1">−</button><span class="pv" id="macd-f">12</span><button data-s="macd-f" data-d="1">+</button></div></div>
+            <div class="param"><label>SLOW</label><div class="stepper"><button data-s="macd-s" data-d="-1">−</button><span class="pv" id="macd-s">26</span><button data-s="macd-s" data-d="1">+</button></div></div>
+            <div class="param"><label>SIGNAL</label><div class="stepper"><button data-s="macd-g" data-d="-1">−</button><span class="pv" id="macd-g">9</span><button data-s="macd-g" data-d="1">+</button></div></div>
+          </div>
+        </div>
+        <div class="switch on" data-toggle="macd"></div>
+      </div>
+      <div class="setrow" data-set="bb">
+        <div class="dot" style="background:var(--warn)"></div>
+        <div class="grow"><div class="t-title">Bollinger Bands</div><div class="t-sub">Volatility · band position</div>
+          <div class="params">
+            <div class="param"><label>PERIOD</label><div class="stepper"><button data-s="bb-p" data-d="-1">−</button><span class="pv" id="bb-p">20</span><button data-s="bb-p" data-d="1">+</button></div></div>
+            <div class="param"><label>STD DEV</label><div class="stepper"><button data-s="bb-s" data-d="-0.5">−</button><span class="pv" id="bb-s">2.0</span><button data-s="bb-s" data-d="0.5">+</button></div></div>
+          </div>
+        </div>
+        <div class="switch on" data-toggle="bb"></div>
+      </div>
+      <div class="setrow" data-set="stoch">
+        <div class="dot" style="background:var(--short)"></div>
+        <div class="grow"><div class="t-title">Stochastic</div><div class="t-sub">Momentum · %K vs %D</div>
+          <div class="params">
+            <div class="param"><label>K / D / S</label><div class="stepper"><button data-s="st-k" data-d="-1">−</button><span class="pv" id="st-k">14</span><button data-s="st-k" data-d="1">+</button></div></div>
+          </div>
+        </div>
+        <div class="switch on" data-toggle="stoch"></div>
+      </div>
+      <div class="setrow" data-set="ema">
+        <div class="dot" style="background:var(--long)"></div>
+        <div class="grow"><div class="t-title">EMA stack</div><div class="t-sub">Trend · fast vs slow</div>
+          <div class="params">
+            <div class="param"><label>FAST</label><div class="stepper"><button data-s="ema-f" data-d="-1">−</button><span class="pv" id="ema-f">20</span><button data-s="ema-f" data-d="1">+</button></div></div>
+            <div class="param"><label>SLOW</label><div class="stepper"><button data-s="ema-s" data-d="-5">−</button><span class="pv" id="ema-s">50</span><button data-s="ema-s" data-d="5">+</button></div></div>
+          </div>
+        </div>
+        <div class="switch on" data-toggle="ema"></div>
+      </div>
+      <div class="setrow" data-set="atr">
+        <div class="dot" style="background:var(--dim)"></div>
+        <div class="grow"><div class="t-title">ATR</div><div class="t-sub">Volatility · stop sizing context</div>
+          <div class="params">
+            <div class="param"><label>PERIOD</label><div class="stepper"><button data-s="atr-p" data-d="-1">−</button><span class="pv" id="atr-p">14</span><button data-s="atr-p" data-d="1">+</button></div></div>
+          </div>
+        </div>
+        <div class="switch on" data-toggle="atr"></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="resetBtn">Reset defaults</button>
+        <button class="btn primary" id="doneBtn">Looks right — build it</button>
+      </div>
+    </div>
+    <div class="note">Toggles and parameters change display only. The 15M consensus math, the guard, and validation never read them.</div>
+
+  </div>
+</div>
+<script>
+// Demo interactivity only — toggles hide tiles, steppers edit numbers, TF pills swap values.
+const tfData = {
+  '15M': {rsi:['58.4','58.4%','NEUTRAL','neutral'], macd:['+0.42','82%','LONG','long'],
+          bb:['62% up band','62%','NEUTRAL','neutral'], stoch:['74.2','74.2%','NEAR OB','warn'],
+          ema:['20 > 50','Fast above slow — trend up','LONG','long'], atr:['1.84']},
+  '5M':  {rsi:['63.1','63.1%','NEUTRAL','neutral'], macd:['+0.18','64%','LONG','long'],
+          bb:['71% up band','71%','NEAR UPPER','warn'], stoch:['81.5','81.5%','OVERBOUGHT','short'],
+          ema:['20 > 50','Fast above slow — trend up','LONG','long'], atr:['0.96']},
+  '1H':  {rsi:['47.9','47.9%','NEUTRAL','neutral'], macd:['−0.11','44%','SHORT','short'],
+          bb:['44% up band','44%','NEUTRAL','neutral'], stoch:['38.6','38.6%','NEUTRAL','neutral'],
+          ema:['20 < 50','Fast below slow — trend down','SHORT','short'], atr:['3.42']}
+};
+document.querySelectorAll('#tfbar button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#tfbar button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  const d = tfData[b.dataset.tf];
+  const set = (ind, val, needle, state, cls) => {
+    const t = document.querySelector('.tile[data-ind="' + ind + '"]');
+    if (!t) return;
+    t.querySelector('[data-val]').textContent = val;
+    const nd = t.querySelector('[data-needle]'); if (nd && needle) nd.style.left = needle;
+    const st = t.querySelector('[data-state]'); if (st && state) { st.textContent = state; st.className = 'pill ' + cls; }
+    const v2 = t.querySelector('[data-val2]'); if (v2 && ind === 'ema') v2.textContent = needle;
+  };
+  set('rsi', d.rsi[0], d.rsi[1], d.rsi[2], d.rsi[3]);
+  set('macd', d.macd[0], d.macd[1], d.macd[2], d.macd[3]);
+  set('bb', d.bb[0], d.bb[1], d.bb[2], d.bb[3]);
+  set('stoch', d.stoch[0], d.stoch[1], d.stoch[2], d.stoch[3]);
+  set('ema', d.ema[0], null, d.ema[2], d.ema[3]);
+  const emaT = document.querySelector('.tile[data-ind="ema"] [data-val2]'); if (emaT) emaT.textContent = d.ema[1];
+  document.querySelector('.tile[data-ind="atr"] [data-val]').textContent = d.atr[0];
+}));
+document.querySelectorAll('[data-toggle]').forEach(sw => sw.addEventListener('click', () => {
+  sw.classList.toggle('on');
+  const tile = document.querySelector('.tile[data-ind="' + sw.dataset.toggle + '"]');
+  if (tile) tile.classList.toggle('off', !sw.classList.contains('on'));
+}));
+const defaults = {};
+document.querySelectorAll('.pv').forEach(el => defaults[el.id] = el.textContent);
+document.querySelectorAll('[data-s]').forEach(b => b.addEventListener('click', () => {
+  const el = document.getElementById(b.dataset.s);
+  let v = parseFloat(el.textContent) + parseFloat(b.dataset.d);
+  v = Math.round(v * 10) / 10;
+  if (v < 1) v = 1;
+  el.textContent = (Number.isInteger(v) ? v : v.toFixed(1));
+  syncTileParams();
+}));
+function syncTileParams() {
+  const g = id => document.getElementById(id).textContent;
+  const set = (ind, txt) => {
+    const t = document.querySelector('.tile[data-ind="' + ind + '"] [data-params]');
+    if (t) t.textContent = txt;
+  };
+  set('rsi', g('rsi-p') + ' · OB ' + g('rsi-ob') + ' / OS ' + g('rsi-os'));
+  set('macd', g('macd-f') + ' · ' + g('macd-s') + ' · ' + g('macd-g'));
+  set('bb', g('bb-p') + ' · ' + g('bb-s') + 'σ');
+  set('stoch', g('st-k') + ' · 3 · 3 · OB 80');
+  set('ema', g('ema-f') + ' / ' + g('ema-s'));
+  set('atr', g('atr-p'));
+}
+document.getElementById('resetBtn').addEventListener('click', () => {
+  Object.keys(defaults).forEach(k => document.getElementById(k).textContent = defaults[k]);
+  document.querySelectorAll('[data-toggle]').forEach(sw => {
+    sw.classList.add('on');
+    const tile = document.querySelector('.tile[data-ind="' + sw.dataset.toggle + '"]');
+    if (tile) tile.classList.remove('off');
+  });
+  syncTileParams();
+});
+document.getElementById('doneBtn').addEventListener('click', () => {
+  alert('Noted! (mockup only — tell Judy in chat to build it.)');
+});
+</script>
+</body>
+</html>

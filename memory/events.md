@@ -1434,3 +1434,19 @@
      Radar caution, and the Signal guardrail bar. Suite green, demo rebuilt.
    - **files:** lib/screens/events_screen.dart
    - **tags:** results-tab, declutter, guardrail-scope
+
+## EVT-20261008-0237 indicators mockup presented, no app code touched
+
+   - **mode:** PLAN
+   - **action:** User requested major indicator signals + user customization,
+     mockup first. Built docs/mockups/mockup-13-indicators.html (Harbor
+     styling per ui-design playbook): A) Signal-screen confluence card with
+     6 tiles (RSI/MACD/Bollinger/Stochastic/EMA/ATR), timeframe pills,
+     threshold gauges; B) Settings customization (toggles + parameter
+     steppers + reset). Interactive (tiles hide, params sync, TF swaps
+     values). Served on :8902, verified by screenshot.
+   - **product position baked in:** indicators are CONTEXT ONLY and never
+     vote/confirm/flip (rules 1/5/9); display-only customization that never
+     touches consensus math, guard, or validation; values computed from
+     real bars (600-deep history exists). Awaiting user approval/changes
+     before any implementation.
