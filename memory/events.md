@@ -1423,3 +1423,14 @@
    - **files:** supabase/functions/fetch-events/index.ts (decodeEntities),
      memory
    - **tags:** entities, results-tab, unverified-report, stale-client
+
+## EVT-20261008-0236 guard line removed from Results tab
+
+   - **mode:** BUILD
+   - **action:** User asked to remove the EVENT GUARDRAIL bar from Results
+     after the flicker root stayed unproven. Agreed on product grounds too:
+     an upcoming-blackout countdown has no business above past results. The
+     bar now renders on Upcoming only; blackout info remains on Upcoming,
+     Radar caution, and the Signal guardrail bar. Suite green, demo rebuilt.
+   - **files:** lib/screens/events_screen.dart
+   - **tags:** results-tab, declutter, guardrail-scope
