@@ -76,11 +76,10 @@ return MultiProvider(
           // One UpdateService for the whole app, so the banner and the Settings
           // panel observe the SAME download. Provided as a nullable type because
           // an offline build has no manifest endpoint and must not be offered a
-          // check that cannot succeed.
+          // check that cannot succeed. The URL comes from public app config
+          // (database first, build define as fallback) — never hardcoded.
           Provider<UpdateService?>.value(
-            value: updatesConfigured
-                ? UpdateService(manifestUrl: Uri.parse(updateManifestUrl))
-                : null,
+            value: _updateManifest(),
           ),
         ],
         child: app,
@@ -88,6 +87,20 @@ return MultiProvider(
     }
     return app;
   }
+}
+
+/// Update manifest endpoint: public app config first, build define second.
+///
+/// Returns null (updater disabled, honest UNAVAILABLE) when neither yields a
+/// usable absolute URL.
+UpdateService? _updateManifest() {
+  final fromDb = BackendService.updateManifestUrl;
+  final fromBuild = updatesConfigured ? updateManifestUrl : null;
+  final raw = (fromDb != null && fromDb.isNotEmpty) ? fromDb : fromBuild;
+  if (raw == null) return null;
+  final uri = Uri.tryParse(raw);
+  if (uri == null || !uri.isAbsolute) return null;
+  return UpdateService(manifestUrl: uri);
 }
 
 /// Shown when a live build cannot reach its backend. Never falls back to

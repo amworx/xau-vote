@@ -1509,3 +1509,25 @@
    - **files:** lib/widgets/regime_card.dart (+customize), lib/screens/
      settings_screen.dart (-219 lines), tests
    - **tags:** customization, colocation, settings-cleanup
+
+## EVT-20261009-0242 in-app updater fixed end to end
+
+   - **mode:** BUILD
+   - **action:** User reported the internal updater broken. Found the real
+     cause chain: no manifest endpoint ever existed (builds shipped without
+     UPDATE_MANIFEST_URL, so the panel honestly read UNAVAILABLE). Built the
+     channel: public gist manifest + v1.0.10 release assets. Hit two real
+     obstacles: (1) repo is PRIVATE so raw.githubusercontent 404s
+     anonymously -> gist instead; (2) --dart-define values arrive empty in
+     Android release AOT builds (proven: same flags work in tests + web,
+     verbose build shows them passed to gen_snapshot, binary contains the
+     string, runtime still empty) -> moved the endpoint into public
+     app_config table (migration 0028) read at startup, define kept as
+     fallback. Verified on phone: CHECK offered, manifest fetched, compare
+     correct ("Version 1.0.10 is current").
+   - **release:** v1.0.10 assets XV-v1.0.10-20.apk + XV-v1.0.10-21.apk;
+     manifest tracks 21; phone on 21.
+   - **files:** supabase/migrations/0028_app_config_table.sql,
+     lib/services/backend_service.dart (+updateManifestUrl),
+     lib/main.dart (DB-first endpoint), updates/xv-manifest.json (mirror)
+   - **tags:** updater, manifest, dart-define-android, app-config, release

@@ -25,6 +25,15 @@ abstract final class BackendService {
   static String? _error;
   static String? get error => _error;
 
+  /// Update-manifest URL read from the public `app_config` table, or null
+  /// when offline at launch or unconfigured. The build-time define cannot be
+  /// trusted here: `--dart-define` values demonstrably arrive empty in some
+  /// Android release builds while working in tests and web, with no error to
+  /// catch — so the database is the source of truth and the define is only a
+  /// fallback. Values in `app_config` are public by design; never secrets.
+  static String? _updateManifestUrl;
+  static String? get updateManifestUrl => _updateManifestUrl;
+
   /// Initializes Supabase. No-op while [mockMode] is true.
   ///
   /// Firebase/FCM is intentionally NOT initialized here: push delivery needs
@@ -51,9 +60,31 @@ abstract final class BackendService {
       _ready = true;
       _error = null;
       debugPrint('BackendService: Supabase live.');
+      await _loadUpdateManifestUrl();
     } catch (e) {
       _error = 'Supabase init failed: $e';
       debugPrint('BackendService: $_error');
+    }
+  }
+
+  /// Reads the update-manifest URL from public app config. Failure leaves any
+  /// previous value alone: an offline first launch shows the updater as
+  /// unavailable rather than pointing it somewhere arbitrary.
+  static Future<void> _loadUpdateManifestUrl() async {
+    try {
+      final row = await Supabase.instance.client
+          .from('app_config')
+          .select('value')
+          .eq('key', 'update_manifest_url')
+          .limit(1)
+          .maybeSingle();
+      final v = row == null ? null : (row as Map)['value'];
+      if (v is String && v.trim().isNotEmpty) {
+        _updateManifestUrl = v.trim();
+        debugPrint('BackendService: update manifest configured.');
+      }
+    } catch (e) {
+      debugPrint('BackendService: app_config read failed: $e');
     }
   }
 
