@@ -1484,3 +1484,12 @@
      models/regime_display + test, widgets/regime_card, screens
      signal/settings, state/app_state, data/analysis_service
    - **tags:** indicators, regime, mockup-13R, phase-1
+
+## EVT-20261008-0240 regime build installed on phone (v19)
+
+   - **mode:** BUILD
+   - **action:** adb back; built 1.0.10+19 from current HEAD, uninstalled,
+     installed, verified fresh process. Phone shows live biquote price,
+     filled day move, session range, ticking countdowns, honest NO
+     CONSENSUS. Regime card on Signal tab for owner review.
+   - **tags:** install, release-build
