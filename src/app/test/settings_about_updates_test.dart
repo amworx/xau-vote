@@ -59,13 +59,10 @@ void main() {
       // case-insensitively on the eyebrow text so the assertion does not
       // depend on which middle-dot codepoint the title happens to use.
       expect(find.text('TIMEFRAMES'), findsOneWidget);
-      // The new display-only indicators group lives between Display and
-      // Notifications without displacing either. Revealed top-down: the
-      // helper only scrolls downward, so an upward target would never come
-      // into view.
-      await _reveal(tester, find.text('INDICATORS · DISPLAY ONLY'));
-      expect(find.text('INDICATORS · DISPLAY ONLY'), findsOneWidget);
-      expect(find.text('Direction · EMA + structure'), findsOneWidget);
+      // Indicator customization moved to the Signal screen's regime card:
+      // Settings must not carry a second copy.
+      expect(find.text('INDICATORS · DISPLAY ONLY'), findsNothing);
+      expect(find.text('Direction · EMA + structure'), findsNothing);
       await _reveal(
         tester,
         find.byWidgetPredicate(

@@ -20,9 +20,14 @@ import 'package:xauvote/widgets/regime_card.dart';
 /// 100 rising 15m candles with three sharp pullbacks (strict V-shapes so
 /// fractal swings confirm cleanly) and tick volumes, ending higher. Regime
 /// math must read an uptrend with positive momentum off this.
+///
+/// Dated backwards from now so the session window always covers the tail:
+/// fixed 2026 dates rotted once wall-clock passed the series (VWAP went
+/// null and the tile honestly waited).
 List<Candle> _rallyBars() {
   const dips = {20, 45, 70};
   final out = <Candle>[];
+  final end = DateTime.now().toUtc();
   var c = 4100.0;
   for (var i = 0; i < 100; i++) {
     final double o = c, h, l, close;
@@ -38,7 +43,7 @@ List<Candle> _rallyBars() {
       l = (c < close ? c : close) - 0.3;
     }
     out.add(Candle(
-      openTime: DateTime.utc(2026, 10, 7, 6).add(Duration(minutes: 15 * i)),
+      openTime: end.subtract(Duration(minutes: 15 * (99 - i))),
       open: o,
       high: h,
       low: l,
@@ -83,6 +88,9 @@ Future<void> _pumpRegime(
   final owned = state == null;
   state ??= AppState();
   if (owned) addTearDown(state.dispose);
+  tester.view.physicalSize = const Size(390, 2400);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
   await tester.pumpWidget(
     MaterialApp(
       theme: harborTheme(),
@@ -139,6 +147,29 @@ void main() {
       // The rest of the stack is untouched.
       expect(find.text('MACD'), findsOneWidget);
       expect(find.text('BULLISH LEAN'), findsOneWidget);
+    });
+
+    testWidgets('customize panel toggles hide tiles inline', (tester) async {
+      final analysis = AnalysisService(repository: _BarsRepo());
+      addTearDown(analysis.dispose);
+      await analysis.refresh();
+      final state = AppState();
+      addTearDown(state.dispose);
+      await _pumpRegime(tester, state: state, analysis: analysis);
+      expect(find.text('RSI'), findsOneWidget);
+
+      // The customization lives on the same page as the readings now, not
+      // in Settings.
+      await tester.tap(find.text('Customize indicators'));
+      await tester.pump();
+      expect(find.text('RSI condition'), findsOneWidget);
+
+      // Third switch down the panel: Direction, ADX, RSI.
+      await tester.tap(find.byType(Switch).at(2));
+      await tester.pump();
+
+      expect(find.text('RSI'), findsNothing);
+      expect(find.text('MACD'), findsOneWidget);
     });
 
     testWidgets('slow sentiment waits honestly', (tester) async {

@@ -1493,3 +1493,19 @@
      filled day move, session range, ticking countdowns, honest NO
      CONSENSUS. Regime card on Signal tab for owner review.
    - **tags:** install, release-build
+
+## EVT-20261008-0241 regime customization moved inline to Signal screen
+
+   - **mode:** BUILD
+   - **action:** User asked to move indicator settings next to the readings
+     instead of app Settings. Added an inline Customize panel on the regime
+     card (toggles + steppers + reset, same prefs, same recompute path) and
+     removed the Settings group. Verified live in demo: summary card, TF
+     pills, layer tiles with real computed values; Settings shows no
+     indicator group.
+   - **tests:** suite green incl. new inline-toggle test; fixed a
+     time-rotted fixture (bars now dated back from now) and a lazy-list
+     scrolling trap in the settings regression test.
+   - **files:** lib/widgets/regime_card.dart (+customize), lib/screens/
+     settings_screen.dart (-219 lines), tests
+   - **tags:** customization, colocation, settings-cleanup

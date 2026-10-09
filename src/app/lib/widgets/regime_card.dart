@@ -40,6 +40,7 @@ class RegimeSection extends StatefulWidget {
 
 class _RegimeSectionState extends State<RegimeSection> {
   Tf _tf = Tf.m15;
+  bool _customizing = false;
 
   @override
   void didChangeDependencies() {
@@ -72,6 +73,15 @@ class _RegimeSectionState extends State<RegimeSection> {
           _Tiles(reading: reading, tf: _tf, state: state),
           const SizedBox(height: 10),
           if (state.indSentiment) const _SentimentPendingCard(),
+        ],
+        const SizedBox(height: 10),
+        _CustomizeToggle(
+          expanded: _customizing,
+          onTap: () => setState(() => _customizing = !_customizing),
+        ),
+        if (_customizing) ...[
+          const SizedBox(height: 10),
+          const _CustomizePanel(),
         ],
         const Padding(
           padding: EdgeInsets.only(top: 8),
@@ -153,9 +163,9 @@ class _SummaryCard extends StatelessWidget {
     final pct = '${(s.fraction * 100).round()}%';
     return Container(
       // Fixed height, per the approved mockup: switching timeframes must
-      // never move the content below. (It also keeps the stretched side
-      // panel legal inside scrolling lists, where the height is unbounded.)
-      height: 216,
+      // never move the content below. Sized for the longest note + a
+      // two-line state at 390px; the suite fails on any overflow.
+      height: 236,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [BoxShadow(color: Color(0x38152126), blurRadius: 28, offset: Offset(0, 10))],
@@ -202,7 +212,7 @@ class _SummaryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'A read of the dashboard, not a setup. Trades come from independent-source consensus only.',
+                    'Context only — never a setup.',
                     style: TextStyle(fontFamily: 'Space Mono', fontSize: 9, color: Color(0xFF7C8AA0), height: 1.55),
                   ),
                 ],
@@ -324,7 +334,10 @@ class _Tiles extends StatelessWidget {
           crossAxisSpacing: 10,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.42,
+          // Roomy enough for the tallest tile (ADX carries a note line) at
+          // 390px: cramped ratios overflowed the gauge block and failed the
+          // layout suite. Whitespace in shorter tiles is cheaper than clip.
+          childAspectRatio: 1.15,
           children: tiles,
         ),
       ],
@@ -908,6 +921,244 @@ class _PendingCard extends StatelessWidget {
       ),
       child: Text(text,
           style: const TextStyle(fontFamily: 'Space Mono', fontSize: 10, color: harborDim)),
+    );
+  }
+}
+
+/// Inline customization, on the same page as the readings (mockup 13R §B
+/// moved here from Settings). Same toggles + steppers, same display-only
+/// promise: writing a setting recomputes the regime, never consensus math.
+class _CustomizeToggle extends StatelessWidget {
+  const _CustomizeToggle({required this.expanded, required this.onTap});
+
+  final bool expanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: harborLine),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            const Expanded(
+              child: Text('Customize indicators',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            ),
+            Text(expanded ? 'HIDE' : 'SHOW',
+                style: const TextStyle(
+                    fontFamily: 'Space Mono',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: harborCobalt)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomizePanel extends StatelessWidget {
+  const _CustomizePanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 6, 14, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: harborLine),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _CToggle(
+            title: 'Direction · EMA + structure',
+            value: state.indDirection,
+            onChanged: (v) => _apply(context, state, () => state.setIndDirection(v)),
+          ),
+          _CParams(children: [
+            _CStepper(label: 'FAST', value: '${state.emaFast}', onMinus: () => _apply(context, state, () => state.setEmaFast((state.emaFast - 1).clamp(2, 200))), onPlus: () => _apply(context, state, () => state.setEmaFast((state.emaFast + 1).clamp(2, 200)))),
+            _CStepper(label: 'MID', value: '${state.emaMid}', onMinus: () => _apply(context, state, () => state.setEmaMid((state.emaMid - 5).clamp(2, 200))), onPlus: () => _apply(context, state, () => state.setEmaMid((state.emaMid + 5).clamp(2, 200)))),
+            _CStepper(label: 'TREND', value: '${state.emaTrend}', onMinus: () => _apply(context, state, () => state.setEmaTrend((state.emaTrend - 10).clamp(2, 400))), onPlus: () => _apply(context, state, () => state.setEmaTrend((state.emaTrend + 10).clamp(2, 400)))),
+            _CStepper(label: 'SWINGS', value: '${state.swings}', onMinus: () => _apply(context, state, () => state.setSwings((state.swings - 1).clamp(1, 10))), onPlus: () => _apply(context, state, () => state.setSwings((state.swings + 1).clamp(1, 10)))),
+          ]),
+          _CToggle(
+            title: 'ADX strength',
+            value: state.indAdx,
+            onChanged: (v) => _apply(context, state, () => state.setIndAdx(v)),
+          ),
+          _CParams(children: [
+            _CStepper(label: 'PERIOD', value: '${state.adxPeriod}', onMinus: () => _apply(context, state, () => state.setAdxPeriod((state.adxPeriod - 1).clamp(2, 50))), onPlus: () => _apply(context, state, () => state.setAdxPeriod((state.adxPeriod + 1).clamp(2, 50)))),
+            _CStepper(label: 'STRONG ≥', value: state.adxStrong.toStringAsFixed(0), onMinus: () => _apply(context, state, () => state.setAdxStrong((state.adxStrong - 1).clamp(5, 50))), onPlus: () => _apply(context, state, () => state.setAdxStrong((state.adxStrong + 1).clamp(5, 50)))),
+          ]),
+          _CToggle(
+            title: 'RSI condition',
+            value: state.indRsi,
+            onChanged: (v) => _apply(context, state, () => state.setIndRsi(v)),
+          ),
+          _CParams(children: [
+            _CStepper(label: 'PERIOD', value: '${state.rsiPeriod}', onMinus: () => _apply(context, state, () => state.setRsiPeriod((state.rsiPeriod - 1).clamp(2, 50))), onPlus: () => _apply(context, state, () => state.setRsiPeriod((state.rsiPeriod + 1).clamp(2, 50)))),
+            _CStepper(label: 'OVERBOUGHT', value: state.rsiOb.toStringAsFixed(0), onMinus: () => _apply(context, state, () => state.setRsiOb((state.rsiOb - 5).clamp(state.rsiOs + 5, 95))), onPlus: () => _apply(context, state, () => state.setRsiOb((state.rsiOb + 5).clamp(state.rsiOs + 5, 95)))),
+            _CStepper(label: 'OVERSOLD', value: state.rsiOs.toStringAsFixed(0), onMinus: () => _apply(context, state, () => state.setRsiOs((state.rsiOs - 5).clamp(5, state.rsiOb - 5))), onPlus: () => _apply(context, state, () => state.setRsiOs((state.rsiOs + 5).clamp(5, state.rsiOb - 5)))),
+          ]),
+          _CToggle(
+            title: 'MACD transition',
+            value: state.indMacd,
+            onChanged: (v) => _apply(context, state, () => state.setIndMacd(v)),
+          ),
+          _CParams(children: [
+            _CStepper(label: 'FAST', value: '${state.macdFast}', onMinus: () => _apply(context, state, () => state.setMacdFast((state.macdFast - 1).clamp(2, 50))), onPlus: () => _apply(context, state, () => state.setMacdFast((state.macdFast + 1).clamp(2, 50)))),
+            _CStepper(label: 'SLOW', value: '${state.macdSlow}', onMinus: () => _apply(context, state, () => state.setMacdSlow((state.macdSlow - 1).clamp(3, 100))), onPlus: () => _apply(context, state, () => state.setMacdSlow((state.macdSlow + 1).clamp(3, 100)))),
+            _CStepper(label: 'SIGNAL', value: '${state.macdSignal}', onMinus: () => _apply(context, state, () => state.setMacdSignal((state.macdSignal - 1).clamp(2, 50))), onPlus: () => _apply(context, state, () => state.setMacdSignal((state.macdSignal + 1).clamp(2, 50)))),
+          ]),
+          _CToggle(
+            title: 'VWAP + activity',
+            value: state.indVwap,
+            onChanged: (v) => _apply(context, state, () => state.setIndVwap(v)),
+          ),
+          _CParams(children: [
+            _CStepper(label: 'LOOKBACK', value: '${state.actLookback}', onMinus: () => _apply(context, state, () => state.setActLookback((state.actLookback - 5).clamp(5, 100))), onPlus: () => _apply(context, state, () => state.setActLookback((state.actLookback + 5).clamp(5, 100)))),
+          ]),
+          _CToggle(
+            title: 'ATR',
+            value: state.indAtr,
+            onChanged: (v) => _apply(context, state, () => state.setIndAtr(v)),
+          ),
+          _CParams(children: [
+            _CStepper(label: 'PERIOD', value: '${state.atrPeriod}', onMinus: () => _apply(context, state, () => state.setAtrPeriod((state.atrPeriod - 1).clamp(2, 50))), onPlus: () => _apply(context, state, () => state.setAtrPeriod((state.atrPeriod + 1).clamp(2, 50)))),
+          ]),
+          _CToggle(
+            title: 'Slow sentiment feeds',
+            value: state.indSentiment,
+            onChanged: (v) => _apply(context, state, () => state.setIndSentiment(v)),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => _apply(context, state, state.resetIndicatorDefaults),
+              child: const Text('Reset defaults'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Writes the setting, persists it, and recomputes the regime when the
+  /// analysis service is mounted (absent in offline builds and bare tests).
+  static void _apply(BuildContext context, AppState state, void Function() write) {
+    write();
+    try {
+      Provider.of<AnalysisService?>(context, listen: false)
+          ?.setRegimeParams(state.toRegimeParams());
+    } catch (_) {
+      // No service mounted: the setting still holds.
+    }
+  }
+}
+
+class _CToggle extends StatelessWidget {
+  const _CToggle({required this.title, required this.value, required this.onChanged});
+
+  final String title;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        ),
+        Switch(value: value, onChanged: onChanged, activeTrackColor: harborLong),
+      ],
+    );
+  }
+}
+
+class _CParams extends StatelessWidget {
+  const _CParams({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Wrap(spacing: 14, runSpacing: 8, children: children),
+    );
+  }
+}
+
+class _CStepper extends StatelessWidget {
+  const _CStepper({required this.label, required this.value, required this.onMinus, required this.onPlus});
+
+  final String label;
+  final String value;
+  final VoidCallback onMinus;
+  final VoidCallback onPlus;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label,
+            style: const TextStyle(
+                fontFamily: 'Space Mono', fontSize: 8, color: harborFaint, letterSpacing: 0.5)),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _CStepButton(label: '−', onTap: onMinus),
+            Container(
+              constraints: const BoxConstraints(minWidth: 30),
+              alignment: Alignment.center,
+              child: Text(value,
+                  style: const TextStyle(fontFamily: 'Space Mono', fontSize: 10, fontWeight: FontWeight.w700)),
+            ),
+            _CStepButton(label: '+', onTap: onPlus),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _CStepButton extends StatelessWidget {
+  const _CStepButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(7),
+      child: Container(
+        width: 22,
+        height: 22,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: harborLine),
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Text(label, style: const TextStyle(fontSize: 13, color: harborInk)),
+      ),
     );
   }
 }
