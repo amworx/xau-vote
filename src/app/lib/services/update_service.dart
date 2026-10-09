@@ -703,10 +703,14 @@ class UpdateService extends ChangeNotifier {
   }
 
   /// The APK path for [release], so download, resume and cancel agree on it.
+  ///
+  /// Named by version AND code: two different builds once shared a version
+  /// string, and the older bytes survived under the newer release's name
+  /// until the checksum caught it. The code makes collisions impossible.
   Future<io.File> _apkFileFor(ReleaseInfo release) async {
     final dir = await _targetDir();
     return io.File(
-      '${dir.path}${io.Platform.pathSeparator}xv-${release.version}.apk',
+      '${dir.path}${io.Platform.pathSeparator}xv-${release.version}-${release.versionCode}.apk',
     );
   }
 

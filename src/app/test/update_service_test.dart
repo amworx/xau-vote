@@ -233,7 +233,7 @@ void main() {
     ReleaseInfo releaseFor(List<int> payload) => ReleaseInfo.fromJson({
           'version': '2.0.0',
           'versionCode': 2,
-          'apkUrl': 'https://example.com/xv-2.0.0.apk',
+          'apkUrl': 'https://example.com/xv-2.0.0-2.apk',
           'sha256': sha256Hex(payload),
         });
 
@@ -305,7 +305,7 @@ void main() {
       s = serving(release, payload, chunkSize: 512);
       await s.check();
       // Point the fresh service at the partial file by resuming.
-      final partial = File('${tmp.path}${Platform.pathSeparator}xv-2.0.0.apk');
+      final partial = File('${tmp.path}${Platform.pathSeparator}xv-2.0.0-2.apk');
       expect(partial.existsSync(), isTrue);
       expect(partial.lengthSync(), pausedAt);
 
@@ -342,7 +342,7 @@ void main() {
       expect(s.state.isInstallable, isFalse);
       expect(s.state.installPath, isNull);
       expect(
-        File('${tmp.path}${Platform.pathSeparator}xv-2.0.0.apk').existsSync(),
+        File('${tmp.path}${Platform.pathSeparator}xv-2.0.0-2.apk').existsSync(),
         isFalse,
       );
     });
@@ -407,7 +407,7 @@ void main() {
       expect(s.state.installPath, isNull);
       // The partial must not survive as something a later resume could trust.
       expect(
-        File('${tmp.path}${Platform.pathSeparator}xv-2.0.0.apk').existsSync(),
+        File('${tmp.path}${Platform.pathSeparator}xv-2.0.0-2.apk').existsSync(),
         isFalse,
       );
     });
@@ -448,7 +448,7 @@ class _ChunkedClient extends http.BaseClient {
       final body = jsonEncode({
         'version': '2.0.0',
         'versionCode': 2,
-        'apkUrl': 'https://example.com/xv-2.0.0.apk',
+        'apkUrl': 'https://example.com/xv-2.0.0-2.apk',
         'sha256': manifestShaOverride ?? sha256Hex(payload),
       });
       return http.StreamedResponse(

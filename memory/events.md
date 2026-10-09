@@ -1550,3 +1550,16 @@
      lib/widgets/harbor_widgets.dart (+HarborOfflineBar), lib/widgets/
      analysis_verdict_card.dart (+offline), screens x3, tests
    - **tags:** offline, airplane-mode, crash-loop-fix, verification
+
+## EVT-20261009-0244 release hygiene: versioned APK filenames
+
+   - **mode:** BUILD
+   - **action:** While cutting v1.0.11 the download filename carried the
+     version string only, so two different builds collided under one name
+     and a stale file survived across a release. Filenames now include the
+     versionCode (xv-1.0.11-24.apk), making collisions impossible; checksum
+     still gates install. Verified: correct binary uploaded (hash
+     round-trip matches manifest), release carries exactly one asset.
+   - **files:** lib/services/update_service.dart, test/update_service_test,
+     pubspec 1.0.11+24
+   - **tags:** updater, filename-collision, release-hygiene
