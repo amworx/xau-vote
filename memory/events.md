@@ -1563,3 +1563,21 @@
    - **files:** lib/services/update_service.dart, test/update_service_test,
      pubspec 1.0.11+24
    - **tags:** updater, filename-collision, release-hygiene
+
+## EVT-20261010-0245 v1.0.11 released, in-app update loop closed on device
+
+   - **mode:** BUILD
+   - **action:** User asked for a shareable release. Cut v1.0.11
+     (1.0.11+24): regime stack, offline detection, DB-driven updater.
+     Caught a real release bug en route: I uploaded the wrong binary first
+     (stale temp path), caught by re-downloading the asset and hashing it.
+     Fixed naming (versionCode in filename) plus manifest. Verified the full
+     loop on the phone: CHECK -> 1.0.11 available -> download 49MB ->
+     checksum -> system installer. One device-side anomaly noted: two
+     installer "success" screens never committed (version frozen); adb
+     install of the identical bytes committed instantly, so the APK and
+     signature are good - likely a stale-file/installer-session quirk on
+     this Samsung, now moot since the filename fix prevents stale reuse.
+     Final state verified: phone on 24, updater reports current.
+   - **link:** https://github.com/amworx/xau-vote/releases/tag/v1.0.11
+   - **tags:** release, updater-e2e, checksum-verified, samsung-quirk
