@@ -1,0 +1,8 @@
+{
+  "version": "1.0.10",
+  "versionCode": 20,
+  "apkUrl": "https://github.com/amworx/xau-vote/releases/download/v1.0.10/XV-v1.0.10-20.apk",
+  "sha256": "25ebd410ab5788809a3af0ee3e84bf782a863253628e790fc4d4bde2d9a859b1",
+  "sizeBytes": 51800989,
+  "notes": "Regime stack (Phase 1) with inline customization; biquote primary price; licensed issuer news."
+}
