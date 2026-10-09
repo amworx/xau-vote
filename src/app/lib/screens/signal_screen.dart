@@ -101,6 +101,7 @@ class SignalScreen extends StatelessWidget {
           sessionOpen: sessionOpen,
           statusText: signal == null ? 'NO CONSENSUS' : statusLabel(signal.status),
         ),
+        if (live != null && live.offline) const HarborOfflineBar(),
         if (!sessionOpen) ...[
           const _MarketClosedNotice(),
           // A closed market is not an empty record. The closed setups still

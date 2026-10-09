@@ -32,6 +32,7 @@ class AnalysisVerdictCard extends StatelessWidget {
     this.onRefresh,
     this.layers,
     this.error,
+    this.offline = false,
   });
 
   final ScanResult? scan;
@@ -48,10 +49,43 @@ class AnalysisVerdictCard extends StatelessWidget {
   /// run. Surfaced instead of being swallowed behind "waiting for history".
   final String? error;
 
+  /// The backend is unreachable. An offline scan failure is a waiting state,
+  /// not a broken pipeline: the card says so calmly instead of printing a
+  /// transport exception the trader cannot act on.
+  final bool offline;
+
   @override
   Widget build(BuildContext context) {
     final s = scan;
     if (s == null) {
+      // Offline first: a scan that cannot run for want of a connection is
+      // waiting, not broken. The raw exception stays in the logs where it
+      // belongs; the card keeps the last known calm state.
+      if (offline) {
+        return const HarborCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              HarborEyebrow('MULTI-TIMEFRAME ANALYSIS'),
+              SizedBox(height: 10),
+              Text(
+                'Waiting for connection',
+                style: TextStyle(
+                  fontFamily: 'Sora',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: harborInk,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'The scan resumes on its own when the connection returns. Nothing is being inferred meanwhile.',
+                style: TextStyle(fontFamily: 'Sora', fontSize: 12, height: 1.45, color: harborDim),
+              ),
+            ],
+          ),
+        );
+      }
       // A failed scan and a scan that has not run yet are different states and
       // must not read the same. Showing "waiting for enough history" while the
       // scan was actually throwing is how a broken pipeline hides behind a

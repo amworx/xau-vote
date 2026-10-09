@@ -972,7 +972,10 @@ class LiveRepository {
   ///
   /// If this call fails, the stored snapshot is still better than an empty
   /// screen, but it is NOT live and is reported as such (product rule 2).
-  Future<({double? price, DateTime? at, bool live, String? source})> directSpotPrice({
+  /// [reachedBackend] tells whether the edge function answered at all: false
+  /// means the device could not reach the backend (offline), as opposed to
+  /// a reachable backend reporting stale data.
+  Future<({double? price, DateTime? at, bool live, String? source, bool reachedBackend})> directSpotPrice({
     // 12s, not 6s. A cold Edge Function start was observed taking longer than
     // 6s, which produced a spurious fallback on an otherwise healthy path. The
     // price is on a 5s timer, so one slow start must not read as an outage.
@@ -1000,7 +1003,7 @@ class LiveRepository {
       // Who priced this tick (biquote, gold-api, stored-snapshot...). Shown
       // next to the age so the provenance is on screen, not in a log.
       final source = body['source'] is String ? body['source'] as String : null;
-      return (price: price, at: at, live: live, source: source);
+      return (price: price, at: at, live: live, source: source, reachedBackend: true);
     } catch (err) {
       // Log the reason rather than swallowing it. A bare `catch (_)` here is
       // what made a real on-device failure look like a design decision: the app
@@ -1008,8 +1011,23 @@ class LiveRepository {
       // debugPrint matches how the rest of this app reports failures, and the
       // string carries nothing sensitive.
       debugPrint('directSpotPrice: live read failed, using stored snapshot: $err');
-      final stored = await latestPrice();
-      return (price: stored?.price, at: stored?.at, live: false, source: null);
+      try {
+        final stored = await latestPrice();
+        return (
+          price: stored?.price,
+          at: stored?.at,
+          live: false,
+          source: null,
+          reachedBackend: false
+        );
+      } catch (err2) {
+        // Offline entirely: even the stored snapshot is unreachable (it lives
+        // behind the same network). Report the miss honestly instead of
+        // throwing — an uncaught throw here became an invisible crash-loop in
+        // the poller while the screen kept showing the last price as live.
+        debugPrint('directSpotPrice: stored snapshot unreachable: $err2');
+        return (price: null, at: null, live: false, source: null, reachedBackend: false);
+      }
     }
   }
 

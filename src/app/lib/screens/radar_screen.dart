@@ -152,6 +152,7 @@ class _RadarScreenState extends State<RadarScreen> {
       padding: EdgeInsets.zero,
       children: [
         HarborHeader(sessionOpen: sessionOpen),
+        if (live != null && live.offline) const HarborOfflineBar(),
         if (live != null && live.error != null) _ErrorLine(live.error!),
         if (live != null && live.price == null && live.loading)
           // First read in flight: hold the layout with a skeleton instead of
@@ -214,6 +215,7 @@ class _RadarScreenState extends State<RadarScreen> {
           onRefresh: analysis?.refresh,
           layers: analysis?.layers,
           error: analysis?.error,
+          offline: live?.offline ?? false,
         ),
         // The switcher demos states the live pipeline owns, so it must not
         // appear next to real rows.

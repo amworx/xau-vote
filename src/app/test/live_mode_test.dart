@@ -66,6 +66,7 @@ class _StubRepository implements LiveRepository {
     this.digest = const [],
     this.headlines = const [],
     this.failWith,
+    this.backendReachable = true,
     this.agreement = (distinctIdeas: 0, distinctSources: 0),
     this.enabledSources = 1,
     this.provenance = const [],
@@ -144,17 +145,21 @@ class _StubRepository implements LiveRepository {
   /// called from a unit test; a test that wants the fallback sets [livePrice]
   /// false.
   @override
-  Future<({double? price, DateTime? at, bool live, String? source})> directSpotPrice({
+  Future<({double? price, DateTime? at, bool live, String? source, bool reachedBackend})> directSpotPrice({
     Duration timeout = const Duration(seconds: 12),
   }) async {
     _guard();
     final p = price;
-    if (p == null) return (price: null, at: null, live: false, source: null);
-    return (price: p, at: DateTime(2026, 10, 2, 12, 0), live: livePrice, source: priceSource);
+    if (p == null) return (price: null, at: null, live: false, source: null, reachedBackend: backendReachable);
+    return (price: p, at: DateTime(2026, 10, 2, 12, 0), live: livePrice, source: priceSource, reachedBackend: backendReachable);
   }
   /// Whether [directSpotPrice] reports a live read. False exercises the
   /// stored-snapshot fallback.
   bool livePrice = true;
+
+  /// Whether the stubbed read reached the backend. False exercises the
+  /// offline path (banner, frozen ages) without throwing.
+  bool backendReachable = true;
 
   /// Provenance the stubbed tick claims. The caption must show it.
   String? priceSource = 'biquote';
@@ -1106,8 +1111,7 @@ void main() {
       expect(find.text('Hawkish Fed repricing'), findsOneWidget);
     });
 
-    testWidgets('a failed poll keeps the last good values and says so', (tester) async {
-      final repo = _StubRepository(
+    testWidgets('a failed poll keeps the last good values and says so', (tester) async {      final repo = _StubRepository(
         price: 4312.45,
         low: 4300.10,
         high: 4320.90,
@@ -1126,6 +1130,33 @@ void main() {
       // The screen is not replaced: the trader still sees what he had.
       expect(find.text('4,312.45'), findsOneWidget);
       expect(find.text('15M Consensus Setup'), findsOneWidget);
+    });
+
+    testWidgets('an unreachable backend raises the offline banner', (tester) async {
+      final repo = _StubRepository(price: 4312.45, backendReachable: false);
+      final live = LiveData(repository: repo);
+      addTearDown(live.dispose);
+      await _pumpLive(tester, live);
+
+      expect(live.offline, isTrue);
+      // Banner names the state; the last price stays on screen, frozen.
+      expect(find.textContaining('OFFLINE'), findsOneWidget);
+      expect(find.text('4,312.45'), findsOneWidget);
+    });
+
+    testWidgets('recovery clears the banner without a restart', (tester) async {
+      final repo = _StubRepository(price: 4312.45, backendReachable: false);
+      final live = LiveData(repository: repo);
+      addTearDown(live.dispose);
+      await _pumpLive(tester, live);
+      expect(find.textContaining('OFFLINE'), findsOneWidget);
+
+      repo.backendReachable = true;
+      await live.refresh();
+      await tester.pump();
+
+      expect(live.offline, isFalse);
+      expect(find.textContaining('OFFLINE'), findsNothing);
     });
 
     testWidgets('ticks fold into the range and move without a new poll', (

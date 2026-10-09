@@ -1531,3 +1531,22 @@
      lib/services/backend_service.dart (+updateManifestUrl),
      lib/main.dart (DB-first endpoint), updates/xv-manifest.json (mirror)
    - **tags:** updater, manifest, dart-define-android, app-config, release
+
+## EVT-20261009-0243 offline detection + calm analysis card
+
+   - **mode:** BUILD
+   - **action:** User reported no offline detection. Reproduced live via
+     airplane mode: price froze with no banner, plus logcat showed an
+     unhandled async crash-loop (fallback query throwing inside the catch).
+     Fixed: directSpotPrice reports reachability explicitly with a guarded
+     fallback; LiveData tracks backend reachability (offline flag, recovers
+     on success); network failures mark offline instead of printing stack
+     traces when data exists; HarborOfflineBar on Radar/Signal/Events;
+     analysis card shows calm "Waiting for connection" instead of the red
+     exception box when offline. Verified on device offline (banner, honest
+     blanks, no red box) and after reconnect (banner clears, all values
+     exact, logcat clean). Suite 287 green.
+   - **files:** lib/data/live_repository.dart, lib/data/live_data.dart,
+     lib/widgets/harbor_widgets.dart (+HarborOfflineBar), lib/widgets/
+     analysis_verdict_card.dart (+offline), screens x3, tests
+   - **tags:** offline, airplane-mode, crash-loop-fix, verification

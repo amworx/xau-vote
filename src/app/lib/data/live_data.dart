@@ -15,12 +15,30 @@ library;
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import 'package:http/http.dart' show ClientException;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:xau_core/analysis/independence.dart';
 import 'package:xau_core/analysis/session.dart';
 
 import 'live_repository.dart';
 import '../models/display_models.dart';
+
+/// Transport failure (DNS, refused socket, timeout, reset stream) as opposed
+/// to an application error (bad query, bad state). Only the former means
+/// "the device cannot reach the backend" and drives the offline banner.
+///
+/// Matched by type where portable (TimeoutException, http ClientException)
+/// and by runtime-type name for the dart:io errors: this file compiles for
+/// web, where importing dart:io is a build break, so SocketException cannot
+/// be named directly.
+bool isNetworkError(Object e) {
+  if (e is TimeoutException || e is ClientException) return true;
+  final t = e.runtimeType.toString();
+  return t.contains('SocketException') ||
+      t.contains('HttpException') ||
+      t.contains('HandshakeException') ||
+      t.contains('Connection');
+}
 
 /// Snapshot of everything the screens read in live mode.
 class LiveData extends ChangeNotifier with WidgetsBindingObserver {
@@ -92,6 +110,17 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
   /// False when the price came from the stored snapshot because the provider was
   /// unreachable. The UI must not present a stale number as live.
   bool _priceIsLive = false;
+
+  /// Whether the backend was reached by the latest price poll. False means
+  /// the device could not reach Supabase at all (offline) — distinct from a
+  /// reachable backend reporting stale data, which is degradation, not an
+  /// outage. Starts true so a cold launch does not flash an offline banner
+  /// before the first poll answers; the first failed poll corrects it.
+  bool _backendReachable = true;
+
+  /// True when the backend is unreachable: the whole snapshot is frozen and
+  /// the UI must say so instead of presenting still numbers as live.
+  bool get offline => !_backendReachable;
 
   /// Who priced the current tick (biquote, gold-api, ...). Shown next to the
   /// age so the provenance is on screen. Null for the stored fallback and
@@ -280,9 +309,16 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
   /// Shared by the 5s price ticker and the full refresh so both paths fold
   /// ticks identically (tests drive it through [refresh]). Returns whether
   /// anything the screens show actually moved.
-  bool _applyPrice(double? price, DateTime? at, bool live, String? source) {
-    if (price == null) return false;
+  bool _applyPrice(double? price, DateTime? at, bool live, String? source,
+      {required bool reachedBackend}) {
+    // Reachability first: a total miss carries no price, and returning early
+    // on it would leave a stale "online" standing.
     var moved = false;
+    if (reachedBackend != _backendReachable) {
+      _backendReachable = reachedBackend;
+      moved = true;
+    }
+    if (price == null) return moved;
     if (price != _price) {
       _price = price;
       _priceAt = at;
@@ -312,8 +348,22 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _pollPrice() async {
-    final price = await _repo.directSpotPrice();
-    if (_applyPrice(price.price, price.at, price.live, price.source)) notifyListeners();
+    try {
+      final price = await _repo.directSpotPrice();
+      if (_applyPrice(price.price, price.at, price.live, price.source,
+          reachedBackend: price.reachedBackend)) {
+        notifyListeners();
+      }
+    } catch (_) {
+      // A read that throws outright (DNS, socket) means the backend was not
+      // reached. directSpotPrice reports misses itself; this is the backstop
+      // for failures thrown past it, which used to surface as unhandled async
+      // errors while the screen kept showing the last price as live.
+      if (_backendReachable) {
+        _backendReachable = false;
+        notifyListeners();
+      }
+    }
   }
 
   Future<void> _pollFast() =>
@@ -386,7 +436,10 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
       // Folds through the same tick path as the price ticker (extremes move
       // with it, no extra network).
       final price = await _repo.directSpotPrice();
-      if (_applyPrice(price.price, price.at, price.live, price.source)) changed = true;
+      if (_applyPrice(price.price, price.at, price.live, price.source,
+          reachedBackend: price.reachedBackend)) {
+        changed = true;
+      }
       _priceIsLive = price.live;
 
       // A null signal is a legitimate "no setup right now" — clear it rather
@@ -514,10 +567,24 @@ class LiveData extends ChangeNotifier with WidgetsBindingObserver {
       // next real change or the next pull.
     } catch (e) {
       // Keep the last good values on screen and surface the failure, rather
-      // than replacing real data with nothing (or with fixtures).
-      _error = '$e';
-      // Notify anyway: the error line must appear.
-      changed = true;
+      // than replacing real data with nothing (or with fixtures). A network
+      // failure marks the backend unreachable (the offline banner) instead of
+      // printing a stack trace the trader cannot act on — unless this is a
+      // first-load failure with nothing to show, which still needs its error.
+      if (isNetworkError(e)) {
+        if (_backendReachable) {
+          _backendReachable = false;
+          changed = true;
+        }
+        if (_price == null && _signal == null && _events.isEmpty && _history.isEmpty) {
+          _error = 'No connection — pull to retry when back online.';
+          changed = true;
+        }
+      } else {
+        _error = '$e';
+        // Notify anyway: the error line must appear.
+        changed = true;
+      }
 } finally {
       _loading = false;
       if (manual) {

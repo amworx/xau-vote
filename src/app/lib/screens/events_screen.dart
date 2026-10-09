@@ -151,8 +151,8 @@ class _EventsScreenState extends State<EventsScreen> {
       padding: const EdgeInsets.only(bottom: 18),
       children: [
         const HarborHeader(subtitle: 'MACRO CONTEXT · NEVER VOTES'),
-        _tabBar(),
-        const SizedBox(height: 11),
+        if (_live?.offline ?? false) const HarborOfflineBar(),
+        _tabBar(),        const SizedBox(height: 11),
         _filterCard(),
         ...guard,
         const SizedBox(height: 10),

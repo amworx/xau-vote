@@ -39,7 +39,6 @@ class HarborHeader extends StatelessWidget {
     this.sessionName,
     this.marketStatusLabel,
   });
-
   final String? subtitle;
 
   /// Overrides the pill text entirely. Screens that know better pass this.
@@ -212,6 +211,55 @@ class HarborHeader extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// Offline banner: the backend is unreachable, so every number on screen is
+/// frozen at its last successful poll. Sits above the content it qualifies —
+/// a stale price with no banner reads as live, which is exactly what this
+/// prevents. Static text (no ticker): the ages beside each value already
+/// convey how stale they are.
+class HarborOfflineBar extends StatelessWidget {
+  const HarborOfflineBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFBF3DF),
+          border: Border.all(color: harborWarn),
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: const Row(
+          children: [
+            SizedBox(
+              width: 6,
+              height: 6,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: harborWarn, shape: BoxShape.circle),
+              ),
+            ),
+            SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                'OFFLINE · showing last data — updates resume when connected.',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Space Mono',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: harborWarn,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Pulsing status dot.

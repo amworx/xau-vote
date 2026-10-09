@@ -158,10 +158,10 @@ class _SlowRepository implements LiveRepository {
   Future<({double price, DateTime at})?> latestPrice() async => null;
 
   @override
-  Future<({double? price, DateTime? at, bool live, String? source})> directSpotPrice({
+  Future<({double? price, DateTime? at, bool live, String? source, bool reachedBackend})> directSpotPrice({
     Duration timeout = const Duration(seconds: 12),
   }) async =>
-      (price: null, at: null, live: false, source: null);
+      (price: null, at: null, live: false, source: null, reachedBackend: true);
   @override
   Future<({double low, double high})?> sessionRange({required DateTime since}) async => null;
 
