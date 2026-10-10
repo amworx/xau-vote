@@ -550,11 +550,19 @@ class DisplayDigestTheme {
     required this.theme,
     required this.pressure,
     required this.evidenceCount,
+    this.evidenceUrls = const [],
   });
 
   final String theme;
   final NewsPressure pressure;
   final int evidenceCount;
+
+  /// The article URLs the theme was summarized from (max 3, publisher links
+  /// only). The theme card resolves these against the collected headlines so
+  /// a tap can show each article's title, source and link — never article
+  /// text (licensing constraint). Empty for older digests written before the
+  /// URLs were carried through, in which case the card says so.
+  final List<String> evidenceUrls;
 }
 
 /// One collected headline (title + source + link only, never full text).
@@ -564,12 +572,19 @@ class DisplayNewsItem {
     required this.title,
     required this.ageText,
     required this.url,
+    this.publishedAt,
   });
 
   final String source;
   final String title;
   final String ageText;
   final String url;
+
+  /// When the publisher dated the article (UTC). Null for undated rows and
+  /// for fixtures, which carry only an age string. The News tab groups
+  /// headlines by this date, day-by-day like the calendar; null-dated rows
+  /// gather under a single "Recent" group rather than borrowing a date.
+  final DateTime? publishedAt;
 }
 
 /// Formats a [remaining] duration as a human countdown.

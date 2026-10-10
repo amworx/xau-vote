@@ -58,7 +58,10 @@ void main() {
       // position in the scroll is not part of the contract. Matched
       // case-insensitively on the eyebrow text so the assertion does not
       // depend on which middle-dot codepoint the title happens to use.
-      expect(find.text('TIMEFRAMES'), findsOneWidget);
+      // The fixed Timeframes display group was removed: 15M/5M/1H is spec,
+      // not a setting, so Targets leads now.
+      expect(find.text('TIMEFRAMES'), findsNothing);
+      expect(find.text('TARGETS'), findsOneWidget);
       // Indicator customization moved to the Signal screen's regime card:
       // Settings must not carry a second copy.
       expect(find.text('INDICATORS · DISPLAY ONLY'), findsNothing);

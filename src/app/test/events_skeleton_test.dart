@@ -179,7 +179,7 @@ class _SlowRepository implements LiveRepository {
           (low: null, high: null, firstPrint: null, prevClose: null);
 
   @override
-  Future<List<DisplayNewsItem>> latestHeadlines({int limit = 15}) async =>
+  Future<List<DisplayNewsItem>> latestHeadlines({int limit = 30}) async =>
       const [];
 
   /// No active signal, so the independence and contributor reads are never

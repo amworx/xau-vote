@@ -1,6 +1,6 @@
 /// Screen 1 — Radar (mockup `.top` … `.scenario`, exact layout).
 ///
-/// Price block, day bar, timeframe display, the verdict card (LONG/SHORT
+/// Price block, day bar, the verdict card (LONG/SHORT
 /// direction, agreement strength, entry/stop/TP levels, target scope,
 /// source agreement, copy/share), plus the NO CONSENSUS, DEVELOPING and
 /// event-guardrail states. A MOCK_MODE-only demo switcher sits under the
@@ -64,11 +64,6 @@ class RadarScreen extends StatefulWidget {
 class _RadarScreenState extends State<RadarScreen> {
   /// Bottom-nav index of the Events screen.
   static const int eventsTab = 4;
-
-  /// Which timeframe the user is inspecting. 15M is the only one that can carry
-  /// a consensus setup; 5M and 1H are context (product rule 1), so switching
-  /// changes which view of the market is shown and never the published signal.
-  String _timeframe = '15M';
 
 /// Whether the market is treated as trading.
   ///
@@ -175,10 +170,6 @@ class _RadarScreenState extends State<RadarScreen> {
         else
           const SpotPriceBlock(signal: quote),
         if (live == null) const DayMoveBar(signal: quote),
-        TimeframeSwitch(
-          active: _timeframe,
-          onChanged: (tf) => setState(() => _timeframe = tf),
-        ),
         if (!sessionOpen)
           const _MarketClosedCard()
         else if (live != null)

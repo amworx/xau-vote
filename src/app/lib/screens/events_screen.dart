@@ -1,8 +1,9 @@
 /// Screen 6 — Events (addendum §5.2, TASK-07).
 ///
 /// Upcoming (chronological HIGH/MEDIUM events, 7-day window) · Results
-/// (actuals vs forecast + surprise flags) · News (macro-backdrop themes +
-/// headlines, title + source + link only). Context and guardrails — never
+/// (actuals vs forecast + surprise flags) · News (macro-backdrop themes with
+/// tappable linked articles + headlines grouped day-by-day, title + source +
+/// link only). Context and guardrails — never
 /// votes (rule 9): no banner here suggests a trade, and an empty calendar
 /// renders silence, not a signal.
 ///
@@ -613,17 +614,19 @@ class _EventsScreenState extends State<EventsScreen> {
     };
   }
 
-  /// News pane: the macro-backdrop themes (display only) and the collected
-  /// headlines. Headline + source + age + link only — never article text.
+  /// News pane: the macro-backdrop themes (tap a theme for its linked
+  /// articles) and the collected headlines, grouped day-by-day like the
+  /// calendar. Headline + source + age + link only — never article text.
   Widget _newsPane() {
     final themes = _digestThemes;
     final headlines = _headlines;
+    final groups = _groupHeadlines(headlines);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Padding(
           padding: EdgeInsets.fromLTRB(18, 0, 18, 0),
-          child: HarborEyebrow('Macro backdrop · display only', color: harborFaint),
+          child: HarborEyebrow('Macro backdrop · tap a theme for its articles', color: harborFaint),
         ),
         const SizedBox(height: 9),
         if (themes.isEmpty)
@@ -634,51 +637,19 @@ class _EventsScreenState extends State<EventsScreen> {
           )
         else
           for (final theme in themes) ...[
-            HarborCard(
-              radius: 16,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          theme.theme,
-                          style: const TextStyle(
-                            fontFamily: 'Sora',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        // What the theme stands on. A pressure label without a
-                        // source count reads as a verdict; the count shows it
-                        // is a summary of N articles, nothing more.
-                        Text(
-                          theme.evidenceCount == 1
-                              ? '1 linked article'
-                              : '${theme.evidenceCount} linked articles',
-                          style: const TextStyle(
-                            fontFamily: 'Space Mono',
-                            fontSize: 9,
-                            color: harborFaint,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PressurePill(pressure: theme.pressure),
-                ],
-              ),
+            _ThemeCard(
+              theme: theme,
+              headlines: headlines,
+              onTap: theme.evidenceUrls.isEmpty
+                  ? null
+                  : () => _showThemeArticles(context, theme, headlines),
             ),
             const SizedBox(height: 8),
           ],
         const SizedBox(height: 6),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 18),
-          child: HarborEyebrow('Gold news · headlines only', color: harborFaint),
+          child: HarborEyebrow('Gold news · day by day · headlines only', color: harborFaint),
         ),
         const SizedBox(height: 9),
         if (headlines.isEmpty)
@@ -688,11 +659,143 @@ class _EventsScreenState extends State<EventsScreen> {
                 '30-minute issuer collection runs.',
           )
         else
-          for (final headline in headlines) ...[
-            _NewsCard(item: headline),
-            const SizedBox(height: 8),
+          for (final group in groups) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
+              child: Text(
+                group.label.toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: 'Space Mono',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                  color: harborDim,
+                ),
+              ),
+            ),
+            for (final headline in group.items) ...[
+              _NewsCard(item: headline),
+              const SizedBox(height: 8),
+            ],
+            const SizedBox(height: 4),
           ],
       ],
+    );
+  }
+
+  /// Groups headlines by publisher day (UTC), newest day first — the same
+  /// day-by-day shape as the calendar, so the News tab can stand in for an
+  /// outside economic calendar. Undated rows gather under one "Recent" group
+  /// rather than borrowing a date they do not have.
+  List<({String label, List<DisplayNewsItem> items})> _groupHeadlines(
+    List<DisplayNewsItem> headlines,
+  ) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    final now = DateTime.now().toUtc();
+    final today = DateTime.utc(now.year, now.month, now.day);
+    final byDay = <DateTime, List<DisplayNewsItem>>{};
+    final undated = <DisplayNewsItem>[];
+    for (final h in headlines) {
+      final at = h.publishedAt;
+      if (at == null) {
+        undated.add(h);
+        continue;
+      }
+      final day = DateTime.utc(at.toUtc().year, at.toUtc().month, at.toUtc().day);
+      (byDay[day] ??= []).add(h);
+    }
+    final days = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
+    final groups = <({String label, List<DisplayNewsItem> items})>[
+      for (final day in days)
+        (
+          label: day == today
+              ? 'Today · ${day.day} ${months[day.month - 1]}'
+              : day == today.subtract(const Duration(days: 1))
+                  ? 'Yesterday · ${day.day} ${months[day.month - 1]}'
+                  : '${day.day} ${months[day.month - 1]}',
+          items: byDay[day]!,
+        ),
+    ];
+    if (undated.isNotEmpty) {
+      groups.add((label: 'Recent', items: undated));
+    }
+    return groups;
+  }
+
+  /// The linked articles behind one digest theme, as a bottom sheet.
+  ///
+  /// Each URL resolves against the collected headlines for its title and
+  /// source; a URL with no matching headline still shows as a link row, so
+  /// the count on the card never promises more than the sheet delivers.
+  /// Headlines only — the full story stays with its publisher.
+  void _showThemeArticles(
+    BuildContext context,
+    DisplayDigestTheme theme,
+    List<DisplayNewsItem> headlines,
+  ) {
+    final byUrl = {for (final h in headlines) h.url: h};
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(18, 4, 18, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      theme.theme,
+                      style: const TextStyle(
+                        fontFamily: 'Sora',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  PressurePill(pressure: theme.pressure),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                theme.evidenceUrls.length == 1
+                    ? '1 linked article · headlines only'
+                    : '${theme.evidenceUrls.length} linked articles · headlines only',
+                style: const TextStyle(
+                  fontFamily: 'Space Mono',
+                  fontSize: 10,
+                  color: harborFaint,
+                ),
+              ),
+              const SizedBox(height: 12),
+              for (final url in theme.evidenceUrls) ...[
+                if (byUrl[url] != null)
+                  _NewsCard(item: byUrl[url]!)
+                else
+                  _UnresolvedArticleRow(url: url),
+                const SizedBox(height: 8),
+              ],
+              const SizedBox(height: 4),
+              const Text(
+                'Full stories stay with their publishers — tap a row to open the original.',
+                style: TextStyle(
+                  fontFamily: 'Space Mono',
+                  fontSize: 9,
+                  height: 1.5,
+                  color: harborFaint,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1043,6 +1146,148 @@ class _AlertBell extends StatelessWidget {
   }
 }
 
+/// One macro-backdrop theme: what it is, which way it leans, and what it
+/// stands on. The source line names the linked publishers (resolved from the
+/// collected headlines), so the card reads as a summary of real articles —
+/// and a tap opens those articles in a sheet.
+///
+/// A pressure label without a source reads as a verdict; the count and the
+/// names show it is a summary of N articles, nothing more. When the digest
+/// predates the carried-through URLs the card says the links are unavailable
+/// rather than offering a sheet with nothing in it.
+class _ThemeCard extends StatelessWidget {
+  const _ThemeCard({
+    required this.theme,
+    required this.headlines,
+    required this.onTap,
+  });
+
+  final DisplayDigestTheme theme;
+  final List<DisplayNewsItem> headlines;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final byUrl = {for (final h in headlines) h.url: h};
+    final sources = {
+      for (final url in theme.evidenceUrls)
+        if (byUrl[url] != null) byUrl[url]!.source.toUpperCase(),
+    }.toList();
+    final countLine = theme.evidenceCount == 1
+        ? '1 linked article'
+        : '${theme.evidenceCount} linked articles';
+    final sub = theme.evidenceUrls.isEmpty
+        ? '$countLine · links unavailable for this digest'
+        : sources.isEmpty
+            ? '$countLine · TAP TO VIEW'
+            : '$countLine · ${sources.join(' · ')}';
+    final card = HarborCard(
+      radius: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  theme.theme,
+                  style: const TextStyle(
+                    fontFamily: 'Sora',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  sub,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Space Mono',
+                    fontSize: 9,
+                    color: harborFaint,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          PressurePill(pressure: theme.pressure),
+          if (onTap != null) ...[
+            const SizedBox(width: 6),
+            const Icon(HarborIcons.arrowUpRight, size: 12, color: harborFaint),
+          ],
+        ],
+      ),
+    );
+    final tap = onTap;
+    if (tap == null) return card;
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: tap,
+      child: card,
+    );
+  }
+}
+
+/// A linked URL with no matching collected headline. The link still opens the
+/// publisher page, so the theme card's count is honoured even when the
+/// collector holds no title for it.
+class _UnresolvedArticleRow extends StatelessWidget {
+  const _UnresolvedArticleRow({required this.url});
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return HarborCard(
+      radius: 16,
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Opens $url'))),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                url,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'Space Mono',
+                  fontSize: 11,
+                  color: harborDim,
+                ),
+              ),
+              const SizedBox(height: 7),
+              const Row(
+                children: [
+                  Icon(HarborIcons.arrowUpRight, size: 12, color: harborCobalt),
+                  SizedBox(width: 5),
+                  Text(
+                    'OPEN ORIGINAL',
+                    style: TextStyle(
+                      fontFamily: 'Sora',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: harborCobalt,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 /// One collected headline. Title + source + age + a cobalt link-out — the
 /// full article is never fetched or shown (licensing constraint), and the
 /// MVP has no `url_launcher`, so the link confirms with a placeholder toast.

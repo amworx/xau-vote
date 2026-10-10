@@ -67,7 +67,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('nav-SETTINGS')));
     await tester.pumpAndSettle();
 
-    expect(find.text('15M / 5M / 1H'), findsOneWidget);
+    // The fixed Timeframes display is gone: 15M/5M/1H is spec, not a setting.
+    expect(find.text('15M / 5M / 1H'), findsNothing);
     expect(find.text('TP1 + TP2 + TP3'), findsOneWidget);
     expect(find.text('Consensus forming'), findsOneWidget);
     expect(find.text('Invalidation'), findsOneWidget);

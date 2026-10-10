@@ -80,11 +80,10 @@ class SignalScreen extends StatelessWidget {
     // blank the design at the weekend. A live build always reads the clock.
     final sessionOpen =
         sessionOpenOverride ?? (mockMode ? true : isSessionOpen(DateTime.now().toUtc()));
-    // Recent closed setups, shown while the market is shut. Offline falls back
-    // to the fixture log so the preview still demonstrates the section.
-    final recentHistory = live != null
-        ? live.history.take(5).toList(growable: false)
-        : MockFixtures.history.take(5).toList(growable: false);
+    // Recent closed setups live on the History tab only. This screen used to
+    // repeat the last five here while the market was shut; the duplicate list
+    // is gone, so a closed market shows the status notice and the regime
+    // context below it — the record itself stays in one place.
     // `DisplaySignal.price` carries a fixture default; live the quote comes
     // from the poller, so an absent tick prints `—`.
     final quote = live == null
@@ -102,21 +101,9 @@ class SignalScreen extends StatelessWidget {
           statusText: signal == null ? 'NO CONSENSUS' : statusLabel(signal.status),
         ),
         if (live != null && live.offline) const HarborOfflineBar(),
-        if (!sessionOpen) ...[
-          const _MarketClosedNotice(),
-          // A closed market is not an empty record. The closed setups still
-          // happened and the trader still wants to review them, so the recent
-          // history is listed underneath rather than leaving the screen bare.
-          if (recentHistory.isEmpty && (live?.loading ?? false))
-            const Column(
-              children: [
-                SkeletonCard(lines: 3),
-                SkeletonCard(lines: 2),
-              ],
-            )
-          else if (recentHistory.isNotEmpty)
-            _ClosedSetupHistory(entries: recentHistory, pipFactor: pipFactor),
-        ] else if (signal == null && (live?.loading ?? false))
+        if (!sessionOpen)
+          const _MarketClosedNotice()
+        else if (signal == null && (live?.loading ?? false))
           // First read in flight: hold the level grid's shape instead of
           // flashing "NO CONSENSUS", which reads as a verdict rather than as
           // "not loaded yet".
@@ -602,73 +589,6 @@ class SignalScreen extends StatelessWidget {
 }
 
 /// No active setup (product rule 2: insufficient agreement is a real answer).
-///
-/// Closed setups listed while the market is shut.
-///
-/// Read-only on purpose: a closed setup cannot be entered, so this deliberately
-/// offers no copy/share action that would hand the trader levels to act on.
-class _ClosedSetupHistory extends StatelessWidget {
-  const _ClosedSetupHistory({required this.entries, required this.pipFactor});
-
-  final List<DisplayHistoryEntry> entries;
-  final int pipFactor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const HarborEyebrow('Recent closed setups · 7 days'),
-          const SizedBox(height: 9),
-          for (final entry in entries) ...[
-            HarborCard(
-              radius: 16,
-              padding: const EdgeInsets.fromLTRB(14, 11, 14, 12),
-              child: Row(
-                children: [
-                  DirectionMark(direction: entry.direction, size: 13),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          entry.detailText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamily: 'Space Mono',
-                            fontSize: 10.5,
-                            color: harborDim,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          entry.whenText,
-                          style: const TextStyle(
-                            fontFamily: 'Space Mono',
-                            fontSize: 9.5,
-                            color: harborFaint,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  StatusPill(status: entry.status),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ],
-      ),
-    );
-  }
-}
 
 /// Stand-in for the setup card while the spot market is closed.
 ///

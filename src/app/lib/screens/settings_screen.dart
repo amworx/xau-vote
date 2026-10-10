@@ -1,6 +1,6 @@
 /// Screen 5 — Settings (spec §24 controls).
 ///
-/// Fixed timeframe display (15M/5M/1H), pip convention, target selection and
+/// Pip convention, target selection and
 /// notification toggles. Persisted in-memory via [AppState] for the MVP;
 /// Supabase user preferences arrive with live wiring (T5.7).
 ///
@@ -84,21 +84,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: HarborEyebrow('Control panel'),
         ),
         const SizedBox(height: 12),
-        const _Group(
-          title: 'Timeframes',
-          children: [
-            _SettingRow(
-              title: 'Signal / Confirm / Context',
-              subtitle: 'Fixed by product spec',
-              value: '15M / 5M / 1H',
-            ),
-            _SettingRow(
-              title: 'Default view',
-              subtitle: 'Screen shown on launch',
-              value: 'RADAR',
-            ),
-          ],
-        ),
         const _Group(
           title: 'Targets',
           children: [_TargetPills()],

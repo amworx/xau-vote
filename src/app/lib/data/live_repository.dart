@@ -552,12 +552,14 @@ class LiveRepository {
     final themes = r['themes'];
     if (themes is! List) return const [];
     return themes.whereType<Map>().map((t) {
+      final urls = t['evidence_urls'];
       return DisplayDigestTheme(
         theme: '${t['theme'] ?? 'Unknown'}',
         pressure: _pressure('${t['pressure'] ?? 'UNCLEAR'}'),
-        evidenceCount: (t['evidence_urls'] is List)
-            ? (t['evidence_urls'] as List).length
-            : 0,
+        evidenceCount: (urls is List) ? urls.length : 0,
+        evidenceUrls: (urls is List)
+            ? urls.whereType<String>().take(3).toList()
+            : const [],
       );
     }).toList();
   }
@@ -578,8 +580,10 @@ class LiveRepository {
 
   /// Latest collected headlines, newest first. Title + source + link only —
   /// the app never stores or shows article bodies. Age always travels with
-  /// the row so a stale headline reads as old, never as breaking.
-  Future<List<DisplayNewsItem>> latestHeadlines({int limit = 15}) async {
+  /// the row so a stale headline reads as old, never as breaking. The
+  /// publisher date travels too, so the News tab can group headlines
+  /// day-by-day like the calendar.
+  Future<List<DisplayNewsItem>> latestHeadlines({int limit = 30}) async {
     final r = await _client
         .from('news_articles')
         .select('title,source_name,url,published_at,collected_at')
@@ -593,6 +597,7 @@ class LiveRepository {
         title: '${m['title'] ?? 'Untitled'}',
         ageText: _ageText(at),
         url: '${m['url'] ?? ''}',
+        publishedAt: at,
       );
     }).toList();
   }

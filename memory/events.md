@@ -1581,3 +1581,22 @@
      Final state verified: phone on 24, updater reports current.
    - **link:** https://github.com/amworx/xau-vote/releases/tag/v1.0.11
    - **tags:** release, updater-e2e, checksum-verified, samsung-quirk
+
+## EVT-20261010-0246 streamlining: Radar/Signal/News/Settings per user review
+
+   - **mode:** BUILD
+   - **action:** Four removals/reworks requested after device review. (1) Radar
+     timeframe switcher deleted - 15M is the only signal timeframe by spec,
+     nothing to switch. (2) Signal recent-closed-setups list deleted - it
+     duplicated the History tab; closed market now shows status + regime only.
+     (3) News reworked instead of removed: digest theme cards are tappable and
+     open a bottom sheet with their linked articles (title+source+link,
+     resolved against collected headlines, unresolved URLs still open), each
+     card names its linked publishers, and headlines group day-by-day
+     (Today/Yesterday/date, undated under Recent) so the tab stands in for an
+     outside calendar. Backend carries evidence_urls + published_at through
+     (headlines limit 15->30). (4) Settings Timeframes group deleted.
+     Verified: analyze clean, 287 app tests pass.
+   - **files:** radar/signal/events/settings screens, display_models,
+     live_repository, mock_fixtures, radar/live/app/settings tests
+   - **tags:** ux-streamline, news-sheet, day-by-day, dedup

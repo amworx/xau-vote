@@ -262,7 +262,7 @@ class _StubRepository implements LiveRepository {
   }
 
   @override
-  Future<List<DisplayNewsItem>> latestHeadlines({int limit = 15}) async {
+  Future<List<DisplayNewsItem>> latestHeadlines({int limit = 30}) async {
     _guard();
     if (failSlowSections.contains('headlines')) {
       throw StateError('headlines down');
@@ -471,6 +471,9 @@ const _liveDigest = DisplayDigestTheme(
   theme: 'Hawkish Fed repricing',
   pressure: NewsPressure.hawkish,
   evidenceCount: 3,
+  evidenceUrls: [
+    'https://www.federalreserve.gov/monetary20260916a.htm',
+  ],
 );
 
 /// A collected headline: title + source + age + link, never article text.
@@ -479,6 +482,7 @@ const _liveHeadline = DisplayNewsItem(
   title: 'Federal Reserve issues FOMC statement',
   ageText: '2h ago',
   url: 'https://www.federalreserve.gov/monetary20260916a.htm',
+  publishedAt: null,
 );
 
 const _liveHistory = [
@@ -1391,12 +1395,19 @@ void main() {
       // The theme shows what it stands on, so it reads as a summary.
       expect(find.textContaining('linked article'), findsOneWidget);
       // Collected headlines reach the screen with source and age — and no
-      // fixture headline borrows in.
+      // fixture headline borrows in. The source appears twice: the theme
+      // card names its linked publishers, and the headline row carries it.
       expect(find.text('Federal Reserve issues FOMC statement'), findsOneWidget);
-      expect(find.textContaining('FEDERAL RESERVE BOARD'), findsOneWidget);
+      expect(find.textContaining('FEDERAL RESERVE BOARD'), findsNWidgets(2));
       expect(find.textContaining('2h ago'), findsOneWidget);
       expect(find.text('No headlines collected.'), findsNothing);
       expect(find.text('Gold holds range ahead of US payrolls data'), findsNothing);
+      // The theme card opens its linked articles in a sheet: the resolved
+      // headline with its source, plus a way to open the original.
+      await tester.tap(find.text('Hawkish Fed repricing'));
+      await tester.pumpAndSettle();
+      expect(find.text('1 linked article · headlines only'), findsOneWidget);
+      expect(find.text('Federal Reserve issues FOMC statement'), findsNWidgets(2));
     });
 
     testWidgets('an empty calendar renders silence, not a fixture event', (tester) async {
@@ -1477,7 +1488,8 @@ void main() {
         findsNWidgets(2),
         reason: 'header subtitle + nav label',
       );
-      expect(find.text('15M / 5M / 1H'), findsOneWidget);
+      // The fixed Timeframes display is gone live too: spec, not a setting.
+      expect(find.text('15M / 5M / 1H'), findsNothing);
       expect(find.text('Consensus forming'), findsOneWidget);
       expect(find.text('MOCK'), findsNothing);
       // No bare "LIVE" label: the pill names the real session phase, so this

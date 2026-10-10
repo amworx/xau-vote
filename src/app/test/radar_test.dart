@@ -42,7 +42,7 @@ Future<void> _setTargets(WidgetTester tester, TargetSelection targets) async {
 }
 
 void main() {
-  testWidgets('Radar renders the mockup header, quote, day bar and switcher',
+  testWidgets('Radar renders the mockup header, quote and day bar',
       skip: !mockMode,
       (tester) async {
     await _pumpApp(tester);
@@ -76,14 +76,9 @@ void main() {
     expect(find.text('4,266.90 — 4,286.40'), findsOneWidget);
     expect(find.text('—'), findsNothing);
 
-    // Timeframe display is view-only, 15M active (product rule 1).
-    final switcher = find.byType(TimeframeSwitch);
-    for (final tf in ['15M', '5M', '1H']) {
-      expect(
-        find.descendant(of: switcher, matching: find.text(tf)),
-        findsOneWidget,
-      );
-    }
+    // The fixed 15M setup needs no switcher: 15M is the only signal
+    // timeframe (product rule 1), so there is nothing to switch between.
+    expect(find.byType(TimeframeSwitch), findsNothing);
   });
 
   testWidgets('Radar verdict card shows levels, targets and agreement',

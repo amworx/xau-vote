@@ -291,16 +291,29 @@ abstract final class MockFixtures {
       theme: 'Hawkish Fed repricing',
       pressure: NewsPressure.hawkish,
       evidenceCount: 3,
+      evidenceUrls: [
+        'https://example.com/news/gold-range-seed',
+        'https://example.com/news/fed-stance-seed',
+        'https://example.com/news/dollar-steady-seed',
+      ],
     ),
     DisplayDigestTheme(
       theme: 'Dovish ECB tilt',
       pressure: NewsPressure.dovish,
       evidenceCount: 2,
+      evidenceUrls: [
+        'https://example.com/news/fed-stance-seed',
+        'https://example.com/news/dollar-steady-seed',
+      ],
     ),
     DisplayDigestTheme(
       theme: 'Neutral Asia flows',
       pressure: NewsPressure.neutral,
       evidenceCount: 2,
+      evidenceUrls: [
+        'https://example.com/news/gold-range-seed',
+        'https://example.com/news/dollar-steady-seed',
+      ],
     ),
   ];
 
