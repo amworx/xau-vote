@@ -1,8 +1,8 @@
 {
-  "version": "1.0.10",
-  "versionCode": 20,
-  "apkUrl": "https://github.com/amworx/xau-vote/releases/download/v1.0.10/XV-v1.0.10-20.apk",
-  "sha256": "25ebd410ab5788809a3af0ee3e84bf782a863253628e790fc4d4bde2d9a859b1",
-  "sizeBytes": 51800989,
-  "notes": "Regime stack (Phase 1) with inline customization; biquote primary price; licensed issuer news."
+    "version":  "1.0.12",
+    "versionCode":  25,
+    "apkUrl":  "https://github.com/amworx/xau-vote/releases/download/v1.0.12/XV-v1.0.12-25.apk",
+    "sha256":  "AB4CB910DF60540DD60851414C88CE703DC569DC90629E34F854480F4D9B1EA3",
+    "sizeBytes":  48311021,
+    "notes":  "Streamlined screens: no Radar switcher, no duplicate Signal history, tappable News themes with article sheets + day-by-day headlines, leaner Settings."
 }

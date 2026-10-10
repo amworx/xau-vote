@@ -1600,3 +1600,17 @@
    - **files:** radar/signal/events/settings screens, display_models,
      live_repository, mock_fixtures, radar/live/app/settings tests
    - **tags:** ux-streamline, news-sheet, day-by-day, dedup
+
+## EVT-20261010-0247 v1.0.12 cut, checksum-verified, manifest live
+
+   - **mode:** BUILD
+   - **action:** User confirmed the v1.0.12 cut. Bumped to 1.0.12+25, built
+     release APK (46.1MB), aapt-verified code 25, uploaded exactly one asset
+     to the v1.0.12 release. Re-downloaded the published asset and hashed it:
+     AB4CB910... matches the build, so the right binary is published (the
+     v1.0.11 wrong-binary lesson held). Updated the public gist manifest and
+     the repo mirror updates/xv-manifest.json; gist raw URL serves 1.0.12.
+     Note: private repo means anonymous release downloads 404 - the in-app
+     updater downloads with its own path, verified on device next.
+   - **link:** https://github.com/amworx/xau-vote/releases/tag/v1.0.12
+   - **tags:** release, checksum-verified, manifest, gist
