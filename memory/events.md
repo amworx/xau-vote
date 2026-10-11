@@ -1631,3 +1631,41 @@
      the manifest living on a public gist does not make the APK public.
    - **files:** repo visibility
    - **tags:** updater, private-repo-404, release-visibility
+
+## EVT-20261011-0249
+
+- **timestamp:** 2026-10-11 22:49:44
+- **mode:** BUILD
+- **action:** Fix stalled in-app update download (silent hang) + idle-panel label; ship v1.0.13 (code 26)
+- **summary:**
+  - The manifest check (a few KB) succeeded, but the ~46MB APK body stalled
+    mid-transfer and the downloader sat forever with no progress and no error.
+    Root cause: a bare `await for` over the response stream never times out.
+  - Fix in `update_service.dart`: replaced the loop with a `StreamIterator`
+    plus a per-chunk timeout, so a dead connection surfaces as a retryable
+    `DownloadState.failed` (message contains 'stalled') instead of a freeze.
+    `chunkTimeout` is injectable via the constructor (default 60s) so the test
+    uses a short window instead of waiting out production time.
+  - Also fixed the idle update panel: `idle` fell through the label switch to
+    'Update in progress', which was simply wrong - idle is the pre-check state.
+  - Added a stall regression test (`stallAfterBytes` on the fake client)
+    that reproduces the field bug and asserts the failure path.
+- **result:** analyze clean; 288/288 tests pass. Built v1.0.13 (code 26,
+  SHA256 B2D63756D1A4CAEC106279D1543422170ADD59E8B4D3C633AA28E52790FFCDE1,
+  51866525 bytes). GitHub release v1.0.13 published; live gist manifest and
+  repo mirror `updates/xv-manifest.json` both point at it.
+- **files:** src/app/lib/services/update_service.dart, src/app/lib/screens/settings_screen.dart, src/app/test/update_service_test.dart, src/app/pubspec.yaml, updates/xv-manifest.json
+- **errors:** `gh gist edit` reported exit 0 but the live URL kept serving
+  1.0.12. Cause was Fastly edge cache (`Cache-Control: max-age=300`), not the
+  push. Origin had the new body immediately; waited out the 5-min TTL and
+  confirmed the edge caught up via a new ETag + larger Content-Length. No
+  public purge path exists for a gist URL.
+- **lessons:**
+  - A bare `await for` over a network response stream has no timeout: a
+    stalled body hangs the download forever with no progress and no error.
+    Long transfers need a per-chunk timeout so a dead connection becomes a
+    retryable failure.
+  - When a push/''gh gist edit'' reports success but the URL still serves old
+    content, check `X-Cache`/`Cache-Control` before assuming the write
+    failed - the origin may already be correct and only the edge is stale.
+- **tags:** updater, download-stall, chunk-timeout, fastly-cache, release, v1.0.13
