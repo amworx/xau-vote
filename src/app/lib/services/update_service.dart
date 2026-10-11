@@ -361,6 +361,7 @@ class UpdateService extends ChangeNotifier {
     http.Client? client,
     this.downloadDir,
     this.probe,
+    this.chunkTimeout = const Duration(seconds: 60),
     UpdateState initialState = const UpdateState(),
   })  : // The manifest URL is stored normalised so an endpoint with a trailing
         // slash or whitespace cannot produce a request that silently 404s.
@@ -385,6 +386,12 @@ class UpdateService extends ChangeNotifier {
 
   /// Test seam: overrides the manifest fetch without a network.
   final UpdateProbe? probe;
+
+  /// How long the download waits for the next chunk before failing.
+  ///
+  /// Overridable so the stall test can use a short window instead of waiting
+  /// out the production value.
+  final Duration chunkTimeout;
 
   /// Creates the client for one request. Defaults to a fresh client so a
   /// cancelled download does not poison the next attempt.
@@ -649,7 +656,26 @@ class UpdateService extends ChangeNotifier {
         received: started,
       ));
 
-      await for (final chunk in response.stream) {
+      // A bare `await for` over a stalled body never returns: the transfer
+      // sits silently with no progress and no error. Pulling each chunk with
+      // a timeout means a dead connection surfaces as a failure the user can
+      // retry instead of a freeze. An active download always produces the next
+      // chunk well within this window, so a healthy transfer is never cut off.
+      // A single iterator (not `.first` + `.skip`) keeps this O(1) per chunk.
+      final iterator = StreamIterator<List<int>>(response.stream);
+      while (true) {
+        final bool hasChunk;
+        try {
+          hasChunk = await iterator.moveNext().timeout(chunkTimeout);
+        } on TimeoutException {
+          throw io.HttpException(
+            'download stalled: no data for '
+            '${chunkTimeout.inSeconds}s at $received bytes',
+          );
+        }
+        if (!hasChunk) break;
+        final chunk = iterator.current;
+
         // Cancel closes the sink itself; just stop here.
         if (_cancelled) return;
         if (_resumeRequested) {

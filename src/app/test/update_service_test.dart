@@ -373,6 +373,35 @@ void main() {
       expect(s.state.isInstallable, isFalse);
     });
 
+    test('a body that stalls mid-transfer fails instead of hanging', () async {
+      // This is the field bug: the manifest check (a few KB) succeeded, but the
+      // ~46MB APK body went silent mid-transfer and the downloader sat forever
+      // with no progress and no error. A stalled body must surface as a
+      // failure the user can retry, not a freeze.
+      final payload = List<int>.generate(4096, (i) => i % 41);
+      final client = _ChunkedClient(
+        payload: payload,
+        chunkSize: 512,
+        stallAfterBytes: 1024, // 2 chunks flow, then the stream just stops
+      );
+      addTearDown(client.close);
+      final s = UpdateService(
+        manifestUrl: Uri.parse('https://example.com/update.json'),
+        downloadDir: tmp,
+        client: client,
+        chunkTimeout: const Duration(milliseconds: 150),
+      );
+      addTearDown(s.dispose);
+
+      await s.check();
+      await s.startDownload();
+
+      expect(s.state.status, DownloadState.failed);
+      expect(s.state.message, contains('stalled'));
+      expect(s.state.isInstallable, isFalse);
+      expect(s.state.installPath, isNull);
+    });
+
     test('a server that ignores Range restarts cleanly', () async {
       final payload = List<int>.generate(4096, (i) => i % 53);
       final release = releaseFor(payload);
@@ -424,6 +453,7 @@ class _ChunkedClient extends http.BaseClient {
     this.truncateAt,
     this.onChunk,
     this.manifestShaOverride,
+    this.stallAfterBytes,
   });
 
   final List<int> payload;
@@ -440,6 +470,13 @@ class _ChunkedClient extends http.BaseClient {
   final int? truncateAt;
 
   final void Function(int sent)? onChunk;
+
+  /// Emit this many bytes then stop, without closing the stream.
+  ///
+  /// This is what a dropped or throttled connection looks like to the
+  /// downloader: bytes stop arriving but no error or end-of-stream is
+  /// signalled, so a downloader with no timeout waits forever.
+  final int? stallAfterBytes;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
@@ -472,6 +509,12 @@ class _ChunkedClient extends http.BaseClient {
     final stream = controller.stream;
     scheduleMicrotask(() async {
       while (sent < slice.length) {
+        // Simulate a stalled connection: bytes stop arriving, but the stream
+        // is never closed and no error is raised. Without a chunk timeout the
+        // downloader would hang here forever.
+        if (stallAfterBytes != null && sent >= stallAfterBytes!) {
+          return;
+        }
         final size = chunkSize < slice.length - sent ? chunkSize : slice.length - sent;
         controller.add(slice.sublist(sent, sent + size));
         sent += size;

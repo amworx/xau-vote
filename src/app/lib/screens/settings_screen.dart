@@ -328,7 +328,12 @@ class _UpdateStatus extends StatelessWidget {
       DownloadState.failed => state.message ?? 'Update failed',
     };
 
+    // `idle` belongs with the "check" labels, not the catch-all "Update in
+    // progress": an idle panel is the pre-check state, and calling it in
+    // progress was simply wrong. The busy states (checking / downloading /
+    // paused / verifying) fall through to the catch-all.
     final label = switch (state.status) {
+      DownloadState.idle ||
       DownloadState.available ||
       DownloadState.upToDate ||
       DownloadState.failed =>
