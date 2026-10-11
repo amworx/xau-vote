@@ -96,6 +96,29 @@ class UpdatePlatform {
     }
   }
 
+  /// The app's private cache directory, as reported by Android.
+  ///
+  /// This MUST come from the platform rather than `Directory.systemTemp`. In a
+  /// release app process Dart resolves temp to `/data/local/tmp`, a location the
+  /// app cannot write and that FileProvider does not share, so the downloaded
+  /// APK landed outside the `<cache-path>` root and the installer was handed a
+  /// URI it could not read ("couldn't open the installer"). Null when the
+  /// channel cannot answer (web, a unit test, or any non-Android target), so
+  /// callers fall back to the Dart temp dir.
+  ///
+  /// Deliberately not gated on `io.Platform.isAndroid`: the channel already
+  /// answers null when nothing is bound, and gating on the host OS made this
+  /// untestable off-device - which is exactly how the wrong write path shipped.
+  Future<String?> cacheDir() async {
+    try {
+      return await channel.invokeMethod<String>('cacheDir');
+    } on MissingPluginException {
+      return null;
+    } on PlatformException {
+      return null;
+    }
+  }
+
   /// Asks Android to open the installer for [apkPath].
   ///
   /// The native side reports a distinct `needs_permission` when the user has not
@@ -411,29 +434,40 @@ class UpdateService extends ChangeNotifier {
   /// injected override.
   ///
   /// Exposed so a test can assert the real Android path resolves. Every other
-  /// test injects [downloadDir], which is precisely why the environment-variable
-  /// lookup that broke the app in the first place was never covered: the
-  /// injected branch returns before the platform is ever consulted.
+  /// test injects [downloadDir], which is precisely why the broken platform
+  /// path was never covered: the injected branch returns before the platform is
+  /// ever consulted.
   @visibleForTesting
   Future<io.Directory> platformTargetDir() async {
-    final base = io.Directory.systemTemp;
-    final dir = io.Directory('${base.path}${io.Platform.pathSeparator}updates');
+    // Ask Android for its private cache dir. This is the only location that is
+    // both app-private and exposed to FileProvider via `<cache-path>`. Trusting
+    // Directory.systemTemp instead landed the APK in /data/local/tmp, outside
+    // the shared root, so getUriForFile threw and the installer could not open
+    // the file.
+    final base = await platform.cacheDir();
+    final root = (base != null && base.isNotEmpty)
+        ? base
+        : io.Directory.systemTemp.path;
+    final dir = io.Directory('$root${io.Platform.pathSeparator}updates');
     if (!await dir.exists()) await dir.create(recursive: true);
     return dir;
   }
 
   /// Where the APK is written.
   ///
-  /// `io.Directory.systemTemp` IS the app's private cache directory on Android
-  /// (`/data/user/0/<pkg>/cache`), which is exactly what
-  /// `res/xml/update_paths.xml` exposes to the FileProvider as `<cache-path>`.
+  /// Resolves to [platformTargetDir], which asks Android for its private cache
+  /// directory so the file lands under the `<cache-path>` root that
+  /// `res/xml/update_paths.xml` exposes to FileProvider. On non-Android targets
+  /// it falls back to the Dart temp dir, which is only used by tests and the
+  /// web build (both of which stub or skip the native install path).
   ///
   /// This used to read `$HOME` / `$USERPROFILE` / `$TMPDIR` out of
   /// `io.Platform.environment`. Android sets NONE of those in an app process, so
-  /// the lookup threw `StateError` before a single byte was requested — which
-  /// is exactly the reported symptom: "check for updates" worked (a plain GET)
-  /// while download did nothing at all. Even had `TMPDIR` been set, appending
-  /// `.cache` to a temp directory would not have matched `<cache-path>`.
+  /// the lookup threw `StateError` before a single byte was requested. The fix
+  /// then pointed at `Directory.systemTemp`, believing it was the app cache dir;
+  /// in a release process Dart resolves temp to `/data/local/tmp`, which is
+  /// outside the shared root, so the installer could not open the APK. Asking
+  /// the platform directly removes both failure modes.
   Future<io.Directory> _targetDir() async {
     final injected = downloadDir;
     if (injected != null) return injected;

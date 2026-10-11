@@ -24,6 +24,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../icons.dart';
 import '../services/update_service.dart';
@@ -238,6 +239,67 @@ class _ArrowUpCircle extends StatelessWidget {
           ],
         ),
       );
+}
+
+class UpdateBannerSlot extends StatefulWidget {
+  const UpdateBannerSlot({super.key, required this.onOpenSettings});
+
+  final VoidCallback onOpenSettings;
+
+  @override
+  State<UpdateBannerSlot> createState() => UpdateBannerSlotState();
+}
+
+class UpdateBannerSlotState extends State<UpdateBannerSlot> {
+  /// "Later" hides the banner for this session only. Not persisted: an update
+  /// the trader waved off should reappear next launch rather than vanish
+  /// forever on a device that never opens Settings.
+  bool _dismissed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // One check per launch, so the banner can surface an update without the
+    // trader having to find Settings and tap CHECK first. The result flows
+    // through the service the slot already watches, so no setState is needed:
+    // check() emits a new state and the ListenableBuilder rebuilds.
+    //
+    // Fails into DownloadState.failed, which isRelevant() does not flag, so a
+    // transient network error at launch shows nothing rather than an error
+    // banner the trader cannot act on. Only an actually-newer build appears.
+    //
+    // The manifest URL is only present in live builds (BackendService or the
+    // build define); in mock mode the provider is absent and this slot returns
+    // before reaching here, so this is not a mock-mode network call.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Fire-and-forget: check() never throws, it reports via state.
+      context.read<UpdateService?>()?.check();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = context.watch<UpdateService?>();
+    if (service == null) return const SizedBox.shrink();
+
+    return ListenableBuilder(
+      listenable: service,
+      builder: (context, _) => UpdateBanner(
+        service: service,
+        dismissed: _dismissed,
+        onDismiss: () => setState(() => _dismissed = true),
+        onOpenSettings: () {
+          // Acting on the banner retires it. Leaving it up while the user is
+          // already looking at the App updates panel meant the banner covered
+          // the very control they were sent to, so it now clears on the way
+          // there rather than sitting over the destination.
+          setState(() => _dismissed = true);
+          widget.onOpenSettings();
+        },
+      ),
+    );
+  }
 }
 
 class _Button extends StatelessWidget {

@@ -214,7 +214,7 @@ class _Shell extends StatelessWidget {
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _UpdateBannerSlot(
+            UpdateBannerSlot(
               // Dismissing lasts the session, not the build: the state lives
               // here so switching tabs cannot resurrect the banner, and a fresh
               // launch brings it back.
@@ -237,46 +237,6 @@ class _Shell extends StatelessWidget {
     final app = context.read<AppState>();
     app.setTab(5);
     app.requestUpdatesScroll();
-  }
-}
-
-/// Holds the banner and the session-scoped dismissal flag.
-class _UpdateBannerSlot extends StatefulWidget {
-  const _UpdateBannerSlot({required this.onOpenSettings});
-
-  final VoidCallback onOpenSettings;
-
-  @override
-  State<_UpdateBannerSlot> createState() => _UpdateBannerSlotState();
-}
-
-class _UpdateBannerSlotState extends State<_UpdateBannerSlot> {
-  /// "Later" hides the banner for this session only. Not persisted: an update
-  /// the trader waved off should reappear next launch rather than vanish
-  /// forever on a device that never opens Settings.
-  bool _dismissed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final service = context.watch<UpdateService?>();
-    if (service == null) return const SizedBox.shrink();
-
-    return ListenableBuilder(
-      listenable: service,
-      builder: (context, _) => UpdateBanner(
-        service: service,
-        dismissed: _dismissed,
-        onDismiss: () => setState(() => _dismissed = true),
-        onOpenSettings: () {
-          // Acting on the banner retires it. Leaving it up while the user is
-          // already looking at the App updates panel meant the banner covered
-          // the very control they were sent to, so it now clears on the way
-          // there rather than sitting over the destination.
-          setState(() => _dismissed = true);
-          widget.onOpenSettings();
-        },
-      ),
-    );
   }
 }
 

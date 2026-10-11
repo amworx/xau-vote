@@ -1,8 +1,8 @@
 {
-    "version":  "1.0.13",
-    "versionCode":  26,
-    "apkUrl":  "https://github.com/amworx/xau-vote/releases/download/v1.0.13/XV-v1.0.13-26.apk",
-    "sha256":  "B2D63756D1A4CAEC106279D1543422170ADD59E8B4D3C633AA28E52790FFCDE1",
+    "version":  "1.0.14",
+    "versionCode":  27,
+    "apkUrl":  "https://github.com/amworx/xau-vote/releases/download/v1.0.14/XV-v1.0.14-27.apk",
+    "sha256":  "fb199ef30b17dc7a3ca8e0069890cea5775154416b43be6d96a48fddf93873da",
     "sizeBytes":  51866525,
-    "notes":  "Fixes the in-app updater: a download that stalls mid-transfer now surfaces as a retryable failure instead of hanging silently forever. Also corrects the idle update-panel label."
+    "notes":  "Fixes the in-app updater's install step: the downloaded APK was written to Dart's temp directory, which on Android is not the app's private cache dir, so the system installer could not open it. The updater now asks the platform for its real cache directory and writes the APK there, under the FileProvider-shared path the installer can read. Also finishes the update banner: it now runs one check on app launch, so a newer build surfaces without the trader having to open Settings and tap CHECK first."
 }

@@ -6,8 +6,11 @@
 /// pin both, plus the "no second download path" rule.
 library;
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:xauvote/services/update_service.dart';
 import 'package:xauvote/widgets/update_banner.dart';
@@ -209,6 +212,58 @@ void main() {
       await tester.pumpWidget(_host(s));
 
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('startup check', () {
+    // Regression guard for the unfinished banner wiring: before this the only
+    // check() call was the Settings CHECK button, so the banner could never
+    // appear unless the trader opened Settings first. The slot now runs one
+    // check per launch; this pins that without a tap and without a network
+    // call (probe injects the manifest response).
+    testWidgets('surfaces an update with no tap on first launch',
+        (tester) async {
+      final manifest = jsonEncode({
+        'version': '1.0.14',
+        'versionCode': 27,
+        'apkUrl': 'https://example.com/app.apk',
+        'sha256': 'b' * 64,
+        'sizeBytes': 51112909,
+        'notes': 'Fixes the installer path.',
+      });
+      var probes = 0;
+      final s = UpdateService(
+        manifestUrl: Uri.parse('https://example.com/update.json'),
+        probe: (url) async {
+          probes += 1;
+          return http.Response(manifest, 200);
+        },
+        // A code far below 27 so the check reports "available", not "current".
+        initialState: const UpdateState(status: DownloadState.idle),
+      );
+      addTearDown(s.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChangeNotifierProvider<UpdateService?>.value(
+            value: s,
+            child: Scaffold(
+              body: UpdateBannerSlot(onOpenSettings: () {}),
+            ),
+          ),
+        ),
+      );
+
+      // Let the post-frame callback run the check and the result emit.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(probes, 1, reason: 'exactly one check per launch');
+      expect(
+        find.text('Update available — 1.0.14'),
+        findsOneWidget,
+        reason: 'the banner must appear without the trader tapping CHECK',
+      );
     });
   });
 }

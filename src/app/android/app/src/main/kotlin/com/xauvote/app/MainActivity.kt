@@ -57,6 +57,12 @@ class MainActivity : FlutterActivity() {
                         requestInstallPermission(result)
                     }
 
+                    // The private cache directory, handed to Dart so the APK is
+                    // written somewhere FileProvider can actually share. See
+                    // cacheDir() for why this must come from Android rather than
+                    // Directory.systemTemp.
+                    "cacheDir" -> result.success(cacheDir.absolutePath)
+
                     "installApk" -> {
                         val path = call.argument<String>("path")
                         if (path.isNullOrBlank()) {

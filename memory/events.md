@@ -1669,3 +1669,55 @@
     content, check `X-Cache`/`Cache-Control` before assuming the write
     failed - the origin may already be correct and only the edge is stale.
 - **tags:** updater, download-stall, chunk-timeout, fastly-cache, release, v1.0.13
+
+
+## EVT-20261011-0250
+
+- **timestamp:** 2026-10-11 23:34:44
+- **mode:** BUILD
+- **action:** Fix in-app updater install step (bad_uri / FileProvider) + finish update banner (startup check); ship v1.0.14 (code 27)
+- **summary:**
+  - User reported: download succeeded, but tapping install threw
+    "couldn't open the installer: APK path is not shared with the installer".
+  - Root cause: `platformTargetDir()` wrote the APK under Dart's
+    `Directory.systemTemp`. Dart's native temp on Android resolves to
+    `/data/local/tmp` when `TMPDIR`/`TMP` are unset (confirmed in the Dart
+    SDK `directory.cc`). That path is outside the `<cache-path path="updates/">`
+    root that `update_paths.xml` exposes to FileProvider, so
+    `FileProvider.getUriForFile` threw `bad_uri` (IllegalArgumentException).
+    The Dart comment claiming `systemTemp` is the app cache dir was wrong.
+  - Fix in `update_service.dart`: added `UpdatePlatform.cacheDir()`, a new
+    channel method that asks Android for its real private cache dir; the
+    download dir is now built from that (fallback to systemTemp only when the
+    channel can't answer, e.g. web/tests). Added the matching `cacheDir`
+    handler in `MainActivity.kt`.
+  - Also finished the update banner: `_UpdateBannerSlot` (now public
+    `UpdateBannerSlot`, moved into `update_banner.dart`) runs one `check()`
+    on launch via a post-frame callback, so a newer build surfaces without
+    the trader opening Settings and tapping CHECK. Previously the only
+    `check()` call was the Settings button.
+  - Added two regression tests: one asserting the APK lands under the
+    platform-reported cache dir (the install bug), one asserting the banner
+    appears on launch with no tap (the startup check), both via the
+    `probe`/channel-mock seams so no network is used.
+- **result:** analyze clean; 289/289 tests pass (288 existing + new startup-check
+  test). Built v1.0.14 (code 27, versionName 1.0.14, SHA256
+  fb199ef30b17dc7a3ca8e0069890cea5775154416b43be6d96a48fddf93873da,
+  51866525 bytes). GitHub release v1.0.14 published with asset
+  `XV-v1.0.14-27.apk` (verified anonymously downloadable: 206 Partial Content,
+  Content-Range total matches). Repo mirror `updates/xv-manifest.json` and gist
+  origin both updated to +27.
+- **files:** src/app/lib/services/update_service.dart, src/app/lib/widgets/update_banner.dart, src/app/lib/main.dart, src/app/android/app/src/main/kotlin/com/xauvote/app/MainActivity.kt, src/app/test/update_service_test.dart, src/app/test/update_banner_test.dart, src/app/pubspec.yaml, updates/xv-manifest.json
+- **errors:** none. The Fastly gist CDN again served the old manifest at the raw
+  URL for ~5 min after `gh gist edit` returned success (origin/API was correct
+  immediately); same known 300s TTL, self-heals, no purge path. No new failure.
+- **lessons:**
+  - Never trust Dart's `Directory.systemTemp` on Android in a release app: with
+    no TMPDIR it is `/data/local/tmp`, not the app cache dir. Anything handed to
+    FileProvider must be written under a path the provider actually exposes;
+    ask the platform for `cacheDir` rather than assuming a Dart path.
+  - The banner could never appear without a manual Settings CHECK because the
+    only `check()` call was that button; a widget that must react to external
+    state needs its own one-shot trigger (post-frame callback), not just a
+    listener on state that nothing ever sets.
+- **tags:** updater, install-bad-uri, fileprovider, systemtemp-android, cacheDir, update-banner, startup-check, release, v1.0.14

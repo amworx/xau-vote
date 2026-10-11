@@ -10,6 +10,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:xauvote/services/update_service.dart';
@@ -172,31 +173,55 @@ void main() {
   });
 
   group('platform download directory', () {
-    // Regression guard for the bug that made the updater useless on Android:
-    // "check for updates" worked, but download threw before requesting a byte.
+    // Regression guard for the installer failure on a real device:
+    // "couldn't open the installer: APK path is not shared with the installer".
     //
-    // Every other test in this file injects `downloadDir`, which short-circuits
-    // before the platform is consulted - so the broken platform path had no
-    // coverage at all. This one deliberately does not inject anything.
-    test('resolves under the system temp dir without reading the environment',
+    // Dart's Directory.systemTemp is NOT the app cache dir in a release app
+    // process on Android - it resolves to /data/local/tmp, which FileProvider's
+    // <cache-path> does not expose, so getUriForFile threw. The download dir
+    // must come from Android's own cacheDir. Every other test in this file
+    // injects `downloadDir`, which short-circuits before the platform is
+    // consulted - so the wrong platform path had no coverage. This one
+    // deliberately does not inject anything, and mocks the channel to report a
+    // known cache root.
+    test('lands the APK under the platform cache dir that <cache-path> exposes',
         () async {
+      // MethodChannel mocks need the test binding; the rest of this file is
+      // pure Dart and never required it.
+      TestWidgetsFlutterBinding.ensureInitialized();
+
+      final cache = await Directory.systemTemp.createTemp('xv_cache');
+      addTearDown(() async {
+        if (await cache.exists()) await cache.delete(recursive: true);
+      });
+
+      final calls = <MethodCall>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(UpdatePlatform.channel, (call) async {
+        calls.add(call);
+        if (call.method == 'cacheDir') return cache.path;
+        return null;
+      });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(UpdatePlatform.channel, null);
+      });
+
       final s = UpdateService(
         manifestUrl: Uri.parse('https://example.com/update.json'),
       );
       addTearDown(s.dispose);
 
-      // Must not throw. It used to: the old implementation required $HOME,
-      // $USERPROFILE or $TMPDIR, and Android sets none of them in an app
-      // process, so this threw StateError on every real device.
       final dir = await s.platformTargetDir();
 
+      expect(calls.map((c) => c.method), contains('cacheDir'),
+          reason: 'must ask Android for its cache dir, not guess from temp');
       expect(await dir.exists(), isTrue,
           reason: 'the updates directory must actually be created');
-      expect(
-        dir.path,
-        startsWith(Directory.systemTemp.path),
-        reason: 'must sit under the app cache dir that <cache-path> exposes',
-      );
+      expect(dir.path, startsWith(cache.path),
+          reason:
+              'must sit under the app cache dir that <cache-path> exposes, '
+              'or the installer cannot open the APK');
       expect(dir.path, endsWith('updates'));
     });
 
