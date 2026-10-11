@@ -1614,3 +1614,20 @@
      updater downloads with its own path, verified on device next.
    - **link:** https://github.com/amworx/xau-vote/releases/tag/v1.0.12
    - **tags:** release, checksum-verified, manifest, gist
+
+## EVT-20261010-0248 in-app update download 404 fixed by public repo
+
+   - **mode:** BUILD
+   - **action:** User reported the in-app update download broken. Diagnosis:
+     manifest check succeeded (200, hosted on a public gist), but the APK
+     asset URL returned 404 to ANONYMOUS requests because the repo was
+     PRIVATE. GitHub release assets on a private repo require auth; the
+     updater downloads without auth, so it could never fetch the binary.
+     Same 404 blocked any friend following the share link. Fixed by making
+     the repo PUBLIC (user chose Option A). Verified no signing keys,
+     credentials or .env in tracked files or history first; asset now
+     returns 206 partial-content anonymously. Lesson: a "share this link"
+     release is only shareable if the repo (or the asset host) is public —
+     the manifest living on a public gist does not make the APK public.
+   - **files:** repo visibility
+   - **tags:** updater, private-repo-404, release-visibility
