@@ -869,7 +869,7 @@
 
    - **mode:** RESEARCH
    - **action:** Verified the "repeated EXPIRED rows every few minutes" claim per
-     directive §15 before acting on it: row timestamps, cron schedules, function
+     directive ï¿½15 before acting on it: row timestamps, cron schedules, function
      error logs.
    - **evidence:** 1,067 EXPIRED rows 2026-10-02 17:55 through 2026-10-06 11:22
      UTC, one roughly every 5 minutes, matching the still-active
@@ -886,7 +886,7 @@
    - **residual risk (step 6 territory):** `xv-build-consensus` still runs every
      5 minutes. It currently emits nothing, which is the desired behaviour, but
      nothing structural stops it from emitting again if a seeder is ever
-     re-enabled. Fixture isolation + the daily canary (§16) are what make this
+     re-enabled. Fixture isolation + the daily canary (ï¿½16) are what make this
      stay true.
    - **tags:** verification, expired-rows, cron, step-5
 
@@ -1026,11 +1026,11 @@
    - **known deferred items (do not lose):**
      1. File the FXScalpers verbatim reply (owner, 10 seconds). Licence file
         open until then; no row may be approved before it.
-     2. Gold Hunts outcome reconciliation (§3/§10): archive table exists and is
+     2. Gold Hunts outcome reconciliation (ï¿½3/ï¿½10): archive table exists and is
         filling; independent tally + XV-bar reconstruction not built.
      3. Provider-consensus TEXT ("Hold at 3.50-3.75%") is dropped (no column);
         revisit only if a real display need appears.
-     4. Ruling still open: ALIGNED session-context-vote model vs directive §2.
+     4. Ruling still open: ALIGNED session-context-vote model vs directive ï¿½2.
      5. spread_cost_r will be null on future real setups (app cannot hold a
         spread number) - server-side computation is the right fix before the
         first setup is scored.
@@ -1627,7 +1627,7 @@
      the repo PUBLIC (user chose Option A). Verified no signing keys,
      credentials or .env in tracked files or history first; asset now
      returns 206 partial-content anonymously. Lesson: a "share this link"
-     release is only shareable if the repo (or the asset host) is public —
+     release is only shareable if the repo (or the asset host) is public ï¿½
      the manifest living on a public gist does not make the APK public.
    - **files:** repo visibility
    - **tags:** updater, private-repo-404, release-visibility
@@ -1721,3 +1721,37 @@
     state needs its own one-shot trigger (post-frame callback), not just a
     listener on state that nothing ever sets.
 - **tags:** updater, install-bad-uri, fileprovider, systemtemp-android, cacheDir, update-banner, startup-check, release, v1.0.14
+
+---
+
+## EVT-20261012-0251
+
+- **timestamp:** 2026-10-12 21:58:24
+- **mode:** RESEARCH
+- **action:** Walk the whole project for every external free source; write `docs/external-sources.md`
+- **summary:**
+  - Walked `supabase/functions/` (16 dirs incl. `_shared`), all 24 migrations,
+    `memory/decisions.md` (through D-20261007-025), `memory/lessons.md`,
+    `memory/events.md`, `docs/free-tier-research.md`,
+    `tools/backfill_dukascopy.py`, and methodology Â§1.1 source-priority table.
+  - New file `docs/external-sources.md` (~490 lines): 13 numbered live/tool
+    sources with endpoint, cost/key, licence basis + decision ref, what we
+    read, which function calls it and how, and the lesson each one taught â€”
+    plus a gated-code table (7 entries needing flag + review), a full REFUSED
+    registry (WGC, 8 retail publishers, FXScalpers, FXLeaders, Trading
+    Economics, Currents/NewsData/GDELT leads, Treasury RSS/ECB), a schedule
+    map of all cron jobs with the free-tier envelope (2s CPU ceiling, 7-day
+    pause, keepalive caveat), 14 numbered lessons, and a decisions index.
+  - Two open items flagged in-file rather than asserted: `oanda-quote` is
+    referenced by migrations/plans but no longer exists in
+    `supabase/functions/` (new Â§9 status-check box); Gold Hunts production
+    dependency still needs the publisher's written confirmation
+    (info@goldhunts.com).
+  - No code touched; docs-only change, nothing to verify beyond file integrity
+    (492 lines, no truncation marker, tail confirmed).
+- **files:** docs/external-sources.md, memory/events.md
+- **errors:** none
+- **lessons:**
+  - A sources file rots fast; each entry carries its decision ref so the next
+    change updates decisions + this file together.
+- **tags:** docs, external-sources, licensing, free-tier, lessons
